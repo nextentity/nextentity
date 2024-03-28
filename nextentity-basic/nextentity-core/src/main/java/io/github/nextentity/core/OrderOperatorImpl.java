@@ -1,0 +1,104 @@
+package io.github.nextentity.core;
+
+import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.Order;
+import io.github.nextentity.core.api.Order.SortOrder;
+import io.github.nextentity.core.api.Path;
+import io.github.nextentity.core.api.Query.Collector;
+import io.github.nextentity.core.api.Query.OrderBy;
+import io.github.nextentity.core.api.Query.OrderOperator;
+import io.github.nextentity.core.api.Query.QueryStructureBuilder;
+import io.github.nextentity.core.api.Query.SubQueryBuilder;
+import io.github.nextentity.core.api.Root;
+import io.github.nextentity.core.api.Slice;
+import io.github.nextentity.core.api.Sliceable;
+import io.github.nextentity.core.api.TypedExpression.ComparableExpression;
+import io.github.nextentity.core.util.Paths;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
+    private final QueryConditionBuilder<T, U> builder;
+    private final Collection<Path<T, Comparable<?>>> orderByPaths;
+
+    public OrderOperatorImpl(QueryConditionBuilder<T, U> builder, Collection<Path<T, Comparable<?>>> orderByPaths) {
+        this.builder = builder;
+        this.orderByPaths = orderByPaths;
+    }
+
+    @NotNull
+    private List<Order<T>> asOrderList(Order.SortOrder sort) {
+        return orderByPaths
+                .stream()
+                .map(path -> {
+                    ComparableExpression<T, ?> expression =
+                            Paths.comparable(TypeCastUtil.unsafeCast(path));
+                    return expression.sort(sort);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public OrderBy<T, U> sort(SortOrder order) {
+        return builder.addOrderBy(asOrderList(order));
+    }
+
+    @Override
+    public Collector<U> orderBy(List<? extends Order<T>> orders) {
+        return asc().orderBy(orders);
+    }
+
+    @Override
+    public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
+        return orderBy(ordersBuilder.apply(RootImpl.of()));
+    }
+
+    @Override
+    public OrderOperator<T, U> orderBy(Collection<Path<T, Comparable<?>>> paths) {
+        return asc().orderBy(paths);
+    }
+
+    @Override
+    public long count() {
+        return asc().count();
+    }
+
+    @Override
+    public List<U> getList(int offset, int maxResult, LockModeType lockModeType) {
+        return asc().getList(offset, maxResult, lockModeType);
+    }
+
+    @Override
+    public boolean exist(int offset) {
+        return asc().exist(offset);
+    }
+
+    @Override
+    public <R> R slice(Sliceable<U, R> sliceable) {
+        return asc().slice(sliceable);
+    }
+
+    @Override
+    public Slice<U> slice(int offset, int limit) {
+        return asc().slice(offset, limit);
+    }
+
+    @Override
+    public QueryStructureBuilder buildMetadata() {
+        return asc().buildMetadata();
+    }
+
+    @Override
+    public <X> SubQueryBuilder<X, U> asSubQuery() {
+        return asc().asSubQuery();
+    }
+
+    @Override
+    public Root<T> root() {
+        return RootImpl.of();
+    }
+}
