@@ -59,7 +59,7 @@ public class JpaQueryExecutor implements AbstractQueryExecutor {
     public JpaQueryExecutor(EntityManager entityManager, Metamodel metamodel, QuerySqlBuilder querySqlBuilder, TypeConverter converter) {
         this.entityManager = entityManager;
         this.metamodel = metamodel;
-        this.nativeQueryExecutor = new JpaNativeQueryExecutor(querySqlBuilder, entityManager, metamodel, converter);
+        this.nativeQueryExecutor = JpaNativeQueryExecutor.getExecutor(querySqlBuilder, entityManager, metamodel, converter);
     }
 
     @Override

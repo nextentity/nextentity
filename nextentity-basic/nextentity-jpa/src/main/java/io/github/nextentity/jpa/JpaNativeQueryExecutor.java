@@ -1,37 +1,85 @@
 package io.github.nextentity.jpa;
 
+import io.github.nextentity.core.AbstractQueryExecutor;
+import io.github.nextentity.core.ExpressionTypeResolver;
+import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.QueryExecutor;
 import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.AbstractQueryExecutor;
-import io.github.nextentity.core.ExpressionTypeResolver;
-import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.reflect.InstanceConstructor;
 import io.github.nextentity.core.reflect.ReflectUtil;
+import io.github.nextentity.jdbc.ConnectionProvider;
+import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
+import io.github.nextentity.jdbc.JdbcResultCollector;
 import jakarta.persistence.EntityManager;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
     private final QuerySqlBuilder sqlBuilder;
     private final EntityManager entityManager;
     private final Metamodel metamodel;
     private final TypeConverter typeConverter;
 
-    public JpaNativeQueryExecutor(QuerySqlBuilder sqlBuilder, EntityManager entityManager, Metamodel metamodel, TypeConverter typeConverter) {
+    public static QueryExecutor getExecutor(QuerySqlBuilder sqlBuilder,
+                                            EntityManager entityManager,
+                                            Metamodel metamodel,
+                                            TypeConverter typeConverter) {
+        try {
+            ConnectionProvider connectionProvider = getConnectionProvider(entityManager);
+            if (connectionProvider != null) {
+                return new JdbcQueryExecutor(metamodel, sqlBuilder, connectionProvider, new JdbcResultCollector());
+            }
+        } catch (Throwable e) {
+            log.info("can not create JdbcQueryExecutor", e);
+        }
+        return new JpaNativeQueryExecutor(sqlBuilder, entityManager, metamodel, typeConverter);
+    }
+
+    private static ConnectionProvider getConnectionProvider(EntityManager entityManager) {
+        Object delegate = entityManager.getDelegate();
+        if (delegate instanceof SharedSessionContractImplementor) {
+            return new ConnectionProvider() {
+                @Override
+                public <T> T execute(ConnectionCallback<T> action) throws SQLException {
+                    JdbcConnectionAccess access = ((SharedSessionContractImplementor) entityManager.getDelegate())
+                            .getJdbcConnectionAccess();
+                    Connection connection = access.obtainConnection();
+                    try {
+                        return action.doInConnection(connection);
+                    } finally {
+                        access.releaseConnection(connection);
+                    }
+                }
+            };
+        }
+        return null;
+    }
+
+    public JpaNativeQueryExecutor(QuerySqlBuilder sqlBuilder,
+                                  EntityManager entityManager,
+                                  Metamodel metamodel,
+                                  TypeConverter typeConverter) {
         this.sqlBuilder = sqlBuilder;
         this.entityManager = entityManager;
         this.metamodel = metamodel;
@@ -68,7 +116,7 @@ public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
 
         if (select instanceof MultiSelected multiSelected) {
             if (multiSelected.expressions().size() != columnsCount) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("column count error");
             }
             ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
             List<Class<?>> types = multiSelected.expressions().stream()
