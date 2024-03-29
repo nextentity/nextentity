@@ -1,13 +1,13 @@
 package io.github.nextentity.data.common;
 
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.ComparablePath;
@@ -26,9 +26,13 @@ import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.TypedExpression;
+import io.github.nextentity.core.api.TypedExpression.BasicExpression;
+import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -39,11 +43,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.Metamodel;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,44 +53,40 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class AccessFacade<T, ID> {
+public class AccessFacade<T, ID> implements Access<T, ID> {
 
     protected Select<T> select;
-    protected Column idColumn;
     protected Updater<T> updater;
-    protected Attribute idAttribute;
+
+    protected BasicExpression<T, ID> id;
+    protected Function<T, ID> getId;
 
     protected void init(Class<T> entityType, Query query, Update update, Metamodel metamodel) {
         this.select = query.from(entityType);
         this.updater = update.getUpdater(entityType);
-        this.idAttribute = metamodel.getEntity(entityType).id();
-        this.idColumn = Expressions.column(idAttribute.name());
+        Attribute idAttribute = metamodel.getEntity(entityType).id();
+        this.id = TypedExpressions.ofBasic(Expressions.column(idAttribute.name()));
+        this.getId = t -> TypeCastUtil.unsafeCast(idAttribute.get(t));
     }
 
     public T get(ID id) {
-        Expression operate = Expressions.operate(idColumn, Operator.EQ, Expressions.of(id));
-        TypedExpression<T, Boolean> predicate = TypedExpressions.of(operate);
-        return where(predicate).getSingle();
+        return where(this.id.eq(id)).getSingle();
     }
 
     public List<T> getAll(Iterable<? extends ID> ids) {
-        List<Expression> idsExpression = StreamSupport.stream(ids.spliterator(), false)
-                .map(Expressions::of).collect(Collectors.toList());
-        if (idsExpression.isEmpty()) {
+        Collection<? extends ID> idList = ids instanceof Collection<?>
+                ? (Collection<? extends ID>) ids
+                : StreamSupport.stream(ids.spliterator(), false).collect(Collectors.toList());
+        if (idList.isEmpty()) {
             return Collections.emptyList();
         }
-        Expression operate = Expressions.operate(idColumn, Operator.IN, idsExpression);
-        TypedExpression<T, Boolean> predicate = TypedExpressions.of(operate);
+        BooleanExpression<T> predicate = id.in(idList);
         return where(predicate).getList();
     }
 
     public Map<ID, T> getMap(Iterable<? extends ID> ids) {
         List<T> entities = getAll(ids);
-        return entities.stream()
-                .collect(Collectors.toMap(
-                        it -> TypeCastUtil.unsafeCast(idAttribute.get(it)),
-                        Function.identity()
-                ));
+        return entities.stream().collect(Collectors.toMap(getId, Function.identity()));
     }
 
     public <R> Where<T, R> select(Class<R> projectionType) {
