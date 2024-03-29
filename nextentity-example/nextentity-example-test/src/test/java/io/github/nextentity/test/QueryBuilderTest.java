@@ -57,11 +57,16 @@ class QueryBuilderTest {
     void select(Select<User> userQuery) {
 
         int offset = 90;
-        User f2 = userQuery.getFirst(offset);
+        User f2 = userQuery.fetch(User::getParentUser).getFirst(offset);
         IUser first1 = userQuery.select(IUser.class).getFirst(offset);
         Assertions.assertEquals(first1.getUsername(), f2.getUsername());
         Assertions.assertEquals(first1.getId(), f2.getId());
         Assertions.assertEquals(first1.getRandomNumber(), f2.getRandomNumber());
+        if (f2.getParentUser() != null) {
+            Assertions.assertEquals(first1.getParentUser().username(), f2.getParentUser().getUsername());
+            Assertions.assertEquals(first1.getParentUser().id(), f2.getParentUser().getId());
+            Assertions.assertEquals(first1.getParentUser().randomNumber(), f2.getParentUser().getRandomNumber());
+        }
 
         User first3 = userQuery.fetch(User::getParentUser).getFirst(offset);
         System.out.println(first3);

@@ -1,6 +1,7 @@
 package io.github.nextentity.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
@@ -13,7 +14,6 @@ import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
-import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.Exceptions;
@@ -1399,6 +1399,21 @@ public class GenericApiTest {
 
         assertEquals(l0, l1);
         assertEquals(l0, l2);
+
+        User user = allUsers.stream()
+                .filter(it -> it.getParentUser() != null)
+                .findAny()
+                .orElse(allUsers.get(0));
+        UserInterface userInterface = userQuery.select(UserInterface.class)
+                .where(User::getId).eq(user.getId())
+                .getSingle();
+
+        assertEquals(userInterface.getId(), user.getId());
+        assertEquals(userInterface.getRandomNumber(), user.getRandomNumber());
+        assertEquals(userInterface.getUsername(), user.getUsername());
+        assertEquals(userInterface.getPid(), user.getPid());
+        assertEquals(userInterface.isValid(), user.isValid());
+        assertEquals(userInterface.getParentUsername(), user.getParentUser().getUsername());
 
     }
 
