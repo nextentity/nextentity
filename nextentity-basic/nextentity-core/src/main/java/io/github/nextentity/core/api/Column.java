@@ -10,4 +10,6 @@ non-sealed public interface Column extends Expression, Iterable<String> {
     Column get(Column column);
 
     Column parent();
+
+    Column subLength(int len);
 }

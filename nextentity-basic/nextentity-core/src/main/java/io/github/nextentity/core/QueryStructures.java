@@ -22,6 +22,7 @@ import io.github.nextentity.core.util.Exceptions;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.List;
@@ -216,10 +217,26 @@ final class QueryStructures {
 
         @Override
         public Column parent() {
-            if (size() <= 1) {
+            return sub(size() - 1);
+        }
+
+        @Override
+        public Column subLength(int len) {
+            if (len == size()) {
+                return this;
+            }
+            if (len > size()) {
+                throw new IndexOutOfBoundsException();
+            }
+            return sub(len);
+        }
+
+        @Nullable
+        private ColumnImpl sub(int len) {
+            if (len <= 0) {
                 return null;
             }
-            String[] strings = new String[size() - 1];
+            String[] strings = new String[len];
             System.arraycopy(paths, 0, strings, 0, strings.length);
             return new ColumnImpl(strings);
         }

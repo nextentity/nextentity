@@ -1,12 +1,11 @@
 package io.github.nextentity.jpa;
 
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Constant;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Operation;
 import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypeCastUtil;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.FetchParent;
 import jakarta.persistence.criteria.From;
@@ -17,7 +16,6 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -303,7 +301,7 @@ public class ExpressionBuilder {
         for (int i = 0; i < size; i++) {
             String s = column.get(i);
             if (i != size - 1) {
-                Column offset = subPaths(column, i + 1);
+                Column offset = column.subLength(i + 1);
                 r = join(offset);
             } else {
                 return r.get(s);
@@ -311,15 +309,6 @@ public class ExpressionBuilder {
         }
 
         return r;
-    }
-
-    @NotNull
-    protected Column subPaths(Column paths, int size) {
-        List<String> subPath = new ArrayList<>(size);
-        for (int j = 0; j < size; j++) {
-            subPath.add(paths.get(j));
-        }
-        return Expressions.column(subPath);
     }
 
     private Join<?, ?> join(Column column) {

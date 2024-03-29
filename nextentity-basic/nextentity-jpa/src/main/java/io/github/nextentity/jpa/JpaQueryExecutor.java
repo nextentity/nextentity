@@ -1,5 +1,9 @@
 package io.github.nextentity.jpa;
 
+import io.github.nextentity.core.AbstractQueryExecutor;
+import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.From;
@@ -16,10 +20,6 @@ import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
 import io.github.nextentity.core.api.SubQuery;
-import io.github.nextentity.core.AbstractQueryExecutor;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
@@ -255,7 +255,7 @@ public class JpaQueryExecutor implements AbstractQueryExecutor {
                     for (int i = 0; i < path.size(); i++) {
                         Fetch<?, ?> cur = fetch;
                         String stringPath = path.get(i);
-                        Column sub = subPaths(path, i + 1);
+                        Column sub = path.subLength(i + 1);
                         fetch = (Fetch<?, ?>) fetched.computeIfAbsent(sub, k -> {
                             if (cur == null) {
                                 return root.fetch(stringPath, JoinType.LEFT);
