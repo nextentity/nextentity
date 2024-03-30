@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:mysql:///nextentity?rewriteBatchedStatements=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    open-in-view: false
+logging:
+  level:
+    io.github.nextentity.jdbc.JdbcQueryExecutor: debug
