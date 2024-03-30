@@ -5,7 +5,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public interface Lists {
 
@@ -67,6 +69,16 @@ public interface Lists {
         list.addAll(collection);
         list.addAll(value);
         return list;
+    }
+
+    static <T> List<T> toArrayList(Iterable<T> iterable) {
+        if (iterable.getClass() == ArrayList.class) {
+            return (List<T>) iterable;
+        } else if (iterable instanceof Collection) {
+            return new ArrayList<>((Collection<? extends T>) iterable);
+        } else {
+            return StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList());
+        }
     }
 
 }

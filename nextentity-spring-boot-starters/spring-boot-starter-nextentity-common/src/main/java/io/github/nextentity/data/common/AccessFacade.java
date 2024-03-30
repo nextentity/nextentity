@@ -43,6 +43,7 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -493,31 +494,31 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.root();
     }
 
-    public T insert(T entity) {
+    public T insert(@NotNull T entity) {
         return updater.insert(entity);
     }
 
-    public List<T> insert(List<T> entities) {
+    public List<T> insert(@NotNull Iterable<T> entities) {
         return updater.insert(entities);
     }
 
-    public List<T> update(List<T> entities) {
+    public List<T> update(@NotNull Iterable<T> entities) {
         return updater.update(entities);
     }
 
-    public T update(T entity) {
+    public T update(@NotNull T entity) {
         return updater.update(entity);
     }
 
-    public void delete(Iterable<T> entities) {
+    public void delete(@NotNull Iterable<T> entities) {
         updater.delete(entities);
     }
 
-    public void delete(T entity) {
+    public void delete(@NotNull T entity) {
         updater.delete(entity);
     }
 
-    public T updateNonNullColumn(T entity) {
+    public T updateNonNullColumn(@NotNull T entity) {
         return updater.updateNonNullColumn(entity);
     }
 }

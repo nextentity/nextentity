@@ -2,6 +2,7 @@ package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -15,37 +16,37 @@ public class UpdaterImpl<T> implements Updater<T> {
     }
 
     @Override
-    public T insert(T entity) {
+    public T insert(@NotNull T entity) {
         return update.insert(entity, entityType);
     }
 
     @Override
-    public List<T> insert(List<T> entities) {
+    public List<T> insert(@NotNull Iterable<T> entities) {
         return update.insert(entities, entityType);
     }
 
     @Override
-    public List<T> update(List<T> entities) {
+    public List<T> update(@NotNull Iterable<T> entities) {
         return update.update(entities, entityType);
     }
 
     @Override
-    public T update(T entity) {
+    public T update(@NotNull T entity) {
         return update.update(entity, entityType);
     }
 
     @Override
-    public void delete(Iterable<T> entities) {
+    public void delete(@NotNull Iterable<T> entities) {
         update.delete(entities, entityType);
     }
 
     @Override
-    public void delete(T entity) {
+    public void delete(@NotNull T entity) {
         update.delete(entity, entityType);
     }
 
     @Override
-    public T updateNonNullColumn(T entity) {
+    public T updateNonNullColumn(@NotNull T entity) {
         return update.updateNonNullColumn(entity, entityType);
     }
 

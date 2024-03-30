@@ -2,6 +2,7 @@ package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
@@ -15,6 +16,7 @@ import jakarta.persistence.PersistenceUnitUtil;
 import jakarta.persistence.metamodel.EntityType;
 import jakarta.persistence.metamodel.SingularAttribute;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,18 +38,21 @@ public class JpaUpdate implements Update {
     }
 
     @Override
-    public <T> List<T> insert(List<T> entities, Class<T> entityType) {
+    public <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
+        List<T> list = Lists.toArrayList(entities);
         for (T entity : entities) {
             entityManager.persist(entity);
         }
-        return entities;
+        return list;
     }
 
     @Override
-    public <T> List<T> update(List<T> entities, Class<T> entityType) {
+    public <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
         List<Expression> ids = new ArrayList<>();
         Set<Object> uniqueValues = new HashSet<>();
+        int size = 0;
         for (T entity : entities) {
+            size++;
             Object id = requireId(entity);
             if (uniqueValues.add(id)) {
                 if (!util.isLoaded(entity)) {
@@ -56,6 +61,9 @@ public class JpaUpdate implements Update {
             } else {
                 throw new IllegalArgumentException("duplicate id");
             }
+        }
+        if (size == 0) {
+            return Lists.of();
         }
         if (!ids.isEmpty()) {
             EntityType<T> entity = entityManager.getMetamodel().entity(entityType);
@@ -66,11 +74,11 @@ public class JpaUpdate implements Update {
             List<T> dbList = query.from(entityType)
                     .where(TypedExpressions.of(operate))
                     .getList();
-            if (dbList.size() != entities.size()) {
+            if (dbList.size() != size) {
                 throw new IllegalArgumentException("some id not found");
             }
         }
-        List<T> list = new ArrayList<>(entities.size());
+        List<T> list = new ArrayList<>(size);
         for (T entity : entities) {
             T merge = entityManager.merge(entity);
             list.add(merge);
@@ -79,14 +87,14 @@ public class JpaUpdate implements Update {
     }
 
     @Override
-    public <T> void delete(Iterable<T> entities, Class<T> entityType) {
+    public <T> void delete(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
         for (T entity : entities) {
             entityManager.remove(entity);
         }
     }
 
     @Override
-    public <T> T updateNonNullColumn(T entity, Class<T> entityType) {
+    public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
         Object id = requireId(entity);
         T t = entityManager.find(entityType, id);
         if (t == null) {
@@ -97,7 +105,7 @@ public class JpaUpdate implements Update {
     }
 
     @Override
-    public <T> Updater<T> getUpdater(Class<T> type) {
+    public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
         return new UpdaterImpl<>(this, type);
     }
 

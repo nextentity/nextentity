@@ -23,48 +23,48 @@ public class TransactionalUpdate implements Update, ApplicationContextAware {
 
     @Override
     @Transactional
-    public <T> T insert(T entity, Class<T> entityType) {
+    public <T> T insert(@NotNull T entity, @NotNull Class<T> entityType) {
         return target.insert(entity, entityType);
     }
 
     @Override
     @Transactional
-    public <T> List<T> insert(List<T> entities, Class<T> entityType) {
+    public <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
         return target.insert(entities, entityType);
     }
 
     @Override
     @Transactional
-    public <T> List<T> update(List<T> entities, Class<T> entityType) {
+    public <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
         return target.update(entities, entityType);
     }
 
     @Override
     @Transactional
-    public <T> T update(T entity, Class<T> entityType) {
+    public <T> T update(@NotNull T entity, Class<T> entityType) {
         return target.update(entity, entityType);
     }
 
     @Override
     @Transactional
-    public <T> void delete(Iterable<T> entities, Class<T> entityType) {
+    public <T> void delete(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
         target.delete(entities, entityType);
     }
 
     @Override
     @Transactional
-    public <T> void delete(T entity, Class<T> entityType) {
+    public <T> void delete(@NotNull T entity, @NotNull Class<T> entityType) {
         target.delete(entity, entityType);
     }
 
     @Override
     @Transactional
-    public <T> T updateNonNullColumn(T entity, Class<T> entityType) {
+    public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
         return target.updateNonNullColumn(entity, entityType);
     }
 
     @Override
-    public <T> Updater<T> getUpdater(Class<T> type) {
+    public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
         return new UpdaterImpl<>(getUpdate(), type);
     }
 
