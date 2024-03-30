@@ -18,13 +18,11 @@
       <artifactId>spring-boot-starter-nextentity-common</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <dependency>
       <groupId>io.github.nextentity</groupId>
       <artifactId>nextentity-metamodel-jpa</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <dependency>
       <groupId>io.github.nextentity</groupId>
       <artifactId>nextentity-jdbc</artifactId>
@@ -34,9 +32,8 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-jdbc</artifactId>
+      <version>${spring.boot.version}</version>
     </dependency>
-
-
     <dependency>
       <groupId>jakarta.persistence</groupId>
       <artifactId>jakarta.persistence-api</artifactId>
