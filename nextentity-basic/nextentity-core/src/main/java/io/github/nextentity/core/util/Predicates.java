@@ -1,10 +1,10 @@
 package io.github.nextentity.core.util;
 
+import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypedExpressions;
 
 import java.util.Arrays;
 import java.util.List;

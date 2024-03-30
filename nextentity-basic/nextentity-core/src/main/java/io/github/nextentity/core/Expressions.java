@@ -1,5 +1,8 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.QueryStructures.ColumnImpl;
+import io.github.nextentity.core.QueryStructures.ConstantImpl;
+import io.github.nextentity.core.QueryStructures.OperationImpl;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Constant;
 import io.github.nextentity.core.api.Expression;
@@ -9,9 +12,6 @@ import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.QueryStructures.ColumnImpl;
-import io.github.nextentity.core.QueryStructures.ConstantImpl;
-import io.github.nextentity.core.QueryStructures.OperationImpl;
 import io.github.nextentity.core.util.Paths;
 
 import java.util.ArrayList;
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 public interface Expressions {
 
     Expression TRUE = of(true);
@@ -63,7 +62,7 @@ public interface Expressions {
         if (paths.getClass() != ArrayList.class) {
             paths = new ArrayList<>(paths);
         }
-        return new ColumnImpl(paths.toArray(String[]::new));
+        return new ColumnImpl(paths.toArray(new String[0]));
     }
 
     static Expression operate(Expression l, Operator o, Expression r) {

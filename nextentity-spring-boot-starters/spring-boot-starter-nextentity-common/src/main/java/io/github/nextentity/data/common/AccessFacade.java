@@ -1,5 +1,8 @@
 package io.github.nextentity.data.common;
 
+import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
@@ -29,6 +32,8 @@ import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -39,11 +44,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.Metamodel;
 
 import java.util.Collection;
 import java.util.Collections;

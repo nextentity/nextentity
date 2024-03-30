@@ -1,8 +1,8 @@
 package io.github.nextentity.data.jpa;
 
+import io.github.nextentity.core.QueryStructurePostProcessor;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.QueryStructurePostProcessor;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.data.common.Accesses;
@@ -10,8 +10,6 @@ import io.github.nextentity.data.common.TransactionalUpdate;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jpa.JpaQueryExecutor;
 import io.github.nextentity.jpa.JpaUpdate;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -22,6 +20,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import java.io.Serializable;
 
 @Configuration

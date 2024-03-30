@@ -1,5 +1,6 @@
 package io.github.nextentity.core.util;
 
+import io.github.nextentity.core.RootImpl;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.ComparablePath;
@@ -10,7 +11,6 @@ import io.github.nextentity.core.api.TypedExpression.ComparablePathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
-import io.github.nextentity.core.RootImpl;
 
 public interface Paths {
 

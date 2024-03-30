@@ -1,14 +1,14 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.ExpressionTypeResolver;
+import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.ExpressionTypeResolver;
-import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.reflect.InstanceConstructor;
@@ -42,7 +42,8 @@ public class JdbcResultCollector implements ResultCollector {
         Selection select = structure.select();
         int columnsCount = resultSet.getMetaData().getColumnCount();
 
-        if (select instanceof MultiSelected multiSelected) {
+        if (select instanceof MultiSelected) {
+            MultiSelected multiSelected = (MultiSelected) select;
             if (multiSelected.expressions().size() != columnsCount) {
                 throw new IllegalStateException();
             }
@@ -58,7 +59,6 @@ public class JdbcResultCollector implements ResultCollector {
             if (1 != columnsCount) {
                 throw new IllegalStateException();
             }
-            //noinspection PatternVariableCanBeUsed
             SingleSelected sc = (SingleSelected) select;
             while (resultSet.next()) {
                 T row = getSingleObj(resultSet, sc);

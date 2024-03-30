@@ -1,6 +1,6 @@
 package io.github.nextentity.core.api;
 
-non-sealed public interface Column extends Expression, Iterable<String> {
+public interface Column extends Expression, Iterable<String> {
     int size();
 
     String get(int i);

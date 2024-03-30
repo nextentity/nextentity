@@ -1,9 +1,9 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.UpdaterImpl;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.UpdaterImpl;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 @Slf4j
 public class JdbcUpdate implements Update {
 

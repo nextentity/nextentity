@@ -9,11 +9,11 @@ import io.github.nextentity.jpa.JpaQueryExecutor;
 import io.github.nextentity.jpa.JpaUpdate;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
 import io.github.nextentity.test.entity.User;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 
+import javax.persistence.EntityManager;
 import java.util.stream.Stream;
 
 public class UserUpdaterProvider implements ArgumentsProvider {

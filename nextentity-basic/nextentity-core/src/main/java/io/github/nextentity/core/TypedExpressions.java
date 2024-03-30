@@ -1,5 +1,6 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.QueryStructures.OrderImpl;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionOperator;
@@ -33,7 +34,6 @@ import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
-import io.github.nextentity.core.QueryStructures.OrderImpl;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 

@@ -1,5 +1,9 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.QueryStructures.MultiSelectedImpl;
+import io.github.nextentity.core.QueryStructures.ProjectionSelectedImpl;
+import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
+import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Lists;
@@ -21,10 +25,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import io.github.nextentity.core.QueryStructures.MultiSelectedImpl;
-import io.github.nextentity.core.QueryStructures.ProjectionSelectedImpl;
-import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
-import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
-@SuppressWarnings("PatternVariableCanBeUsed")
 public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Select<T>, Fetch<T> {
 
     public QueryBuilder(QueryExecutor queryExecutor, Class<T> type, QueryStructurePostProcessor structurePostProcessor) {

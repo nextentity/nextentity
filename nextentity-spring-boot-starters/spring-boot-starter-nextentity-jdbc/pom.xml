@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-spring-boot-starters</artifactId>
-    <version>1.0.0</version><!-- project version -->
+    <version>1.0.0-jdk8</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -38,8 +38,8 @@
 
 
     <dependency>
-      <groupId>jakarta.persistence</groupId>
-      <artifactId>jakarta.persistence-api</artifactId>
+      <groupId>javax.persistence</groupId>
+      <artifactId>javax.persistence-api</artifactId>
     </dependency>
 
 

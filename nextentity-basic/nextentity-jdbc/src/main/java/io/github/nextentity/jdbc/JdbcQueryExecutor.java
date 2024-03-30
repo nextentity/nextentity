@@ -1,8 +1,8 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.AbstractQueryExecutor;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.QueryStructure;
-import io.github.nextentity.core.AbstractQueryExecutor;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Attribute;

@@ -41,9 +41,9 @@ import java.util.stream.Stream;
 import static io.github.nextentity.core.util.Paths.get;
 import static io.github.nextentity.test.Transaction.doInTransaction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class QueryBuilderTest {
@@ -67,9 +67,9 @@ class QueryBuilderTest {
         System.out.println(first3);
         System.out.println(first3.getParentUser());
         IUser.U first2 = userQuery.select(IUser.U.class).getFirst(offset);
-        Assertions.assertEquals(first2.username(), f2.getUsername());
-        Assertions.assertEquals(first2.id(), f2.getId());
-        Assertions.assertEquals(first2.randomNumber(), f2.getRandomNumber());
+        Assertions.assertEquals(first2.getUsername(), f2.getUsername());
+        Assertions.assertEquals(first2.getId(), f2.getId());
+        Assertions.assertEquals(first2.getRandomNumber(), f2.getRandomNumber());
 
         User first = userQuery.select(User.class).getFirst();
         assertEquals(first, users().get(0));
@@ -1542,16 +1542,16 @@ class QueryBuilderTest {
                 .single(10).orElse(null);
         assertEquals(single, user);
 
-        assertTrue(userQuery
+        assertFalse(userQuery
                 .where(User::getId).le(10)
-                .single(11).isEmpty());
+                .single(11).isPresent());
 
         Slice<User> slice = userQuery.slice(20, 10);
         assertEquals(slice.total(), users().size());
         List<User> list = users().stream()
                 .skip(20)
                 .limit(10)
-                .toList();
+                .collect(Collectors.toList());
         assertEquals(slice.data(), list);
 
         Page<User> page = userQuery.slice(new Pageable<>(3, 10));
@@ -1607,9 +1607,9 @@ class QueryBuilderTest {
                         .single(10).orElse(null);
                 assertEquals(single, user);
 
-                assertTrue(userQuery
+                assertFalse(userQuery
                         .where(User::getId).le(10)
-                        .single(11, lockModeType).isEmpty());
+                        .single(11, lockModeType).isPresent());
 
 
                 user = userQuery.getFirst(lockModeType);

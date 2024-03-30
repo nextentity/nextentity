@@ -1,5 +1,9 @@
 package io.github.nextentity.jpa;
 
+import io.github.nextentity.core.AbstractQueryExecutor;
+import io.github.nextentity.core.ExpressionTypeResolver;
+import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Selection;
@@ -7,10 +11,6 @@ import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.AbstractQueryExecutor;
-import io.github.nextentity.core.ExpressionTypeResolver;
-import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
@@ -18,9 +18,9 @@ import io.github.nextentity.core.reflect.InstanceConstructor;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
-import jakarta.persistence.EntityManager;
 import org.jetbrains.annotations.NotNull;
 
+import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +45,7 @@ public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
 
     private <T> List<T> queryByNativeSql(@NotNull QueryStructure queryStructure) {
         PreparedSql preparedSql = sqlBuilder.build(queryStructure, metamodel);
-        jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
+        javax.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
         int position = 0;
         for (Object arg : preparedSql.args()) {
             query.setParameter(++position, arg);
@@ -66,7 +66,8 @@ public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
         Selection select = structure.select();
         int columnsCount = asArray(resultSet.get(0)).length;
 
-        if (select instanceof MultiSelected multiSelected) {
+        if (select instanceof MultiSelected) {
+            MultiSelected multiSelected = (MultiSelected) select;
             if (multiSelected.expressions().size() != columnsCount) {
                 throw new IllegalStateException();
             }

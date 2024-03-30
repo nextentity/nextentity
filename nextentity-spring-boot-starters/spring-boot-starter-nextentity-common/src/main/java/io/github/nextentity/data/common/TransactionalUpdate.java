@@ -1,8 +1,8 @@
 package io.github.nextentity.data.common;
 
+import io.github.nextentity.core.UpdaterImpl;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.UpdaterImpl;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

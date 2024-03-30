@@ -65,7 +65,6 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         return new Builder(structure, metamodel).build();
     }
 
-    @SuppressWarnings("PatternVariableCanBeUsed")
     static class Builder {
 
         protected final StringBuilder sql;
@@ -283,7 +282,6 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         protected StringBuilder appendBlank(StringBuilder sql) {
-            // noinspection SizeReplaceableByIsEmpty
             return sql.length() == 0 || " (,+-*/=><".indexOf(sql.charAt(sql.length() - 1)) >= 0 ? sql : sql.append(' ');
         }
 

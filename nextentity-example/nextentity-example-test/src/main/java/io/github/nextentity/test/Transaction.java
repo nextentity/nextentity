@@ -1,8 +1,8 @@
 package io.github.nextentity.test;
 
 import io.github.nextentity.core.exception.UncheckedSQLException;
-import jakarta.persistence.EntityTransaction;
 
+import javax.persistence.EntityTransaction;
 import java.sql.SQLException;
 
 public class Transaction {

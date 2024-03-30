@@ -1,9 +1,10 @@
 package io.github.nextentity.test.entity;
 
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
+
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Version;
 
 @MappedSuperclass
 public class EnableOptimisticLock {

@@ -1,8 +1,8 @@
 package io.github.nextentity.data.jdbc;
 
+import io.github.nextentity.core.QueryStructurePostProcessor;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.QueryStructurePostProcessor;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.data.common.AccessTypeUtil;
