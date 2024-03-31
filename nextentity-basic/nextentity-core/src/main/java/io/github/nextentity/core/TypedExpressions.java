@@ -34,6 +34,7 @@ import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
+import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -236,7 +237,7 @@ public class TypedExpressions {
 
         @Override
         public Root<T> root() {
-            return RootImpl.of();
+            return Paths.root();
         }
 
         @Override

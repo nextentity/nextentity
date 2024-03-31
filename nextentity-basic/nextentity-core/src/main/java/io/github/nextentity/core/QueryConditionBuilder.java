@@ -1,5 +1,9 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.QueryStructures.FromSubQuery;
+import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
+import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
+import io.github.nextentity.core.QueryStructures.SubQueryExpr;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
@@ -31,10 +35,7 @@ import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BasicExpression;
-import io.github.nextentity.core.QueryStructures.FromSubQuery;
-import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
-import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
-import io.github.nextentity.core.QueryStructures.SubQueryExpr;
+import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -96,7 +97,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
     @Override
     public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
-        return orderBy(ordersBuilder.apply(RootImpl.of()));
+        return orderBy(ordersBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -266,7 +267,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
     @Override
     public Having<T, U> groupBy(ExpressionsBuilder<T> expressionsBuilder) {
-        return groupBy(expressionsBuilder.apply(RootImpl.of()));
+        return groupBy(expressionsBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -314,7 +315,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     }
 
     public Root<T> root() {
-        return RootImpl.of();
+        return Paths.root();
     }
 
     @Override

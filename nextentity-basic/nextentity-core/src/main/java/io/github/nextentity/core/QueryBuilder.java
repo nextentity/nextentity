@@ -11,6 +11,7 @@ import io.github.nextentity.core.api.Query.Where0;
 import io.github.nextentity.core.api.QueryExecutor;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
+import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -56,7 +57,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     @Override
     public Where0<T, Tuple> select(ExpressionsBuilder<T> selectBuilder) {
-        return select(selectBuilder.apply(RootImpl.of()));
+        return select(selectBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -153,7 +154,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     @Override
     public Where0<T, Tuple> selectDistinct(ExpressionsBuilder<T> selectBuilder) {
-        return selectDistinct(selectBuilder.apply(RootImpl.of()));
+        return selectDistinct(selectBuilder.apply(Paths.root()));
     }
 
     @Override

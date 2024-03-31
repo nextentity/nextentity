@@ -1,6 +1,5 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.RootImpl;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Lists;
@@ -909,7 +908,7 @@ class QueryBuilderTest {
             assertEquals(slice.total(), sorted.size());
             Root<User> root = checker.collector
                     .orderBy(User::getRandomNumber, User::getId).root();
-            assertEquals(root, RootImpl.of());
+            assertEquals(root, Paths.root());
 
             users = checker.collector
                     .orderBy((Root<User> r) -> Lists.of(

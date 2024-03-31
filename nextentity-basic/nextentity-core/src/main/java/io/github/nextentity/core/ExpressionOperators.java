@@ -18,6 +18,7 @@ import io.github.nextentity.core.api.TypedExpression.ComparableExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberExpression;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
+import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -140,7 +141,7 @@ public class ExpressionOperators {
         }
 
         public Root<T> root() {
-            return RootImpl.of();
+            return Paths.root();
         }
 
         public NumberExpression<T, Long> count() {

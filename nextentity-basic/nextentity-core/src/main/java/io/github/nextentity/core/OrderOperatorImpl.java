@@ -54,7 +54,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
 
     @Override
     public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
-        return orderBy(ordersBuilder.apply(RootImpl.of()));
+        return orderBy(ordersBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -99,6 +99,6 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
 
     @Override
     public Root<T> root() {
-        return RootImpl.of();
+        return Paths.root();
     }
 }
