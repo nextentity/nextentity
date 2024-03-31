@@ -396,12 +396,12 @@ public class TypedExpressions {
 
         @NotNull
         protected RawTypeExpression and(BasicExpression<?, ?> basicExpression) {
-            return operate(AND, basicExpression);
+            return basicExpression == null ? this : operate(AND, basicExpression);
         }
 
         @NotNull
         protected RawTypeExpression or(BasicExpression<?, ?> basicExpression) {
-            return operate(OR, basicExpression);
+            return basicExpression == null ? this : operate(OR, basicExpression);
         }
 
         @Override
