@@ -97,21 +97,13 @@ public interface TypedExpression<T, U> {
             return lt(root().of(value));
         }
 
-        default BooleanExpression<T> geIfNotNull(U value) {
-            return ge(root().of(value));
-        }
+        BooleanExpression<T> geIfNotNull(U value);
 
-        default BooleanExpression<T> gtIfNotNull(U value) {
-            return gt(root().of(value));
-        }
+        BooleanExpression<T> gtIfNotNull(U value);
 
-        default BooleanExpression<T> leIfNotNull(U value) {
-            return le(root().of(value));
-        }
+        BooleanExpression<T> leIfNotNull(U value);
 
-        default BooleanExpression<T> ltIfNotNull(U value) {
-            return lt(root().of(value));
-        }
+        BooleanExpression<T> ltIfNotNull(U value);
 
         default BooleanExpression<T> between(U l, U r) {
             Root<T> eb = root();

@@ -34,8 +34,8 @@ public class UserService {
     public User updateRandomNumber(User user) {
         if (user != null) {
             user.setRandomNumber(ThreadLocalRandom.current().nextInt(20));
+            userAccess.update(user);
         }
-        userAccess.update(user);
         return user;
     }
 

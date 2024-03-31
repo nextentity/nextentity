@@ -1,5 +1,6 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.QueryStructures.OrderImpl;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionOperator;
@@ -33,7 +34,6 @@ import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
-import io.github.nextentity.core.QueryStructures.OrderImpl;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -148,7 +148,7 @@ public class TypedExpressions {
 
         @Override
         public BooleanExpression<T> eqIfNotNull(U value) {
-            return value == null ? rollback() : eq(value);
+            return value == null ? operateNullAsBoolean() : eq(value);
         }
 
         @Override
@@ -164,11 +164,11 @@ public class TypedExpressions {
 
         @Override
         public BooleanExpression<T> neIfNotNull(U value) {
-            return value == null ? rollback() : ne(value);
+            return value == null ? operateNullAsBoolean() : ne(value);
         }
 
         @NotNull
-        protected TypedExpressions._Boolean<T> rollback() {
+        protected TypedExpressions._Boolean<T> operateNullAsBoolean() {
             return new _Boolean<>(operation, null);
         }
 
@@ -367,6 +367,9 @@ public class TypedExpressions {
 
         @NotNull
         OrOperator<T> newOrOperator(BasicExpression<?, ?> expression) {
+            if (expression == null) {
+                return this;
+            }
             if (expression instanceof OrOperator) {
                 return TypeCastUtil.unsafeCast(expression);
             }
@@ -376,6 +379,9 @@ public class TypedExpressions {
 
         @NotNull
         ExpressionOperator.AndOperator<T> newAndOperator(BasicExpression<?, ?> expression) {
+            if (expression == null) {
+                return this;
+            }
             if (expression instanceof ExpressionOperator.AndOperator) {
                 return TypeCastUtil.unsafeCast(expression);
             }
@@ -529,6 +535,26 @@ public class TypedExpressions {
         public Order<T> sort(SortOrder order) {
             return new OrderImpl<>(operand, order);
         }
+
+        @Override
+        public BooleanExpression<T> geIfNotNull(U value) {
+            return value == null ? operateNullAsBoolean() : ge(value);
+        }
+
+        @Override
+        public BooleanExpression<T> gtIfNotNull(U value) {
+            return value == null ? operateNullAsBoolean() : gt(value);
+        }
+
+        @Override
+        public BooleanExpression<T> leIfNotNull(U value) {
+            return value == null ? operateNullAsBoolean() : le(value);
+        }
+
+        @Override
+        public BooleanExpression<T> ltIfNotNull(U value) {
+            return value == null ? operateNullAsBoolean() : lt(value);
+        }
     }
 
     static class _Number<T, U extends Number & Comparable<U>>
@@ -659,12 +685,12 @@ public class TypedExpressions {
 
         @Override
         public BooleanExpression<T> likeIfNotNull(String value) {
-            return value == null ? rollback() : like(value);
+            return value == null ? operateNullAsBoolean() : like(value);
         }
 
         @Override
         public BooleanExpression<T> notLikeIfNotNull(String value) {
-            return null;
+            return value == null ? operateNullAsBoolean() : notLike(value);
         }
 
         @Override

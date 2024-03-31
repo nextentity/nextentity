@@ -249,13 +249,13 @@ public class ExpressionOperators {
 
         @Override
         public <V> PathOperator<T, V, B> get(Path<U, V> path) {
-            return new _Path<>(base().get(path), resultBuilder);
+            return ofPath(base().get(path), resultBuilder);
         }
 
         @Override
         public StringOperator<T, B> get(StringPath<U> path) {
             StringExpression<T> tStringExpression = base().get(path);
-            return new _String<>(tStringExpression, resultBuilder);
+            return ofString(tStringExpression, resultBuilder);
         }
 
         @Override
@@ -265,7 +265,7 @@ public class ExpressionOperators {
 
         @Override
         public <V extends Comparable<V>> ComparableOperator<T, V, B> get(ComparablePath<U, V> path) {
-            return new ExpressionOperators._Comparable<>(base().get(path), resultBuilder);
+            return ExpressionOperators.ofComparable(base().get(path), resultBuilder);
         }
 
     }
@@ -303,27 +303,27 @@ public class ExpressionOperators {
 
         @Override
         public StringOperator<T, B> lower() {
-            return new _String<>(base().lower(), resultBuilder);
+            return ofString(base().lower(), resultBuilder);
         }
 
         @Override
         public StringOperator<T, B> upper() {
-            return new _String<>(base().upper(), resultBuilder);
+            return ofString(base().upper(), resultBuilder);
         }
 
         @Override
         public StringOperator<T, B> substring(int offset, int length) {
-            return new _String<>(base().substring(offset, length), resultBuilder);
+            return ofString(base().substring(offset, length), resultBuilder);
         }
 
         @Override
         public StringOperator<T, B> substring(int offset) {
-            return new _String<>(base().substring(offset), resultBuilder);
+            return ofString(base().substring(offset), resultBuilder);
         }
 
         @Override
         public StringOperator<T, B> trim() {
-            return new _String<>(base().trim(), resultBuilder);
+            return ofString(base().trim(), resultBuilder);
         }
 
         @Override
