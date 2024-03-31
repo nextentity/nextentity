@@ -219,7 +219,7 @@ public interface ExpressionOperator<T, U, B> {
 
         <R extends Number & Comparable<R>> NumberOperator<T, R, ExpressionOperator.AndOperator<T>> and(NumberPath<T, R> path);
 
-        ExpressionOperator.AndOperator<T> and(BooleanPath<T> path);
+        ComparableOperator<T, Boolean, ExpressionOperator.AndOperator<T>> and(BooleanPath<T> path);
 
         StringOperator<T, ExpressionOperator.AndOperator<T>> and(StringPath<T> path);
 
@@ -248,7 +248,7 @@ public interface ExpressionOperator<T, U, B> {
 
         StringOperator<T, ? extends ExpressionOperator.OrOperator<T>> or(StringPath<T> path);
 
-        ExpressionOperator.OrOperator<T> or(BooleanPath<T> path);
+        ExpressionOperator.ComparableOperator<T, Boolean, ExpressionOperator.OrOperator<T>> or(BooleanPath<T> path);
 
         ExpressionOperator.OrOperator<T> or(TypedExpression<T, Boolean> predicate);
 

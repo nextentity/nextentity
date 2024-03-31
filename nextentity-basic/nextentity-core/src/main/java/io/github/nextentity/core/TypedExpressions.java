@@ -3,7 +3,6 @@ package io.github.nextentity.core;
 import io.github.nextentity.core.QueryStructures.OrderImpl;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.ExpressionOperator;
 import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
@@ -11,7 +10,6 @@ import io.github.nextentity.core.api.ExpressionOperator.OrOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.Lists;
-import io.github.nextentity.core.api.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Order.SortOrder;
@@ -31,10 +29,10 @@ import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 import io.github.nextentity.core.util.Paths;
+import lombok.Data;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +41,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import static io.github.nextentity.core.api.Operator.*;
 
 public class TypedExpressions {
 
@@ -71,659 +71,533 @@ public class TypedExpressions {
     }
 
     public static <T, R> PathExpression<T, R> ofPath(Column column) {
-        return new _Basic<>((Operation) null, column);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
     }
 
     public static <T, R> EntityPathExpression<T, R> ofEntity(Column column) {
-        return new _Basic<>((Operation) null, column);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
     }
 
     public static <T> StringPathExpression<T> ofString(Column column) {
-        return new _String<>((Operation) null, column);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
     }
 
     public static <T> BooleanPathExpression<T> ofBoolean(Column column) {
-        return new _Boolean<>((Operation) null, column);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
     }
 
     public static <T, U extends Number & Comparable<U>> NumberPathExpression<T, U> ofNumber(Column column) {
-        return new _Number<>((Operation) null, column);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
     }
 
     public static <T, U extends Comparable<U>> ComparablePathExpression<T, U> ofComparable(Column column) {
-        return new _Comparable<>((Operation) null, column);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
     }
 
     public static <T, R> BasicExpression<T, R> ofBasic(Expression expression) {
-        return new _Basic<>((Operation) null, expression);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
     }
 
     public static <T> StringExpression<T> ofString(Expression expression) {
-        return new _String<>((Operation) null, expression);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
     }
 
     public static <T> BooleanExpression<T> ofBoolean(Expression expression) {
-        return new _Boolean<>((Operation) null, expression);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
     }
 
     public static <T, U extends Number & Comparable<U>> NumberExpression<T, U> ofNumber(Expression expression) {
-        return new _Number<>((Operation) null, expression);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
     }
 
     public static <T, U extends Comparable<U>> ComparableExpression<T, U> ofComparable(Expression expression) {
-        return new _Comparable<>((Operation) null, expression);
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
     }
 
-    static class _Basic<T, U> implements BasicExpression<T, U>, EntityPathExpression<T, U> {
-        protected final Operation operation;
-        protected final Expression operand;
 
-        public _Basic(Operation operation, Expression operand) {
-            this.operation = operation;
-            this.operand = operand;
-        }
-
-        public _Basic(_Basic<?, ?> operation, Expression operand) {
-            this(operation == null ? null : operation.operation, operand);
-        }
-
-        protected Expression operate(Operator operator, Object value) {
-            return operate(operator, of(value));
-        }
-
-        protected Expression operate(Operator operator, TypedExpression<T, ?> expression) {
-            return operate(operator, Lists.of(expression));
-        }
-
-        protected Expression operate(Operator operator, Iterable<? extends TypedExpression<T, ?>> expressions) {
-            List<Expression> args = StreamSupport.stream(expressions.spliterator(), false)
-                    .map(TypedExpression::expression)
-                    .collect(Collectors.toList());
-            return Expressions.operate(this.operand, operator, args);
-        }
-
-        @Override
-        public BooleanExpression<T> eq(U value) {
-            return eq(of(value));
-        }
-
-        @Override
-        public BooleanExpression<T> eqIfNotNull(U value) {
-            return value == null ? operateNullAsBoolean() : eq(value);
-        }
-
-        @Override
-        public BooleanExpression<T> eq(TypedExpression<T, U> value) {
-            Expression operate = operate(Operator.EQ, value);
-            return new _Boolean<>(this, operate);
-        }
-
-        @Override
-        public BooleanExpression<T> ne(U value) {
-            return ne(of(value));
-        }
-
-        @Override
-        public BooleanExpression<T> neIfNotNull(U value) {
-            return value == null ? operateNullAsBoolean() : ne(value);
-        }
-
-        @NotNull
-        protected TypedExpressions._Boolean<T> operateNullAsBoolean() {
-            return new _Boolean<>(operation, null);
-        }
-
-        @Override
-        public BooleanExpression<T> ne(TypedExpression<T, U> value) {
-            Expression operate = operate(Operator.NE, value);
-            return new _Boolean<>(this, operate);
-        }
-
-        @SafeVarargs
-        @Override
-        public final BooleanExpression<T> in(U... values) {
-            return in(ofList(values));
-        }
-
-        @Override
-        public BooleanExpression<T> in(@NotNull List<? extends TypedExpression<T, U>> values) {
-            Expression operate = operate(Operator.IN, values);
-            return new _Boolean<>(this, operate);
-        }
-
-        @Override
-        public BooleanExpression<T> in(@NotNull Collection<? extends U> values) {
-            return in(ofList(values));
-        }
-
-        @SafeVarargs
-        @Override
-        public final BooleanExpression<T> notIn(U... values) {
-            return notIn(ofList(values));
-        }
-
-        @Override
-        public BooleanExpression<T> notIn(@NotNull List<? extends TypedExpression<T, U>> values) {
-            List<Expression> expressions = values.stream()
-                    .map(TypedExpression::expression)
-                    .collect(Collectors.toList());
-            Expression operate = Expressions.operate(operand, Operator.IN, expressions);
-            operate = Expressions.operate(operate, Operator.NOT);
-            return new _Boolean<>(this, operate);
-        }
-
-        @Override
-        public BooleanExpression<T> notIn(@NotNull Collection<? extends U> values) {
-            return notIn(ofList(values));
-        }
-
-        @Override
-        public BooleanExpression<T> isNull() {
-            Expression operate = Expressions.operate(operand, Operator.IS_NULL);
-            return new _Boolean<>(this, operate);
-        }
-
-        @Override
-        public NumberExpression<T, Long> count() {
-            Expression operate = Expressions.operate(operand, Operator.COUNT);
-            return new _Number<>(this, operate);
-        }
-
-        @Override
-        public BooleanExpression<T> isNotNull() {
-            Expression operate = Expressions.operate(operand, Operator.IS_NOT_NULL);
-            return new _Boolean<>(this, operate);
-        }
-
-        @Override
-        public Root<T> root() {
-            return Paths.root();
-        }
-
-        @Override
-        public Expression expression() {
-            if (operand == null) {
-                return operation;
-            } else if (operation == null) {
-                return operand;
-            } else {
-                Operator operator = operation.operator();
-                if (operator == Operator.OR || operator == Operator.AND) {
-                    return Expressions.operate(operation, operator, operand);
-                } else {
-                    throw new IllegalStateException();
-                }
-            }
-        }
-
-        private <R> Column getPath(Path<U, R> path) {
-            if (operand instanceof Column) {
-                return Expressions.concat((Column) operand, path);
-            }
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public <R> EntityPathExpression<T, R> get(Path<U, R> path) {
-            return new _Basic<>(this, getPath(path));
-        }
-
-        @Override
-        public StringPathExpression<T> get(StringPath<U> path) {
-            return new _String<>(this, getPath(path));
-        }
-
-        @Override
-        public <R extends Number & Comparable<R>> NumberPathExpression<T, R> get(NumberPath<U, R> path) {
-            return new _Number<>(this, getPath(path));
-        }
-
-        @Override
-        public <R extends Comparable<R>> ComparablePathExpression<T, R> get(ComparablePath<U, R> path) {
-            return new _Comparable<>(this, getPath(path));
-        }
-
-        @Override
-        public BooleanPathExpression<T> get(BooleanPath<U> path) {
-            return new _Boolean<>(this, getPath(path));
-        }
-
-        @Override
-        public <R> PathExpression<T, R> get(PathExpression<U, R> path) {
-            Column column = getColumn(path);
-            return ofPath(column);
-        }
-
-        private <R> Column getColumn(PathExpression<U, R> path) {
-            Column pre = (Column) expression();
-            Column next = (Column) path.expression();
-            return pre.get(next);
-        }
-
-        @Override
-        public StringPathExpression<T> get(StringPathExpression<U> path) {
-            return ofString(getColumn(path));
-        }
-
-        @Override
-        public <R extends Number & Comparable<R>> NumberPathExpression<T, R> get(NumberPathExpression<U, R> path) {
-            return ofNumber(getColumn(path));
-        }
-
-        @Override
-        public <R extends Comparable<R>> ComparablePathExpression<T, R> get(ComparablePathExpression<U, R> path) {
-            return ofComparable(getColumn(path));
-        }
-
-        @Override
-        public BooleanPathExpression<T> get(BooleanPathExpression<U> path) {
-            return ofBoolean(getColumn(path));
-        }
-
-        protected Operation and() {
-            return updateOperation(Operator.AND);
-        }
-
-        protected Operation or() {
-            return updateOperation(Operator.OR);
-        }
-
-        protected Operation updateOperation(Operator operator) {
-            if (operand == null) {
-                return operation;
-            }
-            if (operation == null) {
-                return (Operation) Expressions.operate(operand, operator);
-            }
-            if (operation.operator() != operator) {
-                throw new IllegalStateException();
-            }
-            return (Operation) Expressions.operate(operation, operator, operand);
-        }
-
-    }
-
-    static class _Boolean<T>
-            extends _Comparable<T, Boolean>
-            implements BooleanPathExpression<T> {
-
-        public _Boolean(_Basic<?, ?> origin, Expression operand) {
-            super(origin, operand);
-        }
-
-        public _Boolean(Operation operation, Expression operand) {
-            super(operation, operand);
-        }
-
-        @Override
-        public BooleanExpression<T> not() {
-            return new _Boolean<>(this, Expressions.operate(operand, Operator.NOT));
-        }
-
-        @Override
-        public <R> PathOperator<T, R, OrOperator<T>> or(Path<T, R> path) {
-            PathExpression<T, R> expression = new _Basic<>(or(), Expressions.of(path));
-            return ExpressionOperators.ofPath(expression, this::newOrOperator);
-        }
-
-        @NotNull
-        OrOperator<T> newOrOperator(BasicExpression<?, ?> expression) {
-            if (expression == null) {
-                return this;
-            }
-            if (expression instanceof OrOperator) {
-                return TypeCastUtil.unsafeCast(expression);
-            }
-            _Basic<?, ?> expr = (_Basic<?, ?>) expression;
-            return new _Boolean<>(expr.operation, expr.operand);
-        }
-
-        @NotNull
-        ExpressionOperator.AndOperator<T> newAndOperator(BasicExpression<?, ?> expression) {
-            if (expression == null) {
-                return this;
-            }
-            if (expression instanceof ExpressionOperator.AndOperator) {
-                return TypeCastUtil.unsafeCast(expression);
-            }
-            _Basic<?, ?> expr = (_Basic<?, ?>) expression;
-            return new _Boolean<>(expr.operation, expr.operand);
-        }
-
-        @Override
-        public <R extends Comparable<R>> ComparableOperator<T, R, OrOperator<T>> or(ComparablePath<T, R> path) {
-            ComparableExpression<T, R> expression = new _Comparable<>(or(), Expressions.of(path));
-            return ExpressionOperators.ofComparable(expression, this::newOrOperator);
-        }
-
-        @Override
-        public <R extends Number & Comparable<R>> NumberOperator<T, R, OrOperator<T>> or(NumberPath<T, R> path) {
-            NumberExpression<T, R> expression = new _Number<>(or(), Expressions.of(path));
-            return ExpressionOperators.ofNumber(expression, this::newOrOperator);
-        }
-
-        @Override
-        public OrOperator<T> or(BooleanPath<T> path) {
-            return new _Boolean<>(or(), Expressions.of(path));
-        }
-
-        @Override
-        public StringOperator<T, ? extends OrOperator<T>> or(StringPath<T> path) {
-            StringExpression<T> expression = new _String<>(or(), Expressions.of(path));
-            return ExpressionOperators.ofString(expression, this::newOrOperator);
-        }
-
-        @Override
-        public OrOperator<T> or(TypedExpression<T, Boolean> expression) {
-            return new _Boolean<>(or(), expression.expression());
-        }
-
-        @Override
-        public OrOperator<T> or(List<? extends TypedExpression<T, Boolean>> expressions) {
-            if (expressions.isEmpty()) {
-                return this;
-            }
-            List<Expression> sub = expressions
-                    .subList(0, expressions.size() - 1)
-                    .stream().map(TypedExpression::expression)
-                    .collect(Collectors.toList());
-            Operation operation = (Operation) Expressions.operate(or(), Operator.OR, sub);
-            Expression last = expressions.get(expressions.size() - 1).expression();
-            return new _Boolean<>(operation, last);
-        }
-
-        @Override
-        public <R> PathOperator<T, R, AndOperator<T>> and(Path<T, R> path) {
-            PathExpression<T, R> expression = new _Basic<>(and(), Expressions.of(path));
-            return ExpressionOperators.ofPath(expression, this::newAndOperator);
-        }
-
-        @Override
-        public <R extends Comparable<R>> ComparableOperator<T, R, AndOperator<T>> and(ComparablePath<T, R> path) {
-            ComparableExpression<T, R> expression = new _Comparable<>(and(), Expressions.of(path));
-            return ExpressionOperators.ofComparable(expression, this::newAndOperator);
-        }
-
-        @Override
-        public <R extends Number & Comparable<R>> NumberOperator<T, R, AndOperator<T>> and(NumberPath<T, R> path) {
-            NumberExpression<T, R> expression = new _Number<>(and(), Expressions.of(path));
-            return ExpressionOperators.ofNumber(expression, this::newAndOperator);
-        }
-
-        @Override
-        public AndOperator<T> and(BooleanPath<T> path) {
-            BooleanExpression<T> expression = new _Boolean<>(and(), Expressions.of(path));
-            return new _Boolean<>(and(), expression.expression());
-        }
-
-        @Override
-        public StringOperator<T, AndOperator<T>> and(StringPath<T> path) {
-            StringExpression<T> expression = new _String<>(and(), Expressions.of(path));
-            return ExpressionOperators.ofString(expression, this::newAndOperator);
-        }
-
-        @Override
-        public AndOperator<T> and(TypedExpression<T, Boolean> expression) {
-            return new _Boolean<>(and(), expression.expression());
-        }
-
-        @Override
-        public AndOperator<T> and(List<? extends TypedExpression<T, Boolean>> expressions) {
-            BooleanExpression<T> expr = this;
-            if (!expressions.isEmpty()) {
-                List<Expression> sub = expressions
-                        .subList(0, expressions.size() - 1)
-                        .stream().map(TypedExpression::expression)
-                        .collect(Collectors.toList());
-                Operation operation = (Operation) Expressions.operate(and(), Operator.AND, sub);
-                Expression last = expressions.get(expressions.size() - 1).expression();
-                expr = new _Boolean<>(operation, last);
-            }
-            return expr;
-        }
-
-        @Override
-        public Predicate<T> then() {
-            return new _Predicate<>(expression());
-        }
-    }
-
-    static class _Comparable<T, U extends Comparable<U>>
-            extends _Basic<T, U>
-            implements ComparablePathExpression<T, U> {
-
-        public _Comparable(_Basic<?, ?> origin, Expression operand) {
-            super(origin, operand);
-        }
-
-        public _Comparable(Operation operation, Expression operand) {
-            super(operation, operand);
-        }
-
-        @Override
-        public BooleanExpression<T> ge(TypedExpression<T, U> expression) {
-            return new _Boolean<>(this, operate(Operator.GE, expression));
-        }
-
-        @Override
-        public BooleanExpression<T> gt(TypedExpression<T, U> expression) {
-            return new _Boolean<>(this, operate(Operator.GT, expression));
-        }
-
-        @Override
-        public BooleanExpression<T> le(TypedExpression<T, U> expression) {
-            return new _Boolean<>(this, operate(Operator.LE, expression));
-        }
-
-        @Override
-        public BooleanExpression<T> lt(TypedExpression<T, U> expression) {
-            return new _Boolean<>(this, operate(Operator.LT, expression));
-        }
-
-        @Override
-        public BooleanExpression<T> between(TypedExpression<T, U> l, TypedExpression<T, U> r) {
-            return new _Boolean<>(this, operate(Operator.BETWEEN, Lists.of(l, r)));
-        }
-
-        @Override
-        public BooleanExpression<T> notBetween(TypedExpression<T, U> l, TypedExpression<T, U> r) {
-            Expression operate = operate(Operator.BETWEEN, Lists.of(l, r));
-            operate = Expressions.operate(operate, Operator.NOT);
-            return new _Boolean<>(this, operate);
-        }
-
-        @Override
-        public Order<T> sort(SortOrder order) {
-            return new OrderImpl<>(operand, order);
-        }
-
-        @Override
-        public BooleanExpression<T> geIfNotNull(U value) {
-            return value == null ? operateNullAsBoolean() : ge(value);
-        }
-
-        @Override
-        public BooleanExpression<T> gtIfNotNull(U value) {
-            return value == null ? operateNullAsBoolean() : gt(value);
-        }
-
-        @Override
-        public BooleanExpression<T> leIfNotNull(U value) {
-            return value == null ? operateNullAsBoolean() : le(value);
-        }
-
-        @Override
-        public BooleanExpression<T> ltIfNotNull(U value) {
-            return value == null ? operateNullAsBoolean() : lt(value);
-        }
-    }
-
-    static class _Number<T, U extends Number & Comparable<U>>
-            extends _Comparable<T, U>
-            implements NumberPathExpression<T, U> {
-
-        public _Number(_Basic<?, ?> origin, Expression operand) {
-            super(origin, operand);
-        }
-
-        public _Number(Operation operation, Expression operand) {
-            super(operation, operand);
-        }
-
-        @Override
-        public NumberExpression<T, U> add(TypedExpression<T, U> expression) {
-            return new _Number<>(this, operate(Operator.ADD, expression));
-        }
-
-        @Override
-        public NumberExpression<T, U> subtract(TypedExpression<T, U> expression) {
-            return new _Number<>(this, operate(Operator.SUBTRACT, expression));
-        }
-
-        @Override
-        public NumberExpression<T, U> multiply(TypedExpression<T, U> expression) {
-            return new _Number<>(this, operate(Operator.MULTIPLY, expression));
-        }
-
-        @Override
-        public NumberExpression<T, U> divide(TypedExpression<T, U> expression) {
-            return new _Number<>(this, operate(Operator.DIVIDE, expression));
-        }
-
-        @Override
-        public NumberExpression<T, U> mod(TypedExpression<T, U> expression) {
-            return new _Number<>(this, operate(Operator.MOD, expression));
-        }
-
-        @Override
-        public NumberExpression<T, U> sum() {
-            return new _Number<>(this, operate(Operator.SUM, Lists.of()));
-        }
-
-        @Override
-        public NumberExpression<T, Double> avg() {
-            return new _Number<>(this, operate(Operator.AVG, Lists.of()));
-        }
-
-        @Override
-        public NumberExpression<T, U> max() {
-            return new _Number<>(this, operate(Operator.MAX, Lists.of()));
-        }
-
-        @Override
-        public NumberExpression<T, U> min() {
-            return new _Number<>(this, operate(Operator.MIN, Lists.of()));
-        }
-
-        @Override
-        public NumberExpression<T, U> addIfNotNull(U value) {
-            return value == null ? this : add(value);
-        }
-
-        @Override
-        public NumberExpression<T, U> subtractIfNotNull(U value) {
-            return value == null ? this : subtract(value);
-        }
-
-        @Override
-        public NumberExpression<T, U> multiplyIfNotNull(U value) {
-            return value == null ? this : multiply(value);
-        }
-
-        @Override
-        public NumberExpression<T, U> divideIfNotNull(U value) {
-            return value == null ? this : divide(value);
-        }
-
-        @Override
-        public NumberExpression<T, U> modIfNotNull(U value) {
-            return value == null ? this : mod(value);
-        }
-    }
-
+    @Data
     @Accessors(fluent = true)
-    static class _Predicate<T> implements Predicate<T> {
-        private final Expression expression;
+    @SuppressWarnings("rawtypes")
+    private static class RawTypeExpression implements ComparablePathExpression, NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
 
-        private _Predicate(Expression expression) {
+        protected static final RawTypeExpression EMPTY = new RawTypeExpression(null);
+
+        protected final Expression expression;
+
+        public RawTypeExpression(Expression expression) {
             this.expression = expression;
         }
 
         @Override
-        public Predicate<T> not() {
-            return new _Predicate<>(Expressions.operate(expression, Operator.NOT));
+        public Root root() {
+            return Paths.root();
         }
 
         @Override
-        public Expression expression() {
-            return expression;
-        }
-    }
-
-    static class _String<T>
-            extends _Comparable<T, String>
-            implements StringPathExpression<T> {
-
-        public _String(_Basic<?, ?> origin, Expression operand) {
-            super(origin, operand);
-        }
-
-        public _String(Operation operation, Expression operand) {
-            super(operation, operand);
+        public NumberExpression count() {
+            return new RawTypeExpression(Expressions.operate(expression(), COUNT));
         }
 
         @Override
-        public BooleanExpression<T> like(String value) {
-            return new _Boolean<>(this, operate(Operator.LIKE, value));
+        public BooleanExpression eq(Object value) {
+            return eq(Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression<T> notLike(String value) {
-            Expression operate = operate(Operator.LIKE, value);
-            operate = Expressions.operate(operate, Operator.NOT);
-            return new _Boolean<>(this, operate);
+        public BooleanExpression eqIfNotNull(Object value) {
+            return value == null ? operateNull() : eq(value);
         }
 
         @Override
-        public BooleanExpression<T> likeIfNotNull(String value) {
-            return value == null ? operateNullAsBoolean() : like(value);
+        public BooleanExpression eq(TypedExpression value) {
+            return operate(EQ, value);
         }
 
         @Override
-        public BooleanExpression<T> notLikeIfNotNull(String value) {
-            return value == null ? operateNullAsBoolean() : notLike(value);
+        public BooleanExpression ne(Object value) {
+            return ne(Expressions.of(value));
         }
 
         @Override
-        public StringExpression<T> lower() {
-            return new _String<>(this, operate(Operator.LOWER, Lists.of()));
+        public BooleanExpression neIfNotNull(Object value) {
+            return value == null ? operateNull() : ne(value);
         }
 
         @Override
-        public StringExpression<T> upper() {
-            return new _String<>(this, operate(Operator.UPPER, Lists.of()));
+        public BooleanExpression ne(TypedExpression value) {
+            return operate(NE, value);
         }
 
         @Override
-        public StringExpression<T> substring(int a, int b) {
-            List<TypedExpression<T, ?>> expressions =
-                    Lists.of(of(a), of(b));
-            return new _String<>(this, operate(Operator.SUBSTRING, expressions));
+        public BooleanExpression in(Object[] values) {
+            List<TypedExpression<?, ?>> collect = Arrays.stream(values)
+                    .map(TypedExpressions::of)
+                    .collect(Collectors.toList());
+            return in(collect);
         }
 
         @Override
-        public StringExpression<T> substring(int a) {
-            return new _String<>(this, operate(Operator.SUBSTRING, a));
+        public BooleanExpression in(@NotNull Collection values) {
+            List<TypedExpression<?, ?>> collect = ((Collection<?>) values).stream()
+                    .map(TypedExpressions::of)
+                    .collect(Collectors.toList());
+            return in(collect);
         }
 
         @Override
-        public StringExpression<T> trim() {
-            return new _String<>(this, operate(Operator.TRIM, Lists.of()));
+        public BooleanExpression notIn(Object[] values) {
+            return not(in(values));
         }
 
         @Override
-        public NumberExpression<T, Integer> length() {
-            return new _Number<>(this, operate(Operator.LENGTH, Lists.of()));
+        public BooleanExpression notIn(@NotNull Collection values) {
+            return not(in(values));
         }
+
+        @Override
+        public BooleanExpression isNull() {
+            return operate(IS_NULL);
+        }
+
+        @Override
+        public BooleanExpression isNotNull() {
+            return not(isNull());
+        }
+
+        @Override
+        public BooleanExpression notIn(@NotNull List values) {
+            return not(in(values));
+        }
+
+        @Override
+        public BooleanExpression in(@NotNull List expressions) {
+            return operate(IN, asTypeExpressions(expressions));
+        }
+
+        @Override
+        public BooleanExpression ge(TypedExpression expression) {
+            return operate(GE, expression);
+        }
+
+        @Override
+        public BooleanExpression gt(TypedExpression expression) {
+            return operate(GT, expression);
+        }
+
+        @Override
+        public BooleanExpression le(TypedExpression expression) {
+            return operate(LE, expression);
+        }
+
+        @Override
+        public BooleanExpression lt(TypedExpression expression) {
+            return operate(LT, expression);
+        }
+
+        @Override
+        public BooleanExpression between(TypedExpression l, TypedExpression r) {
+            return operate(BETWEEN, List.of(l, r));
+        }
+
+        @Override
+        public BooleanExpression notBetween(TypedExpression l, TypedExpression r) {
+            return not(between(l, r));
+        }
+
+        @Override
+        public Order sort(SortOrder order) {
+            return new OrderImpl(expression(), order);
+        }
+
+        @Override
+        public BooleanExpression geIfNotNull(Comparable value) {
+            return value == null ? operateNull() : ge(Expressions.of(value));
+        }
+
+        @Override
+        public BooleanExpression gtIfNotNull(Comparable value) {
+            return value == null ? operateNull() : gt(Expressions.of(value));
+        }
+
+        @Override
+        public BooleanExpression leIfNotNull(Comparable value) {
+            return value == null ? operateNull() : le(Expressions.of(value));
+        }
+
+        @Override
+        public BooleanExpression ltIfNotNull(Comparable value) {
+            return value == null ? operateNull() : lt(Expressions.of(value));
+        }
+
+        @Override
+        public NumberExpression add(TypedExpression expression) {
+            return operate(ADD, expression);
+        }
+
+        @Override
+        public NumberExpression subtract(TypedExpression expression) {
+            return operate(SUBTRACT, expression);
+        }
+
+        @Override
+        public NumberExpression multiply(TypedExpression expression) {
+            return operate(MULTIPLY, expression);
+        }
+
+        @Override
+        public NumberExpression divide(TypedExpression expression) {
+            return operate(DIVIDE, expression);
+        }
+
+        @Override
+        public NumberExpression mod(TypedExpression expression) {
+            return operate(MOD, expression);
+        }
+
+        @Override
+        public NumberExpression sum() {
+            return operate(SUM);
+        }
+
+        @Override
+        public NumberExpression avg() {
+            return operate(AVG);
+        }
+
+        @Override
+        public NumberExpression max() {
+            return operate(MAX);
+        }
+
+        @Override
+        public NumberExpression min() {
+            return operate(MIN);
+        }
+
+        @Override
+        public NumberExpression addIfNotNull(Number value) {
+            return operate(MAX);
+        }
+
+        @Override
+        public NumberExpression subtractIfNotNull(Number value) {
+            return value == null ? this : subtract(Expressions.of(value));
+        }
+
+        @Override
+        public NumberExpression multiplyIfNotNull(Number value) {
+            return value == null ? this : multiply(Expressions.of(value));
+        }
+
+        @Override
+        public NumberExpression divideIfNotNull(Number value) {
+            return value == null ? this : divide(Expressions.of(value));
+        }
+
+        @Override
+        public NumberExpression modIfNotNull(Number value) {
+            return value == null ? this : mod(Expressions.of(value));
+        }
+
+        @Override
+        public BooleanExpression like(String value) {
+            return operate(LIKE, Expressions.of(value));
+        }
+
+        @Override
+        public BooleanExpression notLike(String value) {
+            return not(like(value));
+        }
+
+        @Override
+        public BooleanExpression likeIfNotNull(String value) {
+            return value == null ? operateNull() : like(value);
+        }
+
+        @Override
+        public BooleanExpression notLikeIfNotNull(String value) {
+            return value == null ? operateNull() : notLike(value);
+        }
+
+        @Override
+        public StringExpression lower() {
+            return operate(LOWER);
+        }
+
+        @Override
+        public StringExpression upper() {
+            return operate(UPPER);
+        }
+
+        @Override
+        public StringExpression substring(int a, int b) {
+            return operate0(SUBSTRING, Lists.of(Expressions.of(a), Expressions.of(b)));
+        }
+
+        @Override
+        public StringExpression substring(int a) {
+            return operate(SUBSTRING, Expressions.of(a));
+        }
+
+        @Override
+        public StringExpression trim() {
+            return operate(TRIM);
+        }
+
+        @Override
+        public NumberExpression length() {
+            return operate(LENGTH);
+        }
+
+        @Override
+        public PathOperator and(Path path) {
+            return ExpressionOperators.ofPath(of(path).asBasic(), this::and);
+        }
+
+        @NotNull
+        protected RawTypeExpression and(BasicExpression<?, ?> basicExpression) {
+            return operate(AND, basicExpression);
+        }
+
+        @NotNull
+        protected RawTypeExpression or(BasicExpression<?, ?> basicExpression) {
+            return operate(OR, basicExpression);
+        }
+
+        @Override
+        public ComparableOperator and(ComparablePath path) {
+            return ExpressionOperators.ofComparable(of(path).asComparable(), this::and);
+        }
+
+        @NotNull
+        static RawTypeExpression of(Path path) {
+            return new RawTypeExpression(Expressions.of(path));
+        }
+
+        @Override
+        public NumberOperator and(NumberPath path) {
+            return ExpressionOperators.ofNumber(of(path).asNumber(), this::and);
+        }
+
+        @Override
+        public ComparableOperator and(BooleanPath path) {
+            return ExpressionOperators.ofComparable(of(path).asComparable(), this::and);
+        }
+
+        @Override
+        public StringOperator and(StringPath path) {
+            return ExpressionOperators.ofString(of(path).asString(), this::and);
+        }
+
+        @Override
+        public PathOperator or(Path path) {
+            return ExpressionOperators.ofPath(of(path).asBasic(), this::or);
+        }
+
+        @Override
+        public NumberOperator or(NumberPath path) {
+            return ExpressionOperators.ofNumber(of(path).asNumber(), this::or);
+        }
+
+        @Override
+        public ComparableOperator or(ComparablePath path) {
+            return ExpressionOperators.ofComparable(of(path).asComparable(), this::or);
+        }
+
+        @Override
+        public StringOperator or(StringPath path) {
+            return ExpressionOperators.ofString(of(path).asString(), this::or);
+        }
+
+        @Override
+        public ComparableOperator or(BooleanPath path) {
+            return ExpressionOperators.ofComparable(of(path).asComparable(), this::or);
+        }
+
+        @Override
+        public OrOperator or(List list) {
+            return operate(OR, asTypeExpressions(list));
+        }
+
+        @Override
+        public OrOperator or(TypedExpression predicate) {
+            return operate(OR, predicate);
+        }
+
+        @Override
+        public Predicate then() {
+            return this;
+        }
+
+        @Override
+        public AndOperator and(List list) {
+            return operate(AND, asTypeExpressions(list));
+        }
+
+        @Override
+        public AndOperator and(TypedExpression expression) {
+            return operate(AND, expression);
+        }
+
+        @Override
+        public Predicate not() {
+            return operate(NOT);
+        }
+
+        @Override
+        public EntityPathExpression get(Path path) {
+            Column expression = (Column) Paths.get((Path<?, ?>) path).expression();
+            return new RawTypeExpression(((Column) expression()).get(expression));
+        }
+
+        @Override
+        public StringPathExpression get(StringPath path) {
+            return get0(path);
+        }
+
+        @Override
+        public BooleanPathExpression get(BooleanPath path) {
+            return get0(path);
+        }
+
+        @Override
+        public StringPathExpression get(StringPathExpression path) {
+            return get0(path);
+        }
+
+        @Override
+        public BooleanPathExpression get(BooleanPathExpression path) {
+            return get0(path);
+        }
+
+        @Override
+        public ComparablePathExpression get(ComparablePathExpression path) {
+            return get0(path);
+        }
+
+        @Override
+        public NumberPathExpression get(NumberPathExpression path) {
+            return get0(path);
+        }
+
+        @Override
+        public PathExpression get(PathExpression path) {
+            return get0(path);
+        }
+
+        @Override
+        public ComparablePathExpression get(ComparablePath path) {
+            return get0(path);
+        }
+
+        @Override
+        public NumberPathExpression get(NumberPath path) {
+            return get0(path);
+        }
+
+        protected RawTypeExpression get0(Path<?, ?> path) {
+            PathExpression<?, ?> pathExpression = Paths.get((Path<?, ?>) path);
+            return get0(pathExpression);
+        }
+
+        @NotNull
+        private RawTypeExpression get0(PathExpression<?, ?> pathExpression) {
+            Column expression = (Column) pathExpression.expression();
+            Expression expr = expression();
+            return new RawTypeExpression(((Column) expr).get(expression));
+        }
+
+        RawTypeExpression not(TypedExpression<?, ?> expression) {
+            Expression operate = Expressions.operate(expression.expression(), NOT);
+            return new RawTypeExpression(operate);
+        }
+
+        @NotNull
+        protected RawTypeExpression operate(Operator operator, TypedExpression expression) {
+            return new RawTypeExpression(Expressions.operate(expression(), operator, expression.expression()));
+        }
+
+        @NotNull
+        protected RawTypeExpression operate(Operator operator, List<? extends TypedExpression> expressions) {
+            List<Expression> list = expressions.stream().map(TypedExpression::expression).collect(Collectors.toList());
+            return operate0(operator, list);
+        }
+
+        @NotNull
+        protected RawTypeExpression operate0(Operator operator, List<Expression> list) {
+            return new RawTypeExpression(Expressions.operate(expression(), operator, list));
+        }
+
+        @NotNull
+        protected RawTypeExpression operate(Operator operator) {
+            return new RawTypeExpression(Expressions.operate(expression(), operator));
+        }
+
+        @NotNull
+        protected static BooleanExpression operateNull() {
+            return EMPTY;
+        }
+
+        @NotNull
+        protected StringExpression<?> asString() {
+            return this;
+        }
+
+        protected ComparableExpression<?, ?> asComparable() {
+            return this;
+        }
+
+        protected BasicExpression<?, ?> asBasic() {
+            return this;
+        }
+
+        protected NumberExpression<?, ?> asNumber() {
+            return this;
+        }
+
+        List<? extends TypedExpression<?, ?>> asTypeExpressions(List<?> list) {
+            return TypeCastUtil.cast(list);
+        }
+
     }
 }

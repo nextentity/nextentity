@@ -61,11 +61,7 @@ import static io.github.nextentity.core.util.Paths.get;
 import static io.github.nextentity.core.util.Predicates.and;
 import static io.github.nextentity.core.util.Predicates.not;
 import static io.github.nextentity.core.util.Predicates.or;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 public class GenericApiTest {
@@ -93,7 +89,7 @@ public class GenericApiTest {
                         metamodel);
                 resetData(connection, jdbcUpdate, query);
                 allUsers = queryAllUsers(query);
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 throw new UncheckedSQLException(e);
             }
         });

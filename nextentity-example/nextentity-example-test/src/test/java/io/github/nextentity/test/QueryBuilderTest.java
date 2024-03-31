@@ -1132,7 +1132,7 @@ class QueryBuilderTest {
         collector = check.collector.where(User::getRandomNumber).eq(1)
                 .where((Path<User, Boolean>) User::isValid).eq(TypedExpressions.ofTrue());
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).eq(1).and(User::isValid));
+        collector = check.collector.where(get(User::getRandomNumber).eq(1).and(User::isValid).eq(true));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1)
                 .andIf(true, root -> root.get(User::isValid)));
