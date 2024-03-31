@@ -33,6 +33,7 @@ public class Page<T> {
 
         private final int page;
         private final int size;
+
         @Override
         public Page<T> collect(List<T> list, long total) {
             return new Page<>(list, total);
