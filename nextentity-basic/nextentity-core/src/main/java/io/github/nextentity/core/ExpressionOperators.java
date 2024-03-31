@@ -50,89 +50,89 @@ public class ExpressionOperators {
     static class _Basic<T, U, B> implements ExpressionOperator<T, U, B> {
 
         protected final BasicExpression<T, U> base;
-        protected final Function<? super BasicExpression<?, ?>, B> resultBuilder;
+        protected final Function<? super BasicExpression<?, ?>, B> operatedCallback;
 
-        _Basic(BasicExpression<T, U> base, Function<? super BasicExpression<?, ?>, B> resultBuilder) {
+        _Basic(BasicExpression<T, U> base, Function<? super BasicExpression<?, ?>, B> operatedCallback) {
             this.base = base;
-            this.resultBuilder = resultBuilder;
+            this.operatedCallback = operatedCallback;
         }
 
         @Override
         public B eq(U value) {
-            return resultBuilder.apply(base.eq(value));
+            return operatedCallback.apply(base.eq(value));
         }
 
         @Override
         public B eqIfNotNull(U value) {
-            return resultBuilder.apply(value == null ? null : base.eq(value));
+            return operatedCallback.apply(value == null ? null : base.eq(value));
         }
 
         @Override
         public B eq(TypedExpression<T, U> expression) {
-            return resultBuilder.apply(base.eq(expression));
+            return operatedCallback.apply(base.eq(expression));
         }
 
         @Override
         public B ne(U value) {
-            return resultBuilder.apply(base.ne(value));
+            return operatedCallback.apply(base.ne(value));
         }
 
         @Override
         public B neIfNotNull(U value) {
-            return resultBuilder.apply(value == null ? null : base.ne(value));
+            return operatedCallback.apply(value == null ? null : base.ne(value));
         }
 
         @Override
         public B ne(TypedExpression<T, U> expression) {
-            return resultBuilder.apply(base.ne(expression));
+            return operatedCallback.apply(base.ne(expression));
         }
 
         @Override
         @SafeVarargs
         public final B in(U... values) {
-            return resultBuilder.apply(base.in(values));
+            return operatedCallback.apply(base.in(values));
         }
 
         @Override
         public B in(@NotNull List<? extends TypedExpression<T, U>> expressions) {
-            return resultBuilder.apply(base.in(expressions));
+            return operatedCallback.apply(base.in(expressions));
         }
 
         @Override
         public B in(@NotNull TypedExpression<T, List<U>> expressions) {
             List<TypedExpression<T, U>> in = TypeCastUtil.unsafeCast(Lists.of(expressions));
-            return resultBuilder.apply(base.in(in));
+            return operatedCallback.apply(base.in(in));
         }
 
         @Override
         public B in(@NotNull Collection<? extends U> values) {
-            return resultBuilder.apply(base.in(values));
+            return operatedCallback.apply(base.in(values));
         }
 
         @Override
         @SafeVarargs
         public final B notIn(U... values) {
-            return resultBuilder.apply(base.notIn(values));
+            return operatedCallback.apply(base.notIn(values));
         }
 
         @Override
         public B notIn(@NotNull List<? extends TypedExpression<T, U>> expressions) {
-            return resultBuilder.apply(base.notIn(expressions));
+            return operatedCallback.apply(base.notIn(expressions));
         }
 
         @Override
         public B notIn(@NotNull Collection<? extends U> values) {
-            return resultBuilder.apply(base.notIn(values));
+            return operatedCallback.apply(base.notIn(values));
         }
 
         @Override
         public B isNull() {
-            return resultBuilder.apply(base.isNull());
+            return operatedCallback.apply(base.isNull());
         }
 
         @Override
         public B isNotNull() {
-            return resultBuilder.apply(base.isNotNull());
+            return operatedCallback.apply(base.isNotNull());
         }
 
 
@@ -152,8 +152,8 @@ public class ExpressionOperators {
 
     static class _Number<T, U extends Number & Comparable<U>, B> extends ExpressionOperators._Comparable<T, U, B> implements NumberOperator<T, U, B> {
 
-        _Number(NumberExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> resultBuilder) {
-            super(expression, resultBuilder);
+        _Number(NumberExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> operatedCallback) {
+            super(expression, operatedCallback);
         }
 
         @Override
@@ -163,27 +163,27 @@ public class ExpressionOperators {
 
         @Override
         public NumberOperator<T, U, B> add(U value) {
-            return new _Number<>(base().add(value), resultBuilder);
+            return new _Number<>(base().add(value), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> subtract(U value) {
-            return new _Number<>(base().subtract(value), resultBuilder);
+            return new _Number<>(base().subtract(value), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> multiply(U value) {
-            return new _Number<>(base().multiply(value), resultBuilder);
+            return new _Number<>(base().multiply(value), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> divide(U value) {
-            return new _Number<>(base().divide(value), resultBuilder);
+            return new _Number<>(base().divide(value), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> mod(U value) {
-            return new _Number<>(base().mod(value), resultBuilder);
+            return new _Number<>(base().mod(value), operatedCallback);
         }
 
         @Override
@@ -213,35 +213,35 @@ public class ExpressionOperators {
 
         @Override
         public NumberOperator<T, U, B> add(TypedExpression<T, U> expression) {
-            return new _Number<>(base().add(expression), resultBuilder);
+            return new _Number<>(base().add(expression), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> subtract(TypedExpression<T, U> expression) {
-            return new _Number<>(base().subtract(expression), resultBuilder);
+            return new _Number<>(base().subtract(expression), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> multiply(TypedExpression<T, U> expression) {
-            return new _Number<>(base().multiply(expression), resultBuilder);
+            return new _Number<>(base().multiply(expression), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> divide(TypedExpression<T, U> expression) {
-            return new _Number<>(base().divide(expression), resultBuilder);
+            return new _Number<>(base().divide(expression), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, U, B> mod(TypedExpression<T, U> expression) {
-            return new _Number<>(base().mod(expression), resultBuilder);
+            return new _Number<>(base().mod(expression), operatedCallback);
         }
 
     }
 
     static class _Path<T, U, B> extends _Basic<T, U, B> implements PathOperator<T, U, B> {
 
-        _Path(BasicExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> resultBuilder) {
-            super(expression, resultBuilder);
+        _Path(BasicExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> operatedCallback) {
+            super(expression, operatedCallback);
         }
 
         protected EntityPathExpression<T, U> base() {
@@ -250,31 +250,31 @@ public class ExpressionOperators {
 
         @Override
         public <V> PathOperator<T, V, B> get(Path<U, V> path) {
-            return ofPath(base().get(path), resultBuilder);
+            return ofPath(base().get(path), operatedCallback);
         }
 
         @Override
         public StringOperator<T, B> get(StringPath<U> path) {
             StringExpression<T> tStringExpression = base().get(path);
-            return ofString(tStringExpression, resultBuilder);
+            return ofString(tStringExpression, operatedCallback);
         }
 
         @Override
         public <V extends Number & Comparable<V>> NumberOperator<T, V, B> get(NumberPath<U, V> path) {
-            return new _Number<>(base().get(path), resultBuilder);
+            return new _Number<>(base().get(path), operatedCallback);
         }
 
         @Override
         public <V extends Comparable<V>> ComparableOperator<T, V, B> get(ComparablePath<U, V> path) {
-            return ExpressionOperators.ofComparable(base().get(path), resultBuilder);
+            return ExpressionOperators.ofComparable(base().get(path), operatedCallback);
         }
 
     }
 
     static class _String<T, B> extends ExpressionOperators._Comparable<T, String, B> implements StringOperator<T, B> {
 
-        _String(StringExpression<T> expression, Function<? super BasicExpression<?, ?>, B> resultBuilder) {
-            super(expression, resultBuilder);
+        _String(StringExpression<T> expression, Function<? super BasicExpression<?, ?>, B> operatedCallback) {
+            super(expression, operatedCallback);
         }
 
         @Override
@@ -284,59 +284,59 @@ public class ExpressionOperators {
 
         @Override
         public B like(String value) {
-            return resultBuilder.apply(base().like(value));
+            return operatedCallback.apply(base().like(value));
         }
 
         @Override
         public B notLike(String value) {
-            return resultBuilder.apply(base().notLike(value));
+            return operatedCallback.apply(base().notLike(value));
         }
 
         @Override
         public B likeIfNotNull(String value) {
-            return resultBuilder.apply(value == null ? null : base().like(value));
+            return operatedCallback.apply(value == null ? null : base().like(value));
         }
 
         @Override
         public B notLikeIfNotNull(String value) {
-            return resultBuilder.apply(value == null ? null : base().notLike(value));
+            return operatedCallback.apply(value == null ? null : base().notLike(value));
         }
 
         @Override
         public StringOperator<T, B> lower() {
-            return ofString(base().lower(), resultBuilder);
+            return ofString(base().lower(), operatedCallback);
         }
 
         @Override
         public StringOperator<T, B> upper() {
-            return ofString(base().upper(), resultBuilder);
+            return ofString(base().upper(), operatedCallback);
         }
 
         @Override
         public StringOperator<T, B> substring(int offset, int length) {
-            return ofString(base().substring(offset, length), resultBuilder);
+            return ofString(base().substring(offset, length), operatedCallback);
         }
 
         @Override
         public StringOperator<T, B> substring(int offset) {
-            return ofString(base().substring(offset), resultBuilder);
+            return ofString(base().substring(offset), operatedCallback);
         }
 
         @Override
         public StringOperator<T, B> trim() {
-            return ofString(base().trim(), resultBuilder);
+            return ofString(base().trim(), operatedCallback);
         }
 
         @Override
         public NumberOperator<T, Integer, B> length() {
-            return new _Number<>(base().length(), resultBuilder);
+            return new _Number<>(base().length(), operatedCallback);
         }
     }
 
     static class _Comparable<T, U extends Comparable<U>, B> extends _Basic<T, U, B> implements ComparableOperator<T, U, B> {
 
-        _Comparable(ComparableExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> resultBuilder) {
-            super(expression, resultBuilder);
+        _Comparable(ComparableExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> operatedCallback) {
+            super(expression, operatedCallback);
         }
 
         protected ComparableExpression<T, U> base() {
@@ -345,102 +345,102 @@ public class ExpressionOperators {
 
         @Override
         public B ge(U value) {
-            return resultBuilder.apply(base().ge(value));
+            return operatedCallback.apply(base().ge(value));
         }
 
         @Override
         public B gt(U value) {
-            return resultBuilder.apply(base().gt(value));
+            return operatedCallback.apply(base().gt(value));
         }
 
         @Override
         public B le(U value) {
-            return resultBuilder.apply(base().le(value));
+            return operatedCallback.apply(base().le(value));
         }
 
         @Override
         public B lt(U value) {
-            return resultBuilder.apply(base().lt(value));
+            return operatedCallback.apply(base().lt(value));
         }
 
         @Override
         public B geIfNotNull(U value) {
-            return resultBuilder.apply(value == null ? null : base().ge(value));
+            return operatedCallback.apply(value == null ? null : base().ge(value));
         }
 
         @Override
         public B gtIfNotNull(U value) {
-            return resultBuilder.apply(value == null ? null : base().gt(value));
+            return operatedCallback.apply(value == null ? null : base().gt(value));
         }
 
         @Override
         public B leIfNotNull(U value) {
-            return resultBuilder.apply(value == null ? null : base().le(value));
+            return operatedCallback.apply(value == null ? null : base().le(value));
         }
 
         @Override
         public B ltIfNotNull(U value) {
-            return resultBuilder.apply(value == null ? null : base().lt(value));
+            return operatedCallback.apply(value == null ? null : base().lt(value));
         }
 
         @Override
         public B between(U l, U r) {
-            return resultBuilder.apply(base().between(l, r));
+            return operatedCallback.apply(base().between(l, r));
         }
 
         @Override
         public B notBetween(U l, U r) {
-            return resultBuilder.apply(base().notBetween(l, r));
+            return operatedCallback.apply(base().notBetween(l, r));
         }
 
         @Override
         public B ge(TypedExpression<T, U> expression) {
-            return resultBuilder.apply(base().ge(expression));
+            return operatedCallback.apply(base().ge(expression));
         }
 
         @Override
         public B gt(TypedExpression<T, U> expression) {
-            return resultBuilder.apply(base().gt(expression));
+            return operatedCallback.apply(base().gt(expression));
         }
 
         @Override
         public B le(TypedExpression<T, U> expression) {
-            return resultBuilder.apply(base().le(expression));
+            return operatedCallback.apply(base().le(expression));
         }
 
         @Override
         public B lt(TypedExpression<T, U> expression) {
-            return resultBuilder.apply(base().lt(expression));
+            return operatedCallback.apply(base().lt(expression));
         }
 
         @Override
         public B between(TypedExpression<T, U> l, TypedExpression<T, U> r) {
-            return resultBuilder.apply(base().between(l, r));
+            return operatedCallback.apply(base().between(l, r));
         }
 
         @Override
         public B between(TypedExpression<T, U> l, U r) {
-            return resultBuilder.apply(base().between(l, r));
+            return operatedCallback.apply(base().between(l, r));
         }
 
         @Override
         public B between(U l, TypedExpression<T, U> r) {
-            return resultBuilder.apply(base().between(l, r));
+            return operatedCallback.apply(base().between(l, r));
         }
 
         @Override
         public B notBetween(TypedExpression<T, U> l, TypedExpression<T, U> r) {
-            return resultBuilder.apply(base().notBetween(l, r));
+            return operatedCallback.apply(base().notBetween(l, r));
         }
 
         @Override
         public B notBetween(TypedExpression<T, U> l, U r) {
-            return resultBuilder.apply(base().notBetween(l, r));
+            return operatedCallback.apply(base().notBetween(l, r));
         }
 
         @Override
         public B notBetween(U l, TypedExpression<T, U> r) {
-            return resultBuilder.apply(base().notBetween(l, r));
+            return operatedCallback.apply(base().notBetween(l, r));
         }
     }
 }
