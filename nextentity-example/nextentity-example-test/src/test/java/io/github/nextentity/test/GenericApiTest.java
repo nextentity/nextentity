@@ -2,6 +2,7 @@ package io.github.nextentity.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
@@ -820,6 +821,8 @@ public class GenericApiTest {
         List<User> fList = allUsers.stream().filter(u -> u.getRandomNumber() == 10)
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
+
+
         qList = userQuery
                 .where(User::getRandomUser).eqIfNotNull(null)
                 .where(User::getRandomUser).eqIfNotNull(null)
@@ -828,6 +831,7 @@ public class GenericApiTest {
                 .where(User::getId).eqIfNotNull(null)
                 .where(User::getUsername).eqIfNotNull(null).getList();
         assertEquals(qList, allUsers);
+
 
         qList = userQuery.where(get(User::getRandomNumber).eqIfNotNull(null)).getList();
         assertEquals(qList, allUsers);
@@ -844,6 +848,11 @@ public class GenericApiTest {
         qList = userQuery.where(get(User::getRandomNumber).eqIfNotNull(20)).getList();
         fList = allUsers.stream().filter(u -> u.getRandomNumber() == 20)
                 .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        AndOperator<User> predicate = get(User::getRandomNumber).eq(20).and(User::getUsername).eqIfNotNull(null);
+        qList = userQuery.where(predicate).getList();
+
         assertEquals(qList, fList);
         qList = userQuery.where(get(User::getRandomNumber).gtIfNotNull(20)).getList();
         fList = allUsers.stream().filter(u -> u.getRandomNumber() > 20)
