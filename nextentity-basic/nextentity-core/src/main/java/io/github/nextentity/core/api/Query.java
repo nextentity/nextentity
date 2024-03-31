@@ -4,6 +4,7 @@ import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
+import io.github.nextentity.core.api.Order.SortOrder;
 import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
@@ -18,7 +19,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import io.github.nextentity.core.api.Order.SortOrder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -429,6 +429,10 @@ public interface Query {
         QueryStructureBuilder buildMetadata();
 
         <X> SubQueryBuilder<X, T> asSubQuery();
+
+        default <R> R getPage(Pageable<T, R> sliceable) {
+            return slice(sliceable);
+        }
     }
 
     interface QueryStructureBuilder {

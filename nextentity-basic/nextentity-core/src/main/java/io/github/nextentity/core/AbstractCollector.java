@@ -1,10 +1,10 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.QueryStructures.SliceImpl;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.QueryStructures.SliceImpl;
 
 import java.util.List;
 
