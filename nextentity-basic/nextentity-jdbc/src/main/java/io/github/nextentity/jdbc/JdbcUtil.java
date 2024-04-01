@@ -71,12 +71,12 @@ public abstract class JdbcUtil {
 
     }
 
-    public static <X> X getValue(ResultSet resultSet, int column, Class<X> targetType) throws SQLException {
+    public static Object getValue(ResultSet resultSet, int column, Class<?> targetType) throws SQLException {
         Object result = resultSet.getObject(column);
         if (result == null) {
             return null;
         }
-        if (targetType != result.getClass()) {
+        if (!targetType.isInstance(result)) {
             ResultSetGetter<?> getter = GETTER_MAPS.get(targetType);
             if (getter == null) {
                 if (Enum.class.isAssignableFrom(targetType)) {

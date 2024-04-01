@@ -48,7 +48,7 @@ public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
         try {
             ConnectionProvider connectionProvider = getConnectionProvider(entityManager);
             if (connectionProvider != null) {
-                return new JdbcQueryExecutor(metamodel, sqlBuilder, connectionProvider, new JdbcResultCollector());
+                return new JdbcQueryExecutor(metamodel, sqlBuilder, connectionProvider, new JdbcResultCollector(typeConverter));
             }
         } catch (Throwable e) {
             log.info("can not create JdbcQueryExecutor", e);

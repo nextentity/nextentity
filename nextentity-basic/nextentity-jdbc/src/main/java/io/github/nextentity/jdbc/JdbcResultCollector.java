@@ -1,14 +1,15 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.ExpressionTypeResolver;
+import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.ExpressionTypeResolver;
-import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.reflect.InstanceConstructor;
@@ -24,6 +25,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JdbcResultCollector implements ResultCollector {
+    private final TypeConverter typeConverter;
+
+    public JdbcResultCollector() {
+        this(TypeConverter.ofDefault());
+    }
+
+    public JdbcResultCollector(TypeConverter typeConverter) {
+        this.typeConverter = typeConverter;
+    }
+
     @Override
     public <T> List<T> resolve(ResultSet resultSet,
                                Metamodel metamodel,
@@ -81,7 +92,7 @@ public class JdbcResultCollector implements ResultCollector {
             while (resultSet.next()) {
                 int i = 0;
                 for (Attribute attribute : selected) {
-                    data[i++] = JdbcUtil.getValue(resultSet, i, attribute.javaType());
+                    data[i++] = getValue(resultSet, i, attribute.javaType());
                 }
                 T row = TypeCastUtil.unsafeCast(extractor.newInstance(data));
                 result.add(row);
@@ -92,7 +103,7 @@ public class JdbcResultCollector implements ResultCollector {
 
     @Nullable
     private <R> R getSingleObj(@NotNull ResultSet resultSet, SingleSelected selectClause) throws SQLException {
-        Object r = JdbcUtil.getValue(resultSet, 1, selectClause.resultType());
+        Object r = getValue(resultSet, 1, selectClause.resultType());
         return TypeCastUtil.unsafeCast(r);
     }
 
@@ -100,9 +111,17 @@ public class JdbcResultCollector implements ResultCollector {
         int column = 0;
         Object[] row = new Object[columnsCount];
         for (Class<?> expression : types) {
-            row[column++] = JdbcUtil.getValue(resultSet, column, expression);
+            row[column++] = getValue(resultSet, column, expression);
         }
         return row;
+    }
+
+    protected Object getValue(ResultSet resultSet, int column, Class<?> targetType) throws SQLException {
+        Object value = JdbcUtil.getValue(resultSet, column, targetType);
+        if (typeConverter != null) {
+            value = typeConverter.convert(value, targetType);
+        }
+        return value;
     }
 
 }
