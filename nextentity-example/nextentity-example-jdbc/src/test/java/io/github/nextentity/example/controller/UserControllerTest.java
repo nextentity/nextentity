@@ -1,6 +1,8 @@
 package io.github.nextentity.example.controller;
 
+import io.github.nextentity.core.api.Page;
 import io.github.nextentity.example.eneity.Gender;
+import io.github.nextentity.example.eneity.User;
 import io.github.nextentity.example.model.UserQuery;
 import io.github.nextentity.example.model.UserQuery2;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,8 @@ class UserControllerTest {
         query.setPage(2);
         query.setSize(20);
 
-        userController.getUsers(query);
+        Page<User> users = userController.getUsers(query);
+        System.out.println(users);
     }
 
     @Test
@@ -38,6 +41,7 @@ class UserControllerTest {
         query.setPage(2);
         query.setSize(20);
 
-        userController.joinExample(query);
+        Page<User> userPage = userController.joinExample(query);
+        System.out.println(userPage);
     }
 }

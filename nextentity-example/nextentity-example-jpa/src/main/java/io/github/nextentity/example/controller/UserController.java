@@ -1,8 +1,8 @@
 package io.github.nextentity.example.controller;
 
+import io.github.nextentity.core.api.Page;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.example.eneity.User;
-import io.github.nextentity.core.domain.Page;
 import io.github.nextentity.example.model.UserQuery;
 import lombok.RequiredArgsConstructor;
 

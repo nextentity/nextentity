@@ -1,9 +1,9 @@
 package io.github.nextentity.example.service;
 
+import io.github.nextentity.core.Pages;
+import io.github.nextentity.core.api.Page;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.example.eneity.User;
-import io.github.nextentity.example.model.Page;
-import io.github.nextentity.example.model.Pageable;
 import io.github.nextentity.example.projection.IUsernameGender;
 import io.github.nextentity.example.projection.UsernameGender;
 import org.junit.jupiter.api.Assertions;
@@ -46,20 +46,19 @@ class UserServiceTest {
 
     @Test
     void page() {
-        Page<User> page = userService.page(null, Pageable.of(1, 12));
+        Page<User> page = userService.page(null, Pages.pageable(1, 12));
         System.out.println(page);
-        page = userService.page("Marjorie Minnie", Pageable.of(1, 12));
+        page = userService.page("Marjorie Minnie", Pages.pageable(1, 12));
         System.out.println(page);
     }
 
 
     @Test
     void usernameGenderPage() {
-        Page<UsernameGender> page = userService.usernameGenderPage(null, Pageable.of(1, 12));
+        Page<UsernameGender> page = userService.usernameGenderPage(null, Pages.pageable(1, 12));
         System.out.println(page);
-        page = userService.usernameGenderPage("Marjorie Minnie", Pageable.of(1, 12));
+        page = userService.usernameGenderPage("Marjorie Minnie", Pages.pageable(1, 12));
         System.out.println(page);
-
     }
 
     @Test
@@ -69,9 +68,9 @@ class UserServiceTest {
         System.out.println(first2.equals(first));
 
 
-        Page<IUsernameGender> page = userService.iUsernameGenderPage(null, Pageable.of(1, 12));
+        Page<IUsernameGender> page = userService.iUsernameGenderPage(null, Pages.pageable(1, 12));
         System.out.println(toString(page));
-        page = userService.iUsernameGenderPage("Marjorie Minnie", Pageable.of(1, 12));
+        page = userService.iUsernameGenderPage("Marjorie Minnie", Pages.pageable(1, 12));
         System.out.println(toString(page));
     }
 

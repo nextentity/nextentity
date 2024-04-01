@@ -3,6 +3,8 @@ package io.github.nextentity.core;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Order.SortOrder;
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Query.OrderBy;
@@ -95,6 +97,11 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     @Override
     public <X> SubQueryBuilder<X, U> asSubQuery() {
         return asc().asSubQuery();
+    }
+
+    @Override
+    public Page<U> getPage(Pageable pageable) {
+        return asc().getPage(pageable);
     }
 
     @Override

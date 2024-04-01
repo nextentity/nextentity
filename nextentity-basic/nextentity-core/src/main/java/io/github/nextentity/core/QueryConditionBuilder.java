@@ -15,6 +15,8 @@ import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;

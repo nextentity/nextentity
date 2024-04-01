@@ -430,9 +430,7 @@ public interface Query {
 
         <X> SubQueryBuilder<X, T> asSubQuery();
 
-        default <R> R getPage(Pageable<T, R> sliceable) {
-            return slice(sliceable);
-        }
+        Page<T> getPage(Pageable pageable);
     }
 
     interface QueryStructureBuilder {

@@ -1,9 +1,9 @@
 package io.github.nextentity.example.service;
 
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.example.eneity.User;
-import io.github.nextentity.example.model.Page;
-import io.github.nextentity.example.model.Pageable;
 import io.github.nextentity.example.projection.IUsernameGender;
 import io.github.nextentity.example.projection.UsernameGender;
 import lombok.RequiredArgsConstructor;
@@ -39,31 +39,30 @@ public class UserService {
         return user;
     }
 
-    public Page<User> page(String username, Pageable<User> pageable) {
+    public Page<User> page(String username, Pageable pageable) {
         return userAccess
                 .where(User::getUsername).eqIfNotNull(username)
                 .where(User::getUsername).eqIfNotNull(username)
-                .slice(pageable);
+                .getPage(pageable);
     }
 
     /**
      * 投影查询示例
      */
-    public Page<UsernameGender> usernameGenderPage(String username, Pageable<UsernameGender> pageable) {
+    public Page<UsernameGender> usernameGenderPage(String username, Pageable pageable) {
         return userAccess
                 .select(UsernameGender.class)
                 .where(User::getUsername).eqIfNotNull(username)
-                .slice(pageable);
+                .getPage(pageable);
     }
-
 
     /**
      * 接口投影查询示例
      */
-    public Page<IUsernameGender> iUsernameGenderPage(String username, Pageable<IUsernameGender> pageable) {
+    public Page<IUsernameGender> iUsernameGenderPage(String username, Pageable pageable) {
         return userAccess
                 .select(IUsernameGender.class)
                 .where(User::getUsername).eqIfNotNull(username)
-                .slice(pageable);
+                .getPage(pageable);
     }
 }

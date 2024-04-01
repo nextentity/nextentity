@@ -9,6 +9,8 @@ import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Order;
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
@@ -474,6 +476,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.getList(lockModeType);
     }
 
+    @Override
     public <R> R slice(Sliceable<T, R> sliceable) {
         return select.slice(sliceable);
     }
@@ -484,6 +487,11 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
 
     public <X> SubQueryBuilder<X, T> asSubQuery() {
         return select.asSubQuery();
+    }
+
+    @Override
+    public Page<T> getPage(Pageable pageable) {
+        return select.getPage(pageable);
     }
 
     public QueryStructureBuilder buildMetadata() {
