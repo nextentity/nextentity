@@ -9,7 +9,7 @@ import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.UpdaterImpl;
+import io.github.nextentity.core.Updaters.UpdaterImpl;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceUnitUtil;

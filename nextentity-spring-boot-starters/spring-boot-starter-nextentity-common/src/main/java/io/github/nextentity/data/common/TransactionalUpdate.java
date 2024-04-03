@@ -2,20 +2,14 @@ package io.github.nextentity.data.common;
 
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.UpdaterImpl;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public class TransactionalUpdate implements Update, ApplicationContextAware {
+public class TransactionalUpdate implements Update {
 
     private final Update target;
-    private ApplicationContext applicationContext;
-    private Update update;
 
     public TransactionalUpdate(Update target) {
         this.target = target;
@@ -65,19 +59,7 @@ public class TransactionalUpdate implements Update, ApplicationContextAware {
 
     @Override
     public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
-        return new UpdaterImpl<>(getUpdate(), type);
+        throw new UnsupportedOperationException();
     }
 
-    @NotNull
-    private Update getUpdate() {
-        if (update != null) {
-            return update;
-        }
-        return update = applicationContext.getBean(TransactionalUpdate.class);
-    }
-
-    @Override
-    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
 }

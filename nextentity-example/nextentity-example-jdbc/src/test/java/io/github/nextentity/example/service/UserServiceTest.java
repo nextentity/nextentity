@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.Random;
 
 /**
  * @author HuangChengwei
@@ -76,5 +77,12 @@ class UserServiceTest {
 
     private String toString(Object page) {
         return String.valueOf(page);
+    }
+
+    @Test
+    void updateUser() {
+        User first = userAccess.getFirst();
+        first.setTestInteger(new Random().nextInt());
+        userService.updateUser(first);
     }
 }

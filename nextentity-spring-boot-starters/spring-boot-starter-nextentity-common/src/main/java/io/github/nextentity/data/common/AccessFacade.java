@@ -3,6 +3,7 @@ package io.github.nextentity.data.common;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.TypedExpressions;
+import io.github.nextentity.core.Updaters;
 import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
@@ -66,7 +67,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
 
     protected void init(Class<T> entityType, Query query, Update update, Metamodel metamodel) {
         this.select = query.from(entityType);
-        this.updater = update.getUpdater(entityType);
+        this.updater = Updaters.create(update, entityType);
         Attribute idAttribute = metamodel.getEntity(entityType).id();
         this.id = TypedExpressions.ofBasic(Expressions.column(idAttribute.name()));
         this.getId = t -> TypeCastUtil.unsafeCast(idAttribute.get(t));

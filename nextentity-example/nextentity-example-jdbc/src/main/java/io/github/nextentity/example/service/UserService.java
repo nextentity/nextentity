@@ -22,6 +22,10 @@ public class UserService {
 
     private final Access<User, Long> userAccess;
 
+    public void updateUser(User user) {
+        userAccess.update(user);
+    }
+
     public List<User> getByUsername(String username) {
         return userAccess.where(User::getUsername).eq(username).getList();
     }
