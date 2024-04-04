@@ -26,7 +26,7 @@ public interface Paths {
         return Paths.<T>root().entity(path);
     }
 
-    static <T, U> BooleanPathExpression<T> get(BooleanPath<T> path) {
+    static <T> BooleanPathExpression<T> get(BooleanPath<T> path) {
         return Paths.<T>root().get(path);
     }
 
@@ -54,7 +54,7 @@ public interface Paths {
         return Paths.<T>root().number(path);
     }
 
-    static <T, U> Predicate<T> predicate(Path<T, Boolean> path) {
+    static <T> Predicate<T> predicate(Path<T, Boolean> path) {
         return Paths.<T>root().predicate(path);
     }
 

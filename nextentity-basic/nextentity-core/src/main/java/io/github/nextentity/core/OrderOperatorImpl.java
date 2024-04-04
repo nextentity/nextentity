@@ -14,7 +14,6 @@ import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.api.TypedExpression.BasicExpression;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
