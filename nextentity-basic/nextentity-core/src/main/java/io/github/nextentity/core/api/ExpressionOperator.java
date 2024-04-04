@@ -95,15 +95,25 @@ public interface ExpressionOperator<T, U, B> {
 
         NumberOperator<T, U, B> mod(U value);
 
-        NumberOperator<T, U, B> addIfNotNull(U value);
+        default NumberOperator<T, U, B> addIfNotNull(U value) {
+            return value == null ? this : add(value);
+        }
 
-        NumberOperator<T, U, B> subtractIfNotNull(U value);
+        default NumberOperator<T, U, B> subtractIfNotNull(U value) {
+            return value == null ? this : subtract(value);
+        }
 
-        NumberOperator<T, U, B> multiplyIfNotNull(U value);
+        default NumberOperator<T, U, B> multiplyIfNotNull(U value) {
+            return value == null ? this : multiply(value);
+        }
 
-        NumberOperator<T, U, B> divideIfNotNull(U value);
+        default NumberOperator<T, U, B> divideIfNotNull(U value) {
+            return value == null ? this : divide(value);
+        }
 
-        NumberOperator<T, U, B> modIfNotNull(U value);
+        default NumberOperator<T, U, B> modIfNotNull(U value) {
+            return value == null ? this : mod(value);
+        }
 
         NumberOperator<T, U, B> add(TypedExpression<T, U> expression);
 

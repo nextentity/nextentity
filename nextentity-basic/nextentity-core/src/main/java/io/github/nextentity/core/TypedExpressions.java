@@ -7,6 +7,7 @@ import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.OrOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
+import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Operator;
@@ -20,13 +21,12 @@ import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BasicExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.BooleanPathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 import io.github.nextentity.core.util.Paths;
@@ -69,58 +69,68 @@ public class TypedExpressions {
     }
 
     public static <T, R> PathExpression<T, R> ofPath(Column column) {
-        return cast(new RawTypeExpression(column));
+        return newTypedExpression(column);
     }
 
     public static <T, R> EntityPathExpression<T, R> ofEntity(Column column) {
-        return cast(new RawTypeExpression(column));
+        return newTypedExpression(column);
     }
 
     public static <T> StringPathExpression<T> ofString(Column column) {
-        return cast(new RawTypeExpression(column));
+        return newTypedExpression(column);
     }
 
     public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(Column column) {
-        return cast(new RawTypeExpression(column));
+        return newTypedExpression(column);
     }
 
     public static <T, R> BasicExpression<T, R> ofBasic(Expression expression) {
-        return cast(new RawTypeExpression(expression));
+        return newTypedExpression(expression);
     }
 
     public static <T> StringExpression<T> ofString(Expression expression) {
-        return cast(new RawTypeExpression(expression));
+        return newTypedExpression(expression);
     }
 
     public static <T> Predicate<T> ofBoolean(Expression expression) {
-        return cast(new RawTypeExpression(expression));
+        return newTypedExpression(expression);
     }
 
     public static <T> BooleanPathExpression<T> ofBoolean(Column expression) {
-        return cast(new RawTypeExpression(expression));
+        return newTypedExpression(expression);
     }
 
     public static <T, U extends Number> NumberExpression<T, U> ofNumber(Expression expression) {
-        return cast(new RawTypeExpression(expression));
+        return newTypedExpression(expression);
     }
 
     public static <T> PredicateOperator<T> ofPredicate(Expression expression) {
-        return cast(new RawTypeExpression(expression));
+        return newTypedExpression(expression);
     }
 
-    static <T extends TypedExpression<?, ?>> T cast(RawTypeExpression expression) {
-        return TypeCastUtil.unsafeCast(expression);
+    private static <T extends TypedExpression<?, ?>> T newTypedExpression(Expression expression) {
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+    }
+
+    static RawTypeExpression raw(TypedExpression<?, ?> expression) {
+        RawTypeExpression result;
+        if (expression == null || expression instanceof RawTypeExpression) {
+            result = (RawTypeExpression) expression;
+        } else {
+            result = new RawTypeExpression(expression.expression());
+        }
+        return result;
     }
 
 
     @Data
     @Accessors(fluent = true)
     @SuppressWarnings("rawtypes")
-    private static class RawTypeExpression implements NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
+    static final class RawTypeExpression implements NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
 
-        protected static final RawTypeExpression EMPTY = new RawTypeExpression(null);
+        static final RawTypeExpression EMPTY = new RawTypeExpression(null);
 
-        protected final Expression expression;
+        final Expression expression;
 
         public RawTypeExpression(Expression expression) {
             this.expression = expression;
@@ -164,6 +174,11 @@ public class TypedExpressions {
         @Override
         public Predicate ne(TypedExpression value) {
             return operate(NE, value);
+        }
+
+        @Override
+        public Predicate in(@NotNull TypedExpression expressions) {
+            return operate(IN, expressions);
         }
 
         @Override
@@ -312,6 +327,10 @@ public class TypedExpressions {
             return operate(MIN);
         }
 
+        public NumberExpression add(Number value) {
+            return add(Paths.root().literal(value));
+        }
+
         @Override
         public NumberExpression addIfNotNull(Number value) {
             return operate(MAX);
@@ -393,12 +412,12 @@ public class TypedExpressions {
         }
 
         @NotNull
-        protected RawTypeExpression and(BasicExpression<?, ?> basicExpression) {
+        RawTypeExpression and(BasicExpression<?, ?> basicExpression) {
             return basicExpression == null ? this : operate(AND, basicExpression);
         }
 
         @NotNull
-        protected RawTypeExpression or(BasicExpression<?, ?> basicExpression) {
+        RawTypeExpression or(BasicExpression<?, ?> basicExpression) {
             return basicExpression == null ? this : operate(OR, basicExpression);
         }
 
@@ -504,7 +523,7 @@ public class TypedExpressions {
             return operate(NOT);
         }
 
-        protected RawTypeExpression get0(Path<?, ?> path) {
+        RawTypeExpression get0(Path<?, ?> path) {
             PathExpression<?, ?> pathExpression = Paths.get((Path<?, ?>) path);
             return get0(pathExpression);
         }
@@ -522,41 +541,41 @@ public class TypedExpressions {
         }
 
         @NotNull
-        protected RawTypeExpression operate(Operator operator, TypedExpression expression) {
+        RawTypeExpression operate(Operator operator, TypedExpression expression) {
             return new RawTypeExpression(Expressions.operate(expression(), operator, expression.expression()));
         }
 
         @NotNull
-        protected RawTypeExpression operate(Operator operator, List<? extends TypedExpression> expressions) {
+        RawTypeExpression operate(Operator operator, List<? extends TypedExpression> expressions) {
             List<Expression> list = expressions.stream().map(TypedExpression::expression).collect(Collectors.toList());
             return operate0(operator, list);
         }
 
         @NotNull
-        protected RawTypeExpression operate0(Operator operator, List<Expression> list) {
+        RawTypeExpression operate0(Operator operator, List<Expression> list) {
             return new RawTypeExpression(Expressions.operate(expression(), operator, list));
         }
 
         @NotNull
-        protected RawTypeExpression operate(Operator operator) {
+        RawTypeExpression operate(Operator operator) {
             return new RawTypeExpression(Expressions.operate(expression(), operator));
         }
 
         @NotNull
-        protected static TypedExpression.Predicate operateNull() {
+        static TypedExpression.Predicate operateNull() {
             return EMPTY;
         }
 
         @NotNull
-        protected StringExpression<?> asString() {
+        StringExpression<?> asString() {
             return this;
         }
 
-        protected BasicExpression<?, ?> asBasic() {
+        BasicExpression<?, ?> asBasic() {
             return this;
         }
 
-        protected NumberExpression<?, ?> asNumber() {
+        NumberExpression<?, ?> asNumber() {
             return this;
         }
 

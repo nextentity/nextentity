@@ -33,6 +33,8 @@ public interface TypedExpression<T, U> {
 
         Predicate<T> ne(TypedExpression<T, U> value);
 
+        Predicate<T> in(@NotNull TypedExpression<T, List<U>> expressions);
+
         @SuppressWarnings("unchecked")
         Predicate<T> in(U... values);
 
