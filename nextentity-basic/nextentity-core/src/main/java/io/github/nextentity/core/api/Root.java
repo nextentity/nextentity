@@ -3,7 +3,6 @@ package io.github.nextentity.core.api;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.BooleanPathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
@@ -27,5 +26,5 @@ public interface Root<T> {
 
     <U extends Number> NumberPathExpression<T, U> number(Path<T, U> path);
 
-    Predicate<T> predicate(Path<T, Boolean> path);
+    BooleanPathExpression<T> bool(Path<T, Boolean> path);
 }

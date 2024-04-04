@@ -13,7 +13,6 @@ import io.github.nextentity.core.api.TypedExpression.BooleanPathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 
 public interface Paths {
@@ -54,8 +53,8 @@ public interface Paths {
         return Paths.<T>root().number(path);
     }
 
-    static <T> Predicate<T> predicate(Path<T, Boolean> path) {
-        return Paths.<T>root().predicate(path);
+    static <T> BooleanPathExpression<T> bool(Path<T, Boolean> path) {
+        return Paths.<T>root().bool(path);
     }
 
     class RootImpl<T> implements Root<T> {
@@ -110,7 +109,7 @@ public interface Paths {
         }
 
         @Override
-        public Predicate<T> predicate(Path<T, Boolean> path) {
+        public BooleanPathExpression<T> bool(Path<T, Boolean> path) {
             return TypedExpressions.ofBoolean(Expressions.of(path));
         }
     }
