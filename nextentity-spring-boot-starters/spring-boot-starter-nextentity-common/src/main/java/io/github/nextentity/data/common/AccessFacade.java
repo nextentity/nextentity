@@ -4,7 +4,6 @@ import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.Updaters;
-import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
@@ -13,7 +12,6 @@ import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query;
@@ -30,7 +28,7 @@ import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BasicExpression;
-import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
+import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
@@ -84,7 +82,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         if (idList.isEmpty()) {
             return Collections.emptyList();
         }
-        BooleanExpression<T> predicate = id.in(idList);
+        PredicateOperator<T> predicate = id.in(idList);
         return where(predicate).getList();
     }
 
@@ -325,11 +323,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.where(path);
     }
 
-    public <N extends Number & Comparable<N>> NumberOperator<T, N, ? extends Where<T, T>> where(NumberPath<T, N> path) {
-        return select.where(path);
-    }
-
-    public <N extends Comparable<N>> ComparableOperator<T, N, ? extends Where<T, T>> where(ComparablePath<T, N> path) {
+    public <N extends Number> NumberOperator<T, N, ? extends Where<T, T>> where(NumberPath<T, N> path) {
         return select.where(path);
     }
 

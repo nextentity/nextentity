@@ -1,11 +1,9 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.Order.SortOrder;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
@@ -189,9 +187,7 @@ public interface Query {
 
         <N> PathOperator<T, N, ? extends Where<T, U>> where(Path<T, N> path);
 
-        <N extends Number & Comparable<N>> NumberOperator<T, N, ? extends Where<T, U>> where(NumberPath<T, N> path);
-
-        <N extends Comparable<N>> ComparableOperator<T, N, ? extends Where<T, U>> where(ComparablePath<T, N> path);
+        <N extends Number> NumberOperator<T, N, ? extends Where<T, U>> where(NumberPath<T, N> path);
 
         StringOperator<T, ? extends Where<T, U>> where(StringPath<T> path);
 
@@ -214,9 +210,7 @@ public interface Query {
 
         <N> PathOperator<T, N, Where0<T, U>> where(Path<T, N> path);
 
-        <N extends Comparable<N>> ComparableOperator<T, N, Where0<T, U>> where(ComparablePath<T, N> path);
-
-        <N extends Number & Comparable<N>> NumberOperator<T, N, Where0<T, U>> where(NumberPath<T, N> path);
+        <N extends Number> NumberOperator<T, N, Where0<T, U>> where(NumberPath<T, N> path);
 
         StringOperator<T, Where0<T, U>> where(StringPath<T> path);
 

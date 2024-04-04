@@ -1,5 +1,6 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.SQL;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.AbstractQueryExecutor;
@@ -59,9 +60,9 @@ public class JdbcQueryExecutor implements AbstractQueryExecutor {
     }
 
     private static void printSql(PreparedSql sql) {
-        log.debug("SQL: {}", sql.sql());
+        SQL.debug("SQL: {}", sql.sql());
         if (!sql.args().isEmpty()) {
-            log.debug("ARGS: {}", sql.args());
+            SQL.debug("ARGS: {}", sql.args());
         }
     }
 

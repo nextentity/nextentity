@@ -6,4 +6,4 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 logging:
   level:
-    io.github.nextentity.jdbc.JdbcQueryExecutor: debug
+    io.github.nextentity.sql: debug

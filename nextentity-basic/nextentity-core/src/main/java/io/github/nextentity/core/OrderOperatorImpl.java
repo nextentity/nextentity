@@ -14,7 +14,7 @@ import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.api.TypedExpression.ComparableExpression;
+import io.github.nextentity.core.api.TypedExpression.BasicExpression;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,11 +36,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     private List<Order<T>> asOrderList(Order.SortOrder sort) {
         return orderByPaths
                 .stream()
-                .map(path -> {
-                    ComparableExpression<T, ?> expression =
-                            Paths.comparable(TypeCastUtil.unsafeCast(path));
-                    return expression.sort(sort);
-                })
+                .map(path -> Paths.get(path).sort(sort))
                 .collect(Collectors.toList());
     }
 

@@ -14,7 +14,7 @@ import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.Exceptions;
@@ -691,9 +691,8 @@ public class GenericApiTest {
         assertEquals(qList, fList);
 
         qList = userQuery.where(
-                        get(User::getUsername).eq("Jeremy Keynes")
-                                .or(get(User::getId).eq(3))
-                                .then().not()
+                        not(get(User::getUsername).eq("Jeremy Keynes")
+                                .or(get(User::getId).eq(3)))
                 )
                 .getList();
         fList = allUsers.stream()
@@ -703,10 +702,9 @@ public class GenericApiTest {
         assertEquals(qList, fList);
 
         qList = userQuery
-                .where(get(User::getUsername).eq("Jeremy Keynes")
+                .where(not(get(User::getUsername).eq("Jeremy Keynes")
                         .and(get(User::getId).eq(3))
-                        .then().not()
-                )
+                ))
                 .getList();
         fList = allUsers.stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
@@ -745,10 +743,9 @@ public class GenericApiTest {
                 .getList();
         assertEquals(qList, fList);
 
-        qList = userQuery.where(get(User::getUsername).eq("Jeremy Keynes")
+        qList = userQuery.where(not(get(User::getUsername).eq("Jeremy Keynes")
                         .or(get(User::getId).eq(3))
-                        .then().not()
-                )
+                ))
                 .getList();
         fList = allUsers.stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
@@ -1007,7 +1004,7 @@ public class GenericApiTest {
     @ArgumentsSource(UserQueryProvider.class)
     public void testOperator(Select<User> userQuery) {
 
-        BooleanExpression<User> isValid = get(User::isValid);
+        Predicate<User> isValid = get(User::isValid);
         List<User> qList = userQuery.where(isValid).getList();
         List<User> validUsers = allUsers.stream().filter(User::isValid)
                 .collect(Collectors.toList());

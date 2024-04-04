@@ -5,40 +5,40 @@ import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BooleanPathExpression;
-import io.github.nextentity.core.api.TypedExpression.ComparablePathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
+import io.github.nextentity.core.api.TypedExpression.PathExpression;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 
 public interface Paths {
+
+    static <T> Root<T> root() {
+        return RootImpl.of();
+    }
 
     static <T, U> EntityPathExpression<T, U> get(Path<T, U> path) {
         return Paths.<T>root().entity(path);
     }
 
-    static <T> Root<T> root() {
-        return RootImpl.of();
+    static <T, U> BooleanPathExpression<T> get(BooleanPath<T> path) {
+        return Paths.<T>root().get(path);
     }
 
     static <T> StringPathExpression<T> get(StringPath<T> path) {
         return Paths.<T>root().get(path);
     }
 
-    static <T, U extends Number & Comparable<U>> NumberPathExpression<T, U> get(NumberPath<T, U> path) {
+    static <T, U extends Number> NumberPathExpression<T, U> get(NumberPath<T, U> path) {
         return Paths.<T>root().get(path);
     }
 
-    static <T, V extends Comparable<V>> ComparablePathExpression<T, V> get(ComparablePath<T, V> path) {
-        return Paths.<T>root().get(path);
-    }
-
-    static <T> BooleanPathExpression<T> get(BooleanPath<T> path) {
+    static <T, U> PathExpression<T, U> path(Path<T, U> path) {
         return Paths.<T>root().get(path);
     }
 
@@ -50,16 +50,12 @@ public interface Paths {
         return Paths.<T>root().string(path);
     }
 
-    static <T, U extends Number & Comparable<U>> NumberPathExpression<T, U> number(Path<T, U> path) {
+    static <T, U extends Number> NumberPathExpression<T, U> number(Path<T, U> path) {
         return Paths.<T>root().number(path);
     }
 
-    static <T, U extends Comparable<U>> ComparablePathExpression<T, U> comparable(Path<T, U> path) {
-        return Paths.<T>root().comparable(path);
-    }
-
-    static <T> BooleanPathExpression<T> bool(Path<T, Boolean> path) {
-        return Paths.<T>root().bool(path);
+    static <T, U> Predicate<T> predicate(Path<T, Boolean> path) {
+        return Paths.<T>root().predicate(path);
     }
 
     class RootImpl<T> implements Root<T> {
@@ -74,7 +70,7 @@ public interface Paths {
         }
 
         @Override
-        public <U> TypedExpression<T, U> of(U value) {
+        public <U> TypedExpression<T, U> literal(U value) {
             return TypedExpressions.of(value);
         }
 
@@ -89,23 +85,18 @@ public interface Paths {
         }
 
         @Override
+        public BooleanPathExpression<T> get(BooleanPath<T> path) {
+            return TypedExpressions.ofBoolean(Expressions.of(path));
+        }
+
+        @Override
         public StringPathExpression<T> get(StringPath<T> path) {
             return string(path);
         }
 
         @Override
-        public <U extends Number & Comparable<U>> NumberPathExpression<T, U> get(NumberPath<T, U> path) {
+        public <U extends Number> NumberPathExpression<T, U> get(NumberPath<T, U> path) {
             return number(path);
-        }
-
-        @Override
-        public <U extends Comparable<U>> ComparablePathExpression<T, U> get(ComparablePath<T, U> path) {
-            return comparable(path);
-        }
-
-        @Override
-        public BooleanPathExpression<T> get(BooleanPath<T> path) {
-            return bool(path);
         }
 
         @Override
@@ -114,19 +105,13 @@ public interface Paths {
         }
 
         @Override
-        public <U extends Number & Comparable<U>> NumberPathExpression<T, U> number(Path<T, U> path) {
+        public <U extends Number> NumberPathExpression<T, U> number(Path<T, U> path) {
             return TypedExpressions.ofNumber(Expressions.of(path));
         }
 
         @Override
-        public <U extends Comparable<U>> ComparablePathExpression<T, U> comparable(Path<T, U> path) {
-            return TypedExpressions.ofComparable(Expressions.of(path));
-        }
-
-        @Override
-        public BooleanPathExpression<T> bool(Path<T, Boolean> path) {
+        public Predicate<T> predicate(Path<T, Boolean> path) {
             return TypedExpressions.ofBoolean(Expressions.of(path));
         }
-
     }
 }

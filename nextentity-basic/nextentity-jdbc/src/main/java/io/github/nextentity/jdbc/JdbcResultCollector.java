@@ -69,7 +69,7 @@ public class JdbcResultCollector implements ResultCollector {
             if (1 != columnsCount) {
                 throw new IllegalStateException();
             }
-            //noinspection PatternVariableCanBeUsed
+            // noinspection PatternVariableCanBeUsed
             SingleSelected sc = (SingleSelected) select;
             while (resultSet.next()) {
                 T row = getSingleObj(resultSet, sc);

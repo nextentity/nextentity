@@ -1,5 +1,6 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.SQL;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
@@ -62,7 +63,7 @@ public class JdbcUpdate implements Update {
         PreparedSql preparedSql = sqlBuilder.buildUpdate(metamodel.getEntity(entityType));
         execute(connection -> {
             String sql = preparedSql.sql();
-            log.debug(sql);
+            SQL.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(list, preparedSql.columns(), statement);
                 int[] updateRowCounts = statement.executeBatch();
@@ -96,12 +97,12 @@ public class JdbcUpdate implements Update {
         PreparedSql preparedSql = sqlBuilder.buildDelete(metamodel.getEntity(entityType));
         execute(connection -> {
             String sql = preparedSql.sql();
-            log.debug(sql);
+            SQL.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(entities, preparedSql.columns(), statement);
                 int[] result = statement.executeBatch();
-                if (log.isDebugEnabled()) {
-                    log.debug("executeBatch result: " + Arrays.toString(result));
+                if (log.isTraceEnabled()) {
+                    log.trace("executeBatch result: " + Arrays.toString(result));
                 }
                 return null;
             }
@@ -130,7 +131,7 @@ public class JdbcUpdate implements Update {
         }
         return execute(connection -> {
             String sql = preparedSql.sql();
-            log.debug(sql);
+            SQL.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(Lists.of(entity), preparedSql.columns(), statement);
                 int i = statement.executeUpdate();
@@ -192,7 +193,7 @@ public class JdbcUpdate implements Update {
                                  PreparedSql preparedSql)
             throws SQLException {
         String sql = preparedSql.sql();
-        log.debug(sql);
+        SQL.debug(sql);
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             List<BasicAttribute> columns = preparedSql.columns();
             setArgs(entities, columns, statement);

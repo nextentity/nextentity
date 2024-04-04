@@ -6,7 +6,6 @@ import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
 import io.github.nextentity.core.QueryStructures.SubQueryExpr;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
@@ -15,10 +14,7 @@ import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.Page;
-import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.Collector;
@@ -48,11 +44,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings("PatternVariableCanBeUsed")
 public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, AbstractCollector<U> {
 
-    static final SingleSelectedImpl SELECT_ANY =
-            new SingleSelectedImpl(Integer.class, Expressions.TRUE, false);
+    static final SingleSelectedImpl SELECT_ANY = new SingleSelectedImpl(Integer.class, Expressions.TRUE, false);
 
-    static final SingleSelectedImpl COUNT_ANY =
-            new SingleSelectedImpl(Integer.class, Expressions.operate(Expressions.TRUE, Operator.COUNT), false);
+    static final SingleSelectedImpl COUNT_ANY = new SingleSelectedImpl(Integer.class, Expressions.operate(Expressions.TRUE, Operator.COUNT), false);
 
     final QueryExecutor queryExecutor;
     final QueryStructureImpl queryStructure;
@@ -109,9 +103,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
     QueryConditionBuilder<T, U> addOrderBy(List<? extends Order<T>> orders) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.orderBy = structure.orderBy == null
-                ? orders
-                : Lists.concat(structure.orderBy, orders);
+        structure.orderBy = structure.orderBy == null ? orders : Lists.concat(structure.orderBy, orders);
         return update(structure);
     }
 
@@ -122,8 +114,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return queryExecutor.<Number>getList(structure).get(0).longValue();
     }
 
-    @NotNull
-    QueryStructures.QueryStructureImpl buildCountData() {
+    @NotNull QueryStructures.QueryStructureImpl buildCountData() {
         QueryStructureImpl structure = queryStructure.copy();
         structure.lockType = LockModeType.NONE;
         structure.orderBy = Lists.of();
@@ -197,8 +188,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return queryExecutor.getList(structure);
     }
 
-    @NotNull
-    QueryStructures.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
+    @NotNull QueryStructures.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.offset = offset;
         structure.limit = maxResult;
@@ -213,8 +203,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return !queryList(structure).isEmpty();
     }
 
-    @NotNull
-    QueryStructures.QueryStructureImpl buildExistData(int offset) {
+    @NotNull QueryStructures.QueryStructureImpl buildExistData(int offset) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.select = SELECT_ANY;
         structure.offset = offset;
@@ -244,10 +233,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
             @Override
             public SliceQueryStructure slice(int offset, int limit) {
-                return new SliceQueryStructure(
-                        buildCountData(),
-                        buildListData(offset, limit, LockModeType.NONE)
-                );
+                return new SliceQueryStructure(buildCountData(), buildListData(offset, limit, LockModeType.NONE));
             }
 
         };
@@ -261,9 +247,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     @Override
     public Having<T, U> groupBy(List<? extends TypedExpression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = expressions.stream()
-                .map(TypedExpression::expression)
-                .collect(Collectors.toList());
+        structure.groupBy = expressions.stream().map(TypedExpression::expression).collect(Collectors.toList());
         return update(structure);
     }
 
@@ -292,13 +276,8 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     }
 
     @Override
-    public <N extends Number & Comparable<N>> NumberOperator<T, N, Where0<T, U>> where(NumberPath<T, N> path) {
+    public <N extends Number> NumberOperator<T, N, Where0<T, U>> where(NumberPath<T, N> path) {
         return ExpressionOperators.ofNumber(root().get(path), this::whereAnd);
-    }
-
-    @Override
-    public <N extends Comparable<N>> ComparableOperator<T, N, Where0<T, U>> where(ComparablePath<T, N> path) {
-        return ExpressionOperators.ofComparable(root().get(path), this::whereAnd);
     }
 
     @NotNull

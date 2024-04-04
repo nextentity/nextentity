@@ -4,7 +4,6 @@ import io.github.nextentity.core.QueryStructures.OrderImpl;
 import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
-import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.OrOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
@@ -15,20 +14,19 @@ import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Order.SortOrder;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
+import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BasicExpression;
-import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.BooleanPathExpression;
-import io.github.nextentity.core.api.TypedExpression.ComparableExpression;
-import io.github.nextentity.core.api.TypedExpression.ComparablePathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
+import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 import io.github.nextentity.core.util.Paths;
@@ -71,54 +69,54 @@ public class TypedExpressions {
     }
 
     public static <T, R> PathExpression<T, R> ofPath(Column column) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
+        return cast(new RawTypeExpression(column));
     }
 
     public static <T, R> EntityPathExpression<T, R> ofEntity(Column column) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
+        return cast(new RawTypeExpression(column));
     }
 
     public static <T> StringPathExpression<T> ofString(Column column) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
+        return cast(new RawTypeExpression(column));
     }
 
-    public static <T> BooleanPathExpression<T> ofBoolean(Column column) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
-    }
-
-    public static <T, U extends Number & Comparable<U>> NumberPathExpression<T, U> ofNumber(Column column) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
-    }
-
-    public static <T, U extends Comparable<U>> ComparablePathExpression<T, U> ofComparable(Column column) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(column));
+    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(Column column) {
+        return cast(new RawTypeExpression(column));
     }
 
     public static <T, R> BasicExpression<T, R> ofBasic(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+        return cast(new RawTypeExpression(expression));
     }
 
     public static <T> StringExpression<T> ofString(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+        return cast(new RawTypeExpression(expression));
     }
 
-    public static <T> BooleanExpression<T> ofBoolean(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+    public static <T> Predicate<T> ofBoolean(Expression expression) {
+        return cast(new RawTypeExpression(expression));
     }
 
-    public static <T, U extends Number & Comparable<U>> NumberExpression<T, U> ofNumber(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+    public static <T> BooleanPathExpression<T> ofBoolean(Column expression) {
+        return cast(new RawTypeExpression(expression));
     }
 
-    public static <T, U extends Comparable<U>> ComparableExpression<T, U> ofComparable(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+    public static <T, U extends Number> NumberExpression<T, U> ofNumber(Expression expression) {
+        return cast(new RawTypeExpression(expression));
+    }
+
+    public static <T> PredicateOperator<T> ofPredicate(Expression expression) {
+        return cast(new RawTypeExpression(expression));
+    }
+
+    static <T extends TypedExpression<?, ?>> T cast(RawTypeExpression expression) {
+        return TypeCastUtil.unsafeCast(expression);
     }
 
 
     @Data
     @Accessors(fluent = true)
     @SuppressWarnings("rawtypes")
-    private static class RawTypeExpression implements ComparablePathExpression, NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
+    private static class RawTypeExpression implements NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
 
         protected static final RawTypeExpression EMPTY = new RawTypeExpression(null);
 
@@ -139,37 +137,37 @@ public class TypedExpressions {
         }
 
         @Override
-        public BooleanExpression eq(Object value) {
+        public Predicate eq(Object value) {
             return eq(Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression eqIfNotNull(Object value) {
+        public Predicate eqIfNotNull(Object value) {
             return value == null ? operateNull() : eq(value);
         }
 
         @Override
-        public BooleanExpression eq(TypedExpression value) {
+        public Predicate eq(TypedExpression value) {
             return operate(EQ, value);
         }
 
         @Override
-        public BooleanExpression ne(Object value) {
+        public Predicate ne(Object value) {
             return ne(Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression neIfNotNull(Object value) {
+        public Predicate neIfNotNull(Object value) {
             return value == null ? operateNull() : ne(value);
         }
 
         @Override
-        public BooleanExpression ne(TypedExpression value) {
+        public Predicate ne(TypedExpression value) {
             return operate(NE, value);
         }
 
         @Override
-        public BooleanExpression in(Object[] values) {
+        public Predicate in(Object[] values) {
             List<TypedExpression<?, ?>> collect = Arrays.stream(values)
                     .map(TypedExpressions::of)
                     .collect(Collectors.toList());
@@ -177,7 +175,7 @@ public class TypedExpressions {
         }
 
         @Override
-        public BooleanExpression in(@NotNull Collection values) {
+        public Predicate in(@NotNull Collection values) {
             List<TypedExpression<?, ?>> collect = ((Collection<?>) values).stream()
                     .map(TypedExpressions::of)
                     .collect(Collectors.toList());
@@ -185,62 +183,62 @@ public class TypedExpressions {
         }
 
         @Override
-        public BooleanExpression notIn(Object[] values) {
+        public Predicate notIn(Object[] values) {
             return not(in(values));
         }
 
         @Override
-        public BooleanExpression notIn(@NotNull Collection values) {
+        public Predicate notIn(@NotNull Collection values) {
             return not(in(values));
         }
 
         @Override
-        public BooleanExpression isNull() {
+        public Predicate isNull() {
             return operate(IS_NULL);
         }
 
         @Override
-        public BooleanExpression isNotNull() {
+        public Predicate isNotNull() {
             return not(isNull());
         }
 
         @Override
-        public BooleanExpression notIn(@NotNull List values) {
+        public Predicate notIn(@NotNull List values) {
             return not(in(values));
         }
 
         @Override
-        public BooleanExpression in(@NotNull List expressions) {
+        public Predicate in(@NotNull List expressions) {
             return operate(IN, asTypeExpressions(expressions));
         }
 
         @Override
-        public BooleanExpression ge(TypedExpression expression) {
+        public Predicate ge(TypedExpression expression) {
             return operate(GE, expression);
         }
 
         @Override
-        public BooleanExpression gt(TypedExpression expression) {
+        public Predicate gt(TypedExpression expression) {
             return operate(GT, expression);
         }
 
         @Override
-        public BooleanExpression le(TypedExpression expression) {
+        public Predicate le(TypedExpression expression) {
             return operate(LE, expression);
         }
 
         @Override
-        public BooleanExpression lt(TypedExpression expression) {
+        public Predicate lt(TypedExpression expression) {
             return operate(LT, expression);
         }
 
         @Override
-        public BooleanExpression between(TypedExpression l, TypedExpression r) {
+        public Predicate between(TypedExpression l, TypedExpression r) {
             return operate(BETWEEN, List.of(l, r));
         }
 
         @Override
-        public BooleanExpression notBetween(TypedExpression l, TypedExpression r) {
+        public Predicate notBetween(TypedExpression l, TypedExpression r) {
             return not(between(l, r));
         }
 
@@ -250,22 +248,22 @@ public class TypedExpressions {
         }
 
         @Override
-        public BooleanExpression geIfNotNull(Comparable value) {
+        public Predicate geIfNotNull(Object value) {
             return value == null ? operateNull() : ge(Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression gtIfNotNull(Comparable value) {
+        public Predicate gtIfNotNull(Object value) {
             return value == null ? operateNull() : gt(Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression leIfNotNull(Comparable value) {
+        public Predicate leIfNotNull(Object value) {
             return value == null ? operateNull() : le(Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression ltIfNotNull(Comparable value) {
+        public Predicate ltIfNotNull(Object value) {
             return value == null ? operateNull() : lt(Expressions.of(value));
         }
 
@@ -340,22 +338,22 @@ public class TypedExpressions {
         }
 
         @Override
-        public BooleanExpression like(String value) {
+        public Predicate like(String value) {
             return operate(LIKE, Expressions.of(value));
         }
 
         @Override
-        public BooleanExpression notLike(String value) {
+        public Predicate notLike(String value) {
             return not(like(value));
         }
 
         @Override
-        public BooleanExpression likeIfNotNull(String value) {
+        public Predicate likeIfNotNull(String value) {
             return value == null ? operateNull() : like(value);
         }
 
         @Override
-        public BooleanExpression notLikeIfNotNull(String value) {
+        public Predicate notLikeIfNotNull(String value) {
             return value == null ? operateNull() : notLike(value);
         }
 
@@ -404,11 +402,6 @@ public class TypedExpressions {
             return basicExpression == null ? this : operate(OR, basicExpression);
         }
 
-        @Override
-        public ComparableOperator and(ComparablePath path) {
-            return ExpressionOperators.ofComparable(of(path).asComparable(), this::and);
-        }
-
         @NotNull
         static RawTypeExpression of(Path path) {
             return new RawTypeExpression(Expressions.of(path));
@@ -420,13 +413,13 @@ public class TypedExpressions {
         }
 
         @Override
-        public ComparableOperator and(BooleanPath path) {
-            return ExpressionOperators.ofComparable(of(path).asComparable(), this::and);
+        public StringOperator and(StringPath path) {
+            return ExpressionOperators.ofString(of(path).asString(), this::and);
         }
 
         @Override
-        public StringOperator and(StringPath path) {
-            return ExpressionOperators.ofString(of(path).asString(), this::and);
+        public AndOperator andIf(boolean predicate, PredicateBuilder predicateBuilder) {
+            return predicate ? and(((PredicateBuilder<?>) predicateBuilder).build(TypeCastUtil.cast(root()))) : this;
         }
 
         @Override
@@ -439,10 +432,6 @@ public class TypedExpressions {
             return ExpressionOperators.ofNumber(of(path).asNumber(), this::or);
         }
 
-        @Override
-        public ComparableOperator or(ComparablePath path) {
-            return ExpressionOperators.ofComparable(of(path).asComparable(), this::or);
-        }
 
         @Override
         public StringOperator or(StringPath path) {
@@ -450,8 +439,8 @@ public class TypedExpressions {
         }
 
         @Override
-        public ComparableOperator or(BooleanPath path) {
-            return ExpressionOperators.ofComparable(of(path).asComparable(), this::or);
+        public OrOperator orIf(boolean predicate, PredicateBuilder predicateBuilder) {
+            return predicate ? or(((PredicateBuilder<?>) predicateBuilder).build(TypeCastUtil.cast(root()))) : this;
         }
 
         @Override
@@ -465,11 +454,6 @@ public class TypedExpressions {
         }
 
         @Override
-        public Predicate then() {
-            return this;
-        }
-
-        @Override
         public AndOperator and(List list) {
             return operate(AND, asTypeExpressions(list));
         }
@@ -477,11 +461,6 @@ public class TypedExpressions {
         @Override
         public AndOperator and(TypedExpression expression) {
             return operate(AND, expression);
-        }
-
-        @Override
-        public Predicate not() {
-            return operate(NOT);
         }
 
         @Override
@@ -496,22 +475,12 @@ public class TypedExpressions {
         }
 
         @Override
-        public BooleanPathExpression get(BooleanPath path) {
-            return get0(path);
-        }
-
-        @Override
         public StringPathExpression get(StringPathExpression path) {
             return get0(path);
         }
 
         @Override
-        public BooleanPathExpression get(BooleanPathExpression path) {
-            return get0(path);
-        }
-
-        @Override
-        public ComparablePathExpression get(ComparablePathExpression path) {
+        public BooleanPathExpression get(BooleanPath path) {
             return get0(path);
         }
 
@@ -526,13 +495,13 @@ public class TypedExpressions {
         }
 
         @Override
-        public ComparablePathExpression get(ComparablePath path) {
+        public NumberPathExpression get(NumberPath path) {
             return get0(path);
         }
 
         @Override
-        public NumberPathExpression get(NumberPath path) {
-            return get0(path);
+        public Predicate not() {
+            return operate(NOT);
         }
 
         protected RawTypeExpression get0(Path<?, ?> path) {
@@ -574,16 +543,12 @@ public class TypedExpressions {
         }
 
         @NotNull
-        protected static BooleanExpression operateNull() {
+        protected static TypedExpression.Predicate operateNull() {
             return EMPTY;
         }
 
         @NotNull
         protected StringExpression<?> asString() {
-            return this;
-        }
-
-        protected ComparableExpression<?, ?> asComparable() {
             return this;
         }
 

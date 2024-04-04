@@ -5,7 +5,6 @@ import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderBy;
@@ -14,7 +13,7 @@ import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -1011,7 +1010,7 @@ class QueryBuilderTest {
         result.add(new Checker<>(stream, collector));
 
 
-        BooleanExpression<User> isValid = get(User::isValid);
+        Predicate<User> isValid = get(User::isValid);
         collector = userQuery.where(isValid);
         stream = users().stream().filter(User::isValid);
 
@@ -1107,7 +1106,7 @@ class QueryBuilderTest {
         List<User> users = check.expected.stream().filter(it -> it.getRandomNumber() == 1).collect(Collectors.toList());
         OrderBy<User, User> collector = check.collector.where(User::getRandomNumber).eq(1);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where((ComparablePath<User, Integer>) User::getRandomNumber).eq(1);
+        collector = check.collector.where(User::getRandomNumber).eq(1);
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1));
         result.add(new Checker<>(users, collector));
@@ -1120,7 +1119,7 @@ class QueryBuilderTest {
                 .orIf(true, root -> root.get(User::getRandomNumber).eq(2))
                 .orIf(false, root -> root.get(User::getId).eq(2)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).eq(1).or((ComparablePath<User, Integer>) User::getRandomNumber).eq(2));
+        collector = check.collector.where(get(User::getRandomNumber).eq(1).or(User::getRandomNumber).eq(2));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1).or(Lists.of(get(User::getRandomNumber).eq(2))));
         result.add(new Checker<>(users, collector));
