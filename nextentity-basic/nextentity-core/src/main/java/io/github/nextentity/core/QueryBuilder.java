@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Column;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Path;
@@ -8,7 +8,6 @@ import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.Fetch;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.QueryExecutor;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.util.Paths;
@@ -22,10 +21,10 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import io.github.nextentity.core.QueryStructures.MultiSelectedImpl;
-import io.github.nextentity.core.QueryStructures.ProjectionSelectedImpl;
-import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
-import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
+import io.github.nextentity.core.ExpressionTrees.MultiSelectedImpl;
+import io.github.nextentity.core.ExpressionTrees.ProjectionSelectedImpl;
+import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
+import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
         QueryStructureImpl structure = queryStructure.copy();
         List<Column> list = new ArrayList<>(expressions.size());
         for (PathExpression<T, ?> expression : expressions) {
-            Expression expr = expression.expression();
+            Expression expr = expression.tree();
             if (expr instanceof Column) {
                 Column column = (Column) expr;
                 list.add(column);
@@ -209,7 +208,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
     public Where0<T, Tuple> select(boolean distinct, List<? extends TypedExpression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
         List<Expression> selectExpressions = expressions.stream()
-                .map(TypedExpression::expression)
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
         structure.select = new MultiSelectedImpl(selectExpressions, distinct);
         return update(structure);
@@ -319,7 +318,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
     public final <R extends Tuple> Where0<T, R> selectTupleByExpr(boolean distinct, TypedExpression<T, ?>... paths) {
         QueryStructureImpl structure = queryStructure.copy();
         List<Expression> selectExpressions = Arrays.stream(paths)
-                .map(TypedExpression::expression)
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
         structure.select = new MultiSelectedImpl(selectExpressions, distinct);
         return update(structure);
@@ -335,7 +334,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     public <R> Where0<T, R> select(boolean distinct, TypedExpression<T, R> paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        Expression expression = paths.expression();
+        Expression expression = paths.tree();
         Class<?> type = Object.class;
         structure.select = new SingleSelectedImpl(type, expression, distinct);
         return update(structure);

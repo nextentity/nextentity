@@ -10,7 +10,7 @@ import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
-import io.github.nextentity.core.api.QueryStructure;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;

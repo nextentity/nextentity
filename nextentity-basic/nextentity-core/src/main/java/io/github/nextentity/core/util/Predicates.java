@@ -24,9 +24,9 @@ public interface Predicates {
     static <T> Predicate<T> and(TypedExpression<T, Boolean> predicate,
                                         TypedExpression<T, Boolean>... predicates) {
         List<Expression> metas = Arrays.stream(predicates)
-                .map(TypedExpression::expression)
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
-        Expression expression = Expressions.operate(predicate.expression(), AND, metas);
+        Expression expression = Expressions.operate(predicate.tree(), AND, metas);
         return TypedExpressions.ofBoolean(expression);
     }
 
@@ -34,9 +34,9 @@ public interface Predicates {
     static <T> Predicate<T> or(TypedExpression<T, Boolean> predicate,
                                        TypedExpression<T, Boolean>... predicates) {
         List<Expression> metas = Arrays.stream(predicates)
-                .map(TypedExpression::expression)
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
-        Expression expression = Expressions.operate(predicate.expression(), OR, metas);
+        Expression expression = Expressions.operate(predicate.tree(), OR, metas);
         return TypedExpressions.ofBoolean(expression);
     }
 
@@ -44,15 +44,15 @@ public interface Predicates {
     static <T> Predicate<T> orNot(TypedExpression<T, Boolean> predicate,
                                           TypedExpression<T, Boolean>... predicates) {
         List<Expression> metas = Arrays.stream(predicates)
-                .map(TypedExpression::expression)
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
-        Expression expression = Expressions.operate(predicate.expression(), OR, metas);
+        Expression expression = Expressions.operate(predicate.tree(), OR, metas);
         expression = Expressions.operate(expression, NOT);
         return TypedExpressions.ofBoolean(expression);
     }
 
     static <T> Predicate<T> not(TypedExpression<T, Boolean> lt) {
-        Expression expression = Expressions.operate(lt.expression(), NOT);
+        Expression expression = Expressions.operate(lt.tree(), NOT);
         return TypedExpressions.ofBoolean(expression);
     }
 

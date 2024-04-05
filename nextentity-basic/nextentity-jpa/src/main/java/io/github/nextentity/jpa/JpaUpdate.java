@@ -1,6 +1,6 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.api.Column;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Operator;

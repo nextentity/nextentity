@@ -1,25 +1,23 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.AbstractQueryExecutor;
+import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Column;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.From;
 import io.github.nextentity.core.api.From.FromSubQuery;
 import io.github.nextentity.core.api.Lists;
-import io.github.nextentity.core.api.Operation;
+import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Order.SortOrder;
-import io.github.nextentity.core.api.QueryExecutor;
-import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.api.SubQuery;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
@@ -44,7 +42,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("PatternVariableCanBeUsed")
-public class JpaQueryExecutor implements AbstractQueryExecutor {
+public class JpaQueryExecutor implements QueryExecutor {
 
     private final EntityManager entityManager;
     private final Metamodel metamodel;
@@ -63,7 +61,7 @@ public class JpaQueryExecutor implements AbstractQueryExecutor {
     }
 
     @Override
-    public <T> List<T> getList(@NotNull QueryStructure queryStructure) {
+    public <T> List<T> getList(@NotNull Expression.QueryStructure queryStructure) {
         if (requiredNativeQuery(queryStructure)) {
             return nativeQueryExecutor.getList(queryStructure);
         }
@@ -100,7 +98,7 @@ public class JpaQueryExecutor implements AbstractQueryExecutor {
         }
     }
 
-    private boolean requiredNativeQuery(@NotNull QueryStructure queryStructure) {
+    private boolean requiredNativeQuery(@NotNull Expression.QueryStructure queryStructure) {
         From from = queryStructure.from();
         return from instanceof FromSubQuery
                || metamodel.getEntity(from.type()) instanceof SubSelectType
@@ -133,7 +131,7 @@ public class JpaQueryExecutor implements AbstractQueryExecutor {
     }
 
     private boolean hasSubQuery(Expression expression) {
-        if (expression instanceof SubQuery) {
+        if (expression instanceof QueryStructure) {
             return true;
         }
         if (expression instanceof Operation) {
@@ -144,14 +142,14 @@ public class JpaQueryExecutor implements AbstractQueryExecutor {
     }
 
 
-    private List<?> getEntityResultList(@NotNull QueryStructure structure) {
+    private List<?> getEntityResultList(@NotNull Expression.QueryStructure structure) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<?> query = cb.createQuery(structure.from().type());
         Root<?> root = query.from(structure.from().type());
         return new EntityBuilder(root, cb, query, structure).getResultList();
     }
 
-    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends Expression> columns) {
+    private List<Object[]> getObjectsList(@NotNull Expression.QueryStructure structure, List<? extends Expression> columns) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<?> query = cb.createQuery(Object[].class);
         Root<?> root = query.from(structure.from().type());

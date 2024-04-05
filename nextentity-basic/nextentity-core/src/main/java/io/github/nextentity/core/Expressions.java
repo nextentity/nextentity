@@ -1,17 +1,17 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Constant;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Lists;
-import io.github.nextentity.core.api.Operation;
+import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.QueryStructures.ColumnImpl;
-import io.github.nextentity.core.QueryStructures.ConstantImpl;
-import io.github.nextentity.core.QueryStructures.OperationImpl;
+import io.github.nextentity.core.ExpressionTrees.ColumnImpl;
+import io.github.nextentity.core.ExpressionTrees.ConstantImpl;
+import io.github.nextentity.core.ExpressionTrees.OperationImpl;
 import io.github.nextentity.core.util.Paths;
 
 import java.util.ArrayList;
@@ -36,11 +36,11 @@ public interface Expressions {
 
     static Expression of(Object value) {
         if (value instanceof TypedExpression<?, ?>) {
-            return ((TypedExpression<?, ?>) value).expression();
+            return ((TypedExpression<?, ?>) value).tree();
         } else if (value instanceof Path<?, ?>) {
             return of((Path<?, ?>) value);
         }
-        return new ConstantImpl(value);
+        return new ConstantImpl<>(value);
     }
 
     static Column of(Path<?, ?> path) {
@@ -63,7 +63,7 @@ public interface Expressions {
         if (paths.getClass() != ArrayList.class) {
             paths = new ArrayList<>(paths);
         }
-        return new ColumnImpl(paths.toArray(String[]::new));
+        return new ColumnImpl<>(paths.toArray(String[]::new));
     }
 
     static Expression operate(Expression l, Operator o, Expression r) {
@@ -84,12 +84,12 @@ public interface Expressions {
         if (o.isMultivalued() && l instanceof Operation && ((Operation) l).operator() == o) {
             Operation lo = (Operation) l;
             List<Expression> operands = Lists.concat(lo.operands(), r);
-            return new OperationImpl(operands, o);
+            return new OperationImpl<>(operands, o);
         }
         List<Expression> operands = new ArrayList<>(r.size() + 1);
         operands.add(l);
         operands.addAll(r);
-        return new OperationImpl(operands, o);
+        return new OperationImpl<>(operands, o);
     }
 
     static <T> List<PathExpression<T, ?>> toExpressionList(Collection<Path<T, ?>> paths) {

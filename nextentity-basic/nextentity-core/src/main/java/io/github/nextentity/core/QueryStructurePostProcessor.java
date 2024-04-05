@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.QueryStructure;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 
 public interface QueryStructurePostProcessor {
 

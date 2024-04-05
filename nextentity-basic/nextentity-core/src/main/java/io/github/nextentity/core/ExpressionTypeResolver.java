@@ -1,12 +1,12 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Constant;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Lists;
-import io.github.nextentity.core.api.Operation;
+import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.SubQuery;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.Type;
@@ -49,14 +49,14 @@ public class ExpressionTypeResolver {
         if (expression instanceof Operation) {
             return getOperationType((Operation) expression, entityType);
         }
-        if (expression instanceof SubQuery) {
-            return getSubQueryType((SubQuery) expression);
+        if (expression instanceof QueryStructure) {
+            return getSubQueryType((QueryStructure) expression);
         }
         return Object.class;
     }
 
-    private Class<?> getSubQueryType(SubQuery subQuery) {
-        return subQuery.queryStructure().from().type();
+    private Class<?> getSubQueryType(QueryStructure subQuery) {
+        return subQuery.from().type();
     }
 
     public Class<?> getOperationType(Operation expression, Class<?> entityType) {

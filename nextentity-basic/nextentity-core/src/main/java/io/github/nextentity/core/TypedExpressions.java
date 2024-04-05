@@ -1,7 +1,7 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.QueryStructures.OrderImpl;
-import io.github.nextentity.core.api.Column;
+import io.github.nextentity.core.ExpressionTrees.OrderImpl;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
@@ -40,12 +40,41 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static io.github.nextentity.core.api.Operator.*;
+import static io.github.nextentity.core.api.Operator.ADD;
+import static io.github.nextentity.core.api.Operator.AND;
+import static io.github.nextentity.core.api.Operator.AVG;
+import static io.github.nextentity.core.api.Operator.BETWEEN;
+import static io.github.nextentity.core.api.Operator.COUNT;
+import static io.github.nextentity.core.api.Operator.DIVIDE;
+import static io.github.nextentity.core.api.Operator.EQ;
+import static io.github.nextentity.core.api.Operator.GE;
+import static io.github.nextentity.core.api.Operator.GT;
+import static io.github.nextentity.core.api.Operator.IN;
+import static io.github.nextentity.core.api.Operator.IS_NULL;
+import static io.github.nextentity.core.api.Operator.LE;
+import static io.github.nextentity.core.api.Operator.LENGTH;
+import static io.github.nextentity.core.api.Operator.LIKE;
+import static io.github.nextentity.core.api.Operator.LOWER;
+import static io.github.nextentity.core.api.Operator.LT;
+import static io.github.nextentity.core.api.Operator.MAX;
+import static io.github.nextentity.core.api.Operator.MIN;
+import static io.github.nextentity.core.api.Operator.MOD;
+import static io.github.nextentity.core.api.Operator.MULTIPLY;
+import static io.github.nextentity.core.api.Operator.NE;
+import static io.github.nextentity.core.api.Operator.NOT;
+import static io.github.nextentity.core.api.Operator.OR;
+import static io.github.nextentity.core.api.Operator.SUBSTRING;
+import static io.github.nextentity.core.api.Operator.SUBTRACT;
+import static io.github.nextentity.core.api.Operator.SUM;
+import static io.github.nextentity.core.api.Operator.TRIM;
+import static io.github.nextentity.core.api.Operator.UPPER;
 
 public class TypedExpressions {
 
     public static <T, U> TypedExpression<T, U> of(Expression expression) {
-        return TypeCastUtil.cast(expression);
+        return expression instanceof TypedExpression<?, ?>
+                ? TypeCastUtil.cast(expression)
+                : expression::tree;
     }
 
     public static <T, U> TypedExpression<T, U> of(U value) {
@@ -117,7 +146,7 @@ public class TypedExpressions {
         if (expression == null || expression instanceof RawTypeExpression) {
             result = (RawTypeExpression) expression;
         } else {
-            result = new RawTypeExpression(expression.expression());
+            result = new RawTypeExpression(expression.tree());
         }
         return result;
     }
@@ -143,12 +172,12 @@ public class TypedExpressions {
 
         @Override
         public NumberExpression count() {
-            return new RawTypeExpression(Expressions.operate(expression(), COUNT));
+            return new RawTypeExpression(Expressions.operate(tree(), COUNT));
         }
 
         @Override
         public Predicate eq(Object value) {
-            return eq(Expressions.of(value));
+            return eq(TypedExpressions.of(value));
         }
 
         @Override
@@ -163,7 +192,7 @@ public class TypedExpressions {
 
         @Override
         public Predicate ne(Object value) {
-            return ne(Expressions.of(value));
+            return ne(TypedExpressions.of(value));
         }
 
         @Override
@@ -259,27 +288,27 @@ public class TypedExpressions {
 
         @Override
         public Order sort(SortOrder order) {
-            return new OrderImpl(expression(), order);
+            return new OrderImpl(tree(), order);
         }
 
         @Override
         public Predicate geIfNotNull(Object value) {
-            return value == null ? operateNull() : ge(Expressions.of(value));
+            return value == null ? operateNull() : ge(TypedExpressions.of(value));
         }
 
         @Override
         public Predicate gtIfNotNull(Object value) {
-            return value == null ? operateNull() : gt(Expressions.of(value));
+            return value == null ? operateNull() : gt(TypedExpressions.of(value));
         }
 
         @Override
         public Predicate leIfNotNull(Object value) {
-            return value == null ? operateNull() : le(Expressions.of(value));
+            return value == null ? operateNull() : le(TypedExpressions.of(value));
         }
 
         @Override
         public Predicate ltIfNotNull(Object value) {
-            return value == null ? operateNull() : lt(Expressions.of(value));
+            return value == null ? operateNull() : lt(TypedExpressions.of(value));
         }
 
         @Override
@@ -325,35 +354,6 @@ public class TypedExpressions {
         @Override
         public NumberExpression min() {
             return operate(MIN);
-        }
-
-        public NumberExpression add(Number value) {
-            return add(Paths.root().literal(value));
-        }
-
-        @Override
-        public NumberExpression addIfNotNull(Number value) {
-            return operate(MAX);
-        }
-
-        @Override
-        public NumberExpression subtractIfNotNull(Number value) {
-            return value == null ? this : subtract(Expressions.of(value));
-        }
-
-        @Override
-        public NumberExpression multiplyIfNotNull(Number value) {
-            return value == null ? this : multiply(Expressions.of(value));
-        }
-
-        @Override
-        public NumberExpression divideIfNotNull(Number value) {
-            return value == null ? this : divide(Expressions.of(value));
-        }
-
-        @Override
-        public NumberExpression modIfNotNull(Number value) {
-            return value == null ? this : mod(Expressions.of(value));
         }
 
         @Override
@@ -484,8 +484,8 @@ public class TypedExpressions {
 
         @Override
         public EntityPathExpression get(Path path) {
-            Column expression = (Column) Paths.get((Path<?, ?>) path).expression();
-            return new RawTypeExpression(((Column) expression()).get(expression));
+            Column expression = (Column) Paths.get((Path<?, ?>) path).tree();
+            return new RawTypeExpression(((Column) tree()).get(expression));
         }
 
         @Override
@@ -530,35 +530,35 @@ public class TypedExpressions {
 
         @NotNull
         private RawTypeExpression get0(PathExpression<?, ?> pathExpression) {
-            Column expression = (Column) pathExpression.expression();
-            Expression expr = expression();
+            Column expression = (Column) pathExpression.tree();
+            Expression expr = tree();
             return new RawTypeExpression(((Column) expr).get(expression));
         }
 
         RawTypeExpression not(TypedExpression<?, ?> expression) {
-            Expression operate = Expressions.operate(expression.expression(), NOT);
+            Expression operate = Expressions.operate(expression.tree(), NOT);
             return new RawTypeExpression(operate);
         }
 
         @NotNull
-        RawTypeExpression operate(Operator operator, TypedExpression expression) {
-            return new RawTypeExpression(Expressions.operate(expression(), operator, expression.expression()));
+        RawTypeExpression operate(Operator operator, Expression expression) {
+            return new RawTypeExpression(Expressions.operate(tree(), operator, expression.tree()));
         }
 
         @NotNull
-        RawTypeExpression operate(Operator operator, List<? extends TypedExpression> expressions) {
-            List<Expression> list = expressions.stream().map(TypedExpression::expression).collect(Collectors.toList());
+        RawTypeExpression operate(Operator operator, List<? extends Expression> expressions) {
+            List<Expression> list = expressions.stream().map(Expression::tree).collect(Collectors.toList());
             return operate0(operator, list);
         }
 
         @NotNull
         RawTypeExpression operate0(Operator operator, List<Expression> list) {
-            return new RawTypeExpression(Expressions.operate(expression(), operator, list));
+            return new RawTypeExpression(Expressions.operate(tree(), operator, list));
         }
 
         @NotNull
         RawTypeExpression operate(Operator operator) {
-            return new RawTypeExpression(Expressions.operate(expression(), operator));
+            return new RawTypeExpression(Expressions.operate(tree(), operator));
         }
 
         @NotNull
@@ -583,5 +583,9 @@ public class TypedExpressions {
             return TypeCastUtil.cast(list);
         }
 
+        @Override
+        public ExpressionTree tree() {
+            return expression == null ? null : expression.tree();
+        }
     }
 }

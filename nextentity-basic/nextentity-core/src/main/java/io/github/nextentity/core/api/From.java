@@ -10,12 +10,10 @@ public interface From extends Serializable {
 
     }
 
-    interface FromSubQuery extends From, SubQuery {
-        QueryStructure queryStructure();
-
+    interface FromSubQuery extends From, Expression.QueryStructure {
         @Override
         default Class<?> type() {
-            return queryStructure().select().resultType();
+            return select().resultType();
         }
     }
 

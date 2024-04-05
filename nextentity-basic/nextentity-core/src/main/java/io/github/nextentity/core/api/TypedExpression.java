@@ -11,9 +11,7 @@ import java.util.Collection;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public interface TypedExpression<T, U> {
-
-    Expression expression();
+public interface TypedExpression<T, U> extends Expression {
 
     interface BasicExpression<T, U> extends TypedExpression<T, U> {
 
@@ -166,15 +164,25 @@ public interface TypedExpression<T, U> {
             return mod(root().literal(value));
         }
 
-        NumberExpression<T, U> addIfNotNull(U value);
+        default NumberExpression<T, U> addIfNotNull(U value) {
+            return value == null ? this : add(value);
+        }
 
-        NumberExpression<T, U> subtractIfNotNull(U value);
+        default NumberExpression<T, U> subtractIfNotNull(U value) {
+            return value == null ? this : subtract(value);
+        }
 
-        NumberExpression<T, U> multiplyIfNotNull(U value);
+        default NumberExpression<T, U> multiplyIfNotNull(U value) {
+            return value == null ? this : multiply(value);
+        }
 
-        NumberExpression<T, U> divideIfNotNull(U value);
+        default NumberExpression<T, U> divideIfNotNull(U value) {
+            return value == null ? this : divide(value);
+        }
 
-        NumberExpression<T, U> modIfNotNull(U value);
+        default NumberExpression<T, U> modIfNotNull(U value) {
+            return value == null ? this : mod(value);
+        }
 
     }
 

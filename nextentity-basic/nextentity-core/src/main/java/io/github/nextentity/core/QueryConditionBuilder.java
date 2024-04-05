@@ -1,17 +1,16 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.QueryStructures.FromSubQuery;
-import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
-import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
-import io.github.nextentity.core.QueryStructures.SubQueryExpr;
-import io.github.nextentity.core.api.Column;
+import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
+import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.Operation;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Path;
@@ -26,8 +25,6 @@ import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.QueryExecutor;
-import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.MultiSelected;
@@ -69,7 +66,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
     @Override
     public Where0<T, U> where(TypedExpression<T, Boolean> predicate) {
-        Expression expression = predicate.expression();
+        Expression expression = predicate.tree();
         if (Expressions.isNullOrTrue(expression)) {
             return this;
         }
@@ -114,19 +111,19 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return queryExecutor.<Number>getList(structure).get(0).longValue();
     }
 
-    @NotNull QueryStructures.QueryStructureImpl buildCountData() {
+    @NotNull ExpressionTrees.QueryStructureImpl buildCountData() {
         QueryStructureImpl structure = queryStructure.copy();
         structure.lockType = LockModeType.NONE;
         structure.orderBy = Lists.of();
         if (queryStructure.select().distinct()) {
-            return new QueryStructureImpl(COUNT_ANY, new FromSubQuery(structure));
+            return new QueryStructureImpl(COUNT_ANY, structure);
         } else if (requiredCountSubQuery(queryStructure)) {
             structure.select = COUNT_ANY;
-            return new QueryStructureImpl(COUNT_ANY, new FromSubQuery(structure));
+            return new QueryStructureImpl(COUNT_ANY, structure);
         } else if (queryStructure.groupBy() != null && !queryStructure.groupBy().isEmpty()) {
             structure.select = SELECT_ANY;
             structure.fetch = Lists.of();
-            return new QueryStructureImpl(COUNT_ANY, new FromSubQuery(structure));
+            return new QueryStructureImpl(COUNT_ANY, structure);
         } else {
             structure.select = COUNT_ANY;
             structure.fetch = Lists.of();
@@ -150,7 +147,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
     protected boolean requiredCountSubQuery(List<? extends Expression> expressions) {
         for (Expression expression : expressions) {
-            if (requiredCountSubQuery(expression.expression())) {
+            if (requiredCountSubQuery(expression)) {
                 return true;
             }
         }
@@ -188,7 +185,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return queryExecutor.getList(structure);
     }
 
-    @NotNull QueryStructures.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
+    @NotNull ExpressionTrees.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.offset = offset;
         structure.limit = maxResult;
@@ -203,7 +200,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return !queryList(structure).isEmpty();
     }
 
-    @NotNull QueryStructures.QueryStructureImpl buildExistData(int offset) {
+    @NotNull ExpressionTrees.QueryStructureImpl buildExistData(int offset) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.select = SELECT_ANY;
         structure.offset = offset;
@@ -247,7 +244,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     @Override
     public Having<T, U> groupBy(List<? extends TypedExpression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = expressions.stream().map(TypedExpression::expression).collect(Collectors.toList());
+        structure.groupBy = expressions.stream().map(TypedExpression::tree).collect(Collectors.toList());
         return update(structure);
     }
 
@@ -271,7 +268,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     @Override
     public OrderBy<T, U> having(TypedExpression<T, Boolean> predicate) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.having = predicate.expression();
+        structure.having = predicate.tree();
         return update(structure);
     }
 
@@ -286,7 +283,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
             return this;
         }
         QueryStructureImpl structure = queryStructure.copy();
-        whereAnd(structure, expression.expression());
+        whereAnd(structure, expression.tree());
         return update(structure);
     }
 
@@ -311,35 +308,35 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         public TypedExpression<X, Long> count() {
             QueryStructure structure = buildCountData();
             structure = structurePostProcessor.preCountQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(new SubQueryExpr(structure));
+            return TypedExpressions.of(structure);
         }
 
         @Override
         public TypedExpression<X, List<U>> slice(int offset, int maxResult) {
             QueryStructure structure = buildListData(offset, maxResult, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(new SubQueryExpr(structure));
+            return TypedExpressions.of(structure);
         }
 
         @Override
         public TypedExpression<X, U> getSingle(int offset) {
             QueryStructure structure = buildListData(offset, 2, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(new SubQueryExpr(structure));
+            return TypedExpressions.of(structure);
         }
 
         @Override
         public TypedExpression<X, U> getFirst(int offset) {
             QueryStructure structure = buildListData(offset, 1, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(new SubQueryExpr(structure));
+            return TypedExpressions.of(structure);
         }
 
         @Override
-        public Expression expression() {
+        public ExpressionTree tree() {
             QueryStructure structure = buildListData(-1, -1, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return new SubQueryExpr(structure);
+            return structure;
         }
 
     }

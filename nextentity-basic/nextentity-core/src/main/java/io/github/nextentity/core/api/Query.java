@@ -429,11 +429,11 @@ public interface Query {
 
     interface QueryStructureBuilder {
 
-        QueryStructure count();
+        Expression.QueryStructure count();
 
-        QueryStructure getList(int offset, int maxResult, LockModeType lockModeType);
+        Expression.QueryStructure getList(int offset, int maxResult, LockModeType lockModeType);
 
-        QueryStructure exist(int offset);
+        Expression.QueryStructure exist(int offset);
 
         SliceQueryStructure slice(int offset, int limit);
 
@@ -461,8 +461,8 @@ public interface Query {
     @Data
     @Accessors(fluent = true)
     final class SliceQueryStructure {
-        private final QueryStructure count;
-        private final QueryStructure list;
+        private final Expression.QueryStructure count;
+        private final Expression.QueryStructure list;
     }
 
     @FunctionalInterface

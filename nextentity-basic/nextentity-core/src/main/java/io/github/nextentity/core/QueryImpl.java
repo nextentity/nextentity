@@ -1,7 +1,6 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.QueryExecutor;
 
 public class QueryImpl implements Query {
     private final QueryExecutor executor;

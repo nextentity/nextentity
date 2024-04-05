@@ -3,7 +3,7 @@ package io.github.nextentity.jdbc;
 import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.QueryStructure;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;

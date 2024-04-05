@@ -1,25 +1,24 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Constant;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.From;
 import io.github.nextentity.core.api.From.Entity;
 import io.github.nextentity.core.api.From.FromSubQuery;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operation;
+import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Order.SortOrder;
-import io.github.nextentity.core.api.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.api.SubQuery;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.meta.AnyToOneAttribute;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.BasicAttribute;
@@ -319,8 +318,8 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             } else if (expression instanceof Operation) {
                 Operation operation = (Operation) expression;
                 appendOperation(args, operation);
-            } else if (expression instanceof SubQuery) {
-                appendSubQuery(((SubQuery) expression).queryStructure());
+            } else if (expression instanceof QueryStructure) {
+                appendSubQuery(((QueryStructure) expression));
             } else {
                 throw new UnsupportedOperationException("unknown type " + expression.getClass());
             }
@@ -405,7 +404,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                 case SUM: {
                     appendOperator(operator);
                     List<? extends Expression> operands = operation.operands();
-                    boolean notSingleSubQuery = !(leftOperand instanceof SubQuery) || operands.size() != 1;
+                    boolean notSingleSubQuery = !(leftOperand instanceof QueryStructure) || operands.size() != 1;
                     if (notSingleSubQuery) {
                         sql.append('(');
                     }
@@ -428,7 +427,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                         appendExpression(leftOperand);
                         appendOperator(operator);
                         List<? extends Expression> operands = operation.operands();
-                        boolean notSingleSubQuery = operands.size() != 2 || !(operands.get(1) instanceof SubQuery);
+                        boolean notSingleSubQuery = operands.size() != 2 || !(operands.get(1) instanceof QueryStructure);
                         char join = notSingleSubQuery ? '(' : ' ';
                         for (int i = 1; i < operands.size(); i++) {
                             Expression expression = operands.get(i);

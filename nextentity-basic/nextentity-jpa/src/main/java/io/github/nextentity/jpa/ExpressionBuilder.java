@@ -1,10 +1,10 @@
 package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Constant;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Operation;
+import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.FetchParent;

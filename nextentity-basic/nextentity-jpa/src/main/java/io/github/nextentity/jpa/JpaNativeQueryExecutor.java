@@ -1,12 +1,11 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.AbstractQueryExecutor;
+import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.QueryExecutor;
-import io.github.nextentity.core.api.QueryStructure;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
@@ -35,7 +34,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
+public class JpaNativeQueryExecutor implements QueryExecutor {
     private final QuerySqlBuilder sqlBuilder;
     private final EntityManager entityManager;
     private final Metamodel metamodel;
