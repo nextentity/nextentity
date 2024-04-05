@@ -56,10 +56,11 @@ public class PathReference {
             int implMethodKind = serializedLambda.getImplMethodKind();
             if (implMethodKind != MethodHandleInfo.REF_invokeVirtual
                 && implMethodKind != MethodHandleInfo.REF_invokeInterface) {
-                throw new IllegalStateException("implMethodKind error: required "
-                                                + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeVirtual)
-                                                + " or " + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeInterface)
-                                                + " but is " + MethodHandleInfo.referenceKindToString(implMethodKind));
+                throw new IllegalStateException(
+                        "implMethodKind error: required "
+                        + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeVirtual)
+                        + " or " + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeInterface)
+                        + " but is " + MethodHandleInfo.referenceKindToString(implMethodKind));
             }
             return new PathReference(serializedLambda);
         } catch (ReflectiveOperationException e) {
