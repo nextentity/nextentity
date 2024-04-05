@@ -1,5 +1,6 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.TypedExpressions.AbstractTypeExpression;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression.ExpressionTree;
@@ -16,7 +17,6 @@ import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.util.Exceptions;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -27,6 +27,18 @@ import java.util.Iterator;
 import java.util.List;
 
 final class ExpressionTrees {
+
+    public static ExpressionTree newConstant(Object value) {
+        return new ConstantImpl(value);
+    }
+
+    public static Column newColumn(String[] path) {
+        return new ColumnImpl(path);
+    }
+
+    public static ExpressionTree newOperation(List<ExpressionTree> operands, Operator operator) {
+        return new ExpressionTrees.OperationImpl(operands, operator);
+    }
 
     @EqualsAndHashCode
     static class QueryStructureImpl implements FromSubQuery, Cloneable {
@@ -174,20 +186,20 @@ final class ExpressionTrees {
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class ConstantImpl<T, R> implements Constant, TypedExpression<T, R> {
+    private static final class ConstantImpl implements Constant, AbstractTypeExpression {
         private final Object value;
     }
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class OperationImpl<T, R> implements Operation, TypedExpression<T, R> {
+    private static final class OperationImpl implements Operation, AbstractTypeExpression {
         private final List<? extends ExpressionTree> operands;
         private final Operator operator;
     }
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class ColumnImpl<T, R> implements Column, TypedExpression<T, R> {
+    private static final class ColumnImpl implements Column, AbstractTypeExpression {
         private final String[] paths;
 
         @Override
@@ -205,7 +217,7 @@ final class ExpressionTrees {
             String[] strings = new String[size() + 1];
             System.arraycopy(paths, 0, strings, 0, paths.length);
             strings[size()] = path;
-            return new ColumnImpl<>(strings);
+            return new ColumnImpl(strings);
         }
 
         @Override
@@ -231,7 +243,7 @@ final class ExpressionTrees {
             }
             String[] strings = new String[len];
             System.arraycopy(paths, 0, strings, 0, strings.length);
-            return new ColumnImpl<>(strings);
+            return new ColumnImpl(strings);
         }
 
         @NotNull
@@ -250,7 +262,7 @@ final class ExpressionTrees {
             for (String s : column) {
                 paths[i++] = s;
             }
-            return new ColumnImpl<>(paths);
+            return new ColumnImpl(paths);
         }
     }
 

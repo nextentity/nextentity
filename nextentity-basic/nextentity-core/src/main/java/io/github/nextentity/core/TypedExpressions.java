@@ -29,7 +29,6 @@ import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 import io.github.nextentity.core.util.Paths;
-import lombok.Data;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,34 +38,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static io.github.nextentity.core.api.Operator.ADD;
-import static io.github.nextentity.core.api.Operator.AND;
-import static io.github.nextentity.core.api.Operator.AVG;
-import static io.github.nextentity.core.api.Operator.BETWEEN;
-import static io.github.nextentity.core.api.Operator.COUNT;
-import static io.github.nextentity.core.api.Operator.DIVIDE;
-import static io.github.nextentity.core.api.Operator.EQ;
-import static io.github.nextentity.core.api.Operator.GE;
-import static io.github.nextentity.core.api.Operator.GT;
-import static io.github.nextentity.core.api.Operator.IN;
-import static io.github.nextentity.core.api.Operator.IS_NULL;
-import static io.github.nextentity.core.api.Operator.LE;
-import static io.github.nextentity.core.api.Operator.LENGTH;
-import static io.github.nextentity.core.api.Operator.LIKE;
-import static io.github.nextentity.core.api.Operator.LOWER;
-import static io.github.nextentity.core.api.Operator.LT;
-import static io.github.nextentity.core.api.Operator.MAX;
-import static io.github.nextentity.core.api.Operator.MIN;
-import static io.github.nextentity.core.api.Operator.MOD;
-import static io.github.nextentity.core.api.Operator.MULTIPLY;
-import static io.github.nextentity.core.api.Operator.NE;
-import static io.github.nextentity.core.api.Operator.NOT;
-import static io.github.nextentity.core.api.Operator.OR;
-import static io.github.nextentity.core.api.Operator.SUBSTRING;
-import static io.github.nextentity.core.api.Operator.SUBTRACT;
-import static io.github.nextentity.core.api.Operator.SUM;
-import static io.github.nextentity.core.api.Operator.TRIM;
-import static io.github.nextentity.core.api.Operator.UPPER;
+import static io.github.nextentity.core.TypedExpressions.TypeExpressionImpl.EMPTY;
+import static io.github.nextentity.core.api.Operator.*;
 
 public class TypedExpressions {
 
@@ -97,120 +70,123 @@ public class TypedExpressions {
     }
 
     public static <T, R> PathExpression<T, R> ofPath(Column column) {
-        return newTypedExpression(column);
+        return toTypedExpression(column);
     }
 
     public static <T, R> EntityPathExpression<T, R> ofEntity(Column column) {
-        return newTypedExpression(column);
+        return toTypedExpression(column);
     }
 
     public static <T> StringPathExpression<T> ofString(Column column) {
-        return newTypedExpression(column);
+        return toTypedExpression(column);
     }
 
     public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(Column column) {
-        return newTypedExpression(column);
+        return toTypedExpression(column);
     }
 
     public static <T, R> BasicExpression<T, R> ofBasic(Expression expression) {
-        return newTypedExpression(expression);
+        return toTypedExpression(expression);
     }
 
     public static <T> StringExpression<T> ofString(Expression expression) {
-        return newTypedExpression(expression);
+        return toTypedExpression(expression);
     }
 
     public static <T> Predicate<T> ofBoolean(Expression expression) {
-        return newTypedExpression(expression);
+        return toTypedExpression(expression);
     }
 
     public static <T> BooleanPathExpression<T> ofBoolean(Column expression) {
-        return newTypedExpression(expression);
+        return toTypedExpression(expression);
     }
 
     public static <T, U extends Number> NumberExpression<T, U> ofNumber(Expression expression) {
-        return newTypedExpression(expression);
+        return toTypedExpression(expression);
     }
 
     public static <T> PredicateOperator<T> ofPredicate(Expression expression) {
-        return newTypedExpression(expression);
+        return toTypedExpression(expression);
     }
 
-    private static <T extends TypedExpression<?, ?>> T newTypedExpression(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression.tree()));
-    }
-
-    static RawTypeExpression raw(TypedExpression<?, ?> expression) {
-        RawTypeExpression result;
-        if (expression == null || expression instanceof RawTypeExpression) {
-            result = (RawTypeExpression) expression;
+    static <T extends TypedExpression<?, ?>> T toTypedExpression(Expression expression) {
+        AbstractTypeExpression result;
+        if (expression == null || expression instanceof AbstractTypeExpression) {
+            result = (AbstractTypeExpression) expression;
         } else {
-            result = new RawTypeExpression(expression.tree());
+            result = new TypeExpressionImpl(expression.tree());
         }
-        return result;
+        return TypeCastUtil.unsafeCast(result);
     }
 
+    static final class TypeExpressionImpl implements AbstractTypeExpression {
 
-    @Data
-    @Accessors(fluent = true)
-    @SuppressWarnings("rawtypes")
-    static final class RawTypeExpression implements NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
+        static final TypeExpressionImpl EMPTY = new TypeExpressionImpl(null);
 
-        static final RawTypeExpression EMPTY = new RawTypeExpression(null);
+        private final ExpressionTree expression;
 
-        final ExpressionTree expression;
-
-        public RawTypeExpression(ExpressionTree expression) {
+        TypeExpressionImpl(ExpressionTree expression) {
             this.expression = expression;
         }
 
         @Override
-        public Root root() {
+        public ExpressionTree tree() {
+            return expression;
+        }
+    }
+
+
+    @Accessors(fluent = true)
+    @SuppressWarnings("rawtypes")
+    interface AbstractTypeExpression extends NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
+
+        @Override
+        default Root root() {
             return Paths.root();
         }
 
         @Override
-        public NumberExpression count() {
-            return new RawTypeExpression(Expressions.operate(tree(), COUNT));
+        default NumberExpression count() {
+            return toTypedExpression(Expressions.operate(tree(), COUNT));
         }
 
         @Override
-        public Predicate eq(Object value) {
+        default Predicate eq(Object value) {
             return eq(TypedExpressions.of(value));
         }
 
         @Override
-        public Predicate eqIfNotNull(Object value) {
+        default Predicate eqIfNotNull(Object value) {
             return value == null ? operateNull() : eq(value);
         }
 
         @Override
-        public Predicate eq(TypedExpression value) {
+        default Predicate eq(TypedExpression value) {
             return operate(EQ, value);
         }
 
         @Override
-        public Predicate ne(Object value) {
+        default Predicate ne(Object value) {
             return ne(TypedExpressions.of(value));
         }
 
         @Override
-        public Predicate neIfNotNull(Object value) {
+        default Predicate neIfNotNull(Object value) {
             return value == null ? operateNull() : ne(value);
         }
 
         @Override
-        public Predicate ne(TypedExpression value) {
+        default Predicate ne(TypedExpression value) {
             return operate(NE, value);
         }
 
         @Override
-        public Predicate in(@NotNull TypedExpression expressions) {
+        default Predicate in(@NotNull TypedExpression expressions) {
             return operate(IN, expressions);
         }
 
         @Override
-        public Predicate in(Object[] values) {
+        default Predicate in(Object[] values) {
             List<TypedExpression<?, ?>> collect = Arrays.stream(values)
                     .map(TypedExpressions::of)
                     .collect(Collectors.toList());
@@ -218,7 +194,7 @@ public class TypedExpressions {
         }
 
         @Override
-        public Predicate in(@NotNull Collection values) {
+        default Predicate in(@NotNull Collection values) {
             List<TypedExpression<?, ?>> collect = ((Collection<?>) values).stream()
                     .map(TypedExpressions::of)
                     .collect(Collectors.toList());
@@ -226,338 +202,338 @@ public class TypedExpressions {
         }
 
         @Override
-        public Predicate notIn(Object[] values) {
+        default Predicate notIn(Object[] values) {
             return not(in(values));
         }
 
         @Override
-        public Predicate notIn(@NotNull Collection values) {
+        default Predicate notIn(@NotNull Collection values) {
             return not(in(values));
         }
 
         @Override
-        public Predicate isNull() {
+        default Predicate isNull() {
             return operate(IS_NULL);
         }
 
         @Override
-        public Predicate isNotNull() {
+        default Predicate isNotNull() {
             return not(isNull());
         }
 
         @Override
-        public Predicate notIn(@NotNull List values) {
+        default Predicate notIn(@NotNull List values) {
             return not(in(values));
         }
 
         @Override
-        public Predicate in(@NotNull List expressions) {
+        default Predicate in(@NotNull List expressions) {
             return operate(IN, asTypeExpressions(expressions));
         }
 
         @Override
-        public Predicate ge(TypedExpression expression) {
+        default Predicate ge(TypedExpression expression) {
             return operate(GE, expression);
         }
 
         @Override
-        public Predicate gt(TypedExpression expression) {
+        default Predicate gt(TypedExpression expression) {
             return operate(GT, expression);
         }
 
         @Override
-        public Predicate le(TypedExpression expression) {
+        default Predicate le(TypedExpression expression) {
             return operate(LE, expression);
         }
 
         @Override
-        public Predicate lt(TypedExpression expression) {
+        default Predicate lt(TypedExpression expression) {
             return operate(LT, expression);
         }
 
         @Override
-        public Predicate between(TypedExpression l, TypedExpression r) {
+        default Predicate between(TypedExpression l, TypedExpression r) {
             return operate(BETWEEN, List.of(l, r));
         }
 
         @Override
-        public Predicate notBetween(TypedExpression l, TypedExpression r) {
+        default Predicate notBetween(TypedExpression l, TypedExpression r) {
             return not(between(l, r));
         }
 
         @Override
-        public Order sort(SortOrder order) {
+        default Order sort(SortOrder order) {
             return new OrderImpl(tree(), order);
         }
 
         @Override
-        public Predicate geIfNotNull(Object value) {
+        default Predicate geIfNotNull(Object value) {
             return value == null ? operateNull() : ge(TypedExpressions.of(value));
         }
 
         @Override
-        public Predicate gtIfNotNull(Object value) {
+        default Predicate gtIfNotNull(Object value) {
             return value == null ? operateNull() : gt(TypedExpressions.of(value));
         }
 
         @Override
-        public Predicate leIfNotNull(Object value) {
+        default Predicate leIfNotNull(Object value) {
             return value == null ? operateNull() : le(TypedExpressions.of(value));
         }
 
         @Override
-        public Predicate ltIfNotNull(Object value) {
+        default Predicate ltIfNotNull(Object value) {
             return value == null ? operateNull() : lt(TypedExpressions.of(value));
         }
 
         @Override
-        public NumberExpression add(TypedExpression expression) {
+        default NumberExpression add(TypedExpression expression) {
             return operate(ADD, expression);
         }
 
         @Override
-        public NumberExpression subtract(TypedExpression expression) {
+        default NumberExpression subtract(TypedExpression expression) {
             return operate(SUBTRACT, expression);
         }
 
         @Override
-        public NumberExpression multiply(TypedExpression expression) {
+        default NumberExpression multiply(TypedExpression expression) {
             return operate(MULTIPLY, expression);
         }
 
         @Override
-        public NumberExpression divide(TypedExpression expression) {
+        default NumberExpression divide(TypedExpression expression) {
             return operate(DIVIDE, expression);
         }
 
         @Override
-        public NumberExpression mod(TypedExpression expression) {
+        default NumberExpression mod(TypedExpression expression) {
             return operate(MOD, expression);
         }
 
         @Override
-        public NumberExpression sum() {
+        default NumberExpression sum() {
             return operate(SUM);
         }
 
         @Override
-        public NumberExpression avg() {
+        default NumberExpression avg() {
             return operate(AVG);
         }
 
         @Override
-        public NumberExpression max() {
+        default NumberExpression max() {
             return operate(MAX);
         }
 
         @Override
-        public NumberExpression min() {
+        default NumberExpression min() {
             return operate(MIN);
         }
 
         @Override
-        public Predicate like(String value) {
+        default Predicate like(String value) {
             return operate(LIKE, Expressions.of(value));
         }
 
         @Override
-        public Predicate notLike(String value) {
+        default Predicate notLike(String value) {
             return not(like(value));
         }
 
         @Override
-        public Predicate likeIfNotNull(String value) {
+        default Predicate likeIfNotNull(String value) {
             return value == null ? operateNull() : like(value);
         }
 
         @Override
-        public Predicate notLikeIfNotNull(String value) {
+        default Predicate notLikeIfNotNull(String value) {
             return value == null ? operateNull() : notLike(value);
         }
 
         @Override
-        public StringExpression lower() {
+        default StringExpression lower() {
             return operate(LOWER);
         }
 
         @Override
-        public StringExpression upper() {
+        default StringExpression upper() {
             return operate(UPPER);
         }
 
         @Override
-        public StringExpression substring(int a, int b) {
+        default StringExpression substring(int a, int b) {
             return operate0(SUBSTRING, Lists.of(Expressions.of(a), Expressions.of(b)));
         }
 
         @Override
-        public StringExpression substring(int a) {
+        default StringExpression substring(int a) {
             return operate(SUBSTRING, Expressions.of(a));
         }
 
         @Override
-        public StringExpression trim() {
+        default StringExpression trim() {
             return operate(TRIM);
         }
 
         @Override
-        public NumberExpression length() {
+        default NumberExpression length() {
             return operate(LENGTH);
         }
 
         @Override
-        public PathOperator and(Path path) {
+        default PathOperator and(Path path) {
             return ExpressionOperators.ofPath(of(path).asBasic(), this::and);
         }
 
         @NotNull
-        RawTypeExpression and(BasicExpression<?, ?> basicExpression) {
+        default AbstractTypeExpression and(BasicExpression<?, ?> basicExpression) {
             return basicExpression == null ? this : operate(AND, basicExpression);
         }
 
         @NotNull
-        RawTypeExpression or(BasicExpression<?, ?> basicExpression) {
+        default AbstractTypeExpression or(BasicExpression<?, ?> basicExpression) {
             return basicExpression == null ? this : operate(OR, basicExpression);
         }
 
         @NotNull
-        static RawTypeExpression of(Path path) {
-            return new RawTypeExpression(Expressions.of(path));
+        static AbstractTypeExpression of(Path path) {
+            return toTypedExpression(Expressions.of(path));
         }
 
         @Override
-        public NumberOperator and(NumberPath path) {
+        default NumberOperator and(NumberPath path) {
             return ExpressionOperators.ofNumber(of(path).asNumber(), this::and);
         }
 
         @Override
-        public StringOperator and(StringPath path) {
+        default StringOperator and(StringPath path) {
             return ExpressionOperators.ofString(of(path).asString(), this::and);
         }
 
         @Override
-        public AndOperator andIf(boolean predicate, PredicateBuilder predicateBuilder) {
+        default AndOperator andIf(boolean predicate, PredicateBuilder predicateBuilder) {
             return predicate ? and(((PredicateBuilder<?>) predicateBuilder).build(TypeCastUtil.cast(root()))) : this;
         }
 
         @Override
-        public PathOperator or(Path path) {
+        default PathOperator or(Path path) {
             return ExpressionOperators.ofPath(of(path).asBasic(), this::or);
         }
 
         @Override
-        public NumberOperator or(NumberPath path) {
+        default NumberOperator or(NumberPath path) {
             return ExpressionOperators.ofNumber(of(path).asNumber(), this::or);
         }
 
 
         @Override
-        public StringOperator or(StringPath path) {
+        default StringOperator or(StringPath path) {
             return ExpressionOperators.ofString(of(path).asString(), this::or);
         }
 
         @Override
-        public OrOperator orIf(boolean predicate, PredicateBuilder predicateBuilder) {
+        default OrOperator orIf(boolean predicate, PredicateBuilder predicateBuilder) {
             return predicate ? or(((PredicateBuilder<?>) predicateBuilder).build(TypeCastUtil.cast(root()))) : this;
         }
 
         @Override
-        public OrOperator or(List list) {
+        default OrOperator or(List list) {
             return operate(OR, asTypeExpressions(list));
         }
 
         @Override
-        public OrOperator or(TypedExpression predicate) {
+        default OrOperator or(TypedExpression predicate) {
             return operate(OR, predicate);
         }
 
         @Override
-        public AndOperator and(List list) {
+        default AndOperator and(List list) {
             return operate(AND, asTypeExpressions(list));
         }
 
         @Override
-        public AndOperator and(TypedExpression expression) {
+        default AndOperator and(TypedExpression expression) {
             return operate(AND, expression);
         }
 
         @Override
-        public EntityPathExpression get(Path path) {
+        default EntityPathExpression get(Path path) {
             Column expression = (Column) Paths.get((Path<?, ?>) path).tree();
-            return new RawTypeExpression(((Column) tree()).get(expression));
+            return toTypedExpression(((Column) tree()).get(expression));
         }
 
         @Override
-        public StringPathExpression get(StringPath path) {
+        default StringPathExpression get(StringPath path) {
             return get0(path);
         }
 
         @Override
-        public StringPathExpression get(StringPathExpression path) {
+        default StringPathExpression get(StringPathExpression path) {
             return get0(path);
         }
 
         @Override
-        public BooleanPathExpression get(BooleanPath path) {
+        default BooleanPathExpression get(BooleanPath path) {
             return get0(path);
         }
 
         @Override
-        public NumberPathExpression get(NumberPathExpression path) {
+        default NumberPathExpression get(NumberPathExpression path) {
             return get0(path);
         }
 
         @Override
-        public PathExpression get(PathExpression path) {
+        default PathExpression get(PathExpression path) {
             return get0(path);
         }
 
         @Override
-        public NumberPathExpression get(NumberPath path) {
+        default NumberPathExpression get(NumberPath path) {
             return get0(path);
         }
 
         @Override
-        public Predicate not() {
+        default Predicate not() {
             return operate(NOT);
         }
 
-        RawTypeExpression get0(Path<?, ?> path) {
+        default AbstractTypeExpression get0(Path<?, ?> path) {
             PathExpression<?, ?> pathExpression = Paths.get((Path<?, ?>) path);
             return get0(pathExpression);
         }
 
         @NotNull
-        private RawTypeExpression get0(PathExpression<?, ?> pathExpression) {
+        private AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
             Column expression = (Column) pathExpression.tree();
             ExpressionTree expr = tree();
-            return new RawTypeExpression(((Column) expr).get(expression));
+            return toTypedExpression(((Column) expr).get(expression));
         }
 
-        RawTypeExpression not(TypedExpression<?, ?> expression) {
+        default AbstractTypeExpression not(TypedExpression<?, ?> expression) {
             ExpressionTree operate = Expressions.operate(expression.tree(), NOT);
-            return new RawTypeExpression(operate);
+            return toTypedExpression(operate);
         }
 
         @NotNull
-        RawTypeExpression operate(Operator operator, Expression expression) {
-            return new RawTypeExpression(Expressions.operate(tree(), operator, expression.tree()));
+        default AbstractTypeExpression operate(Operator operator, Expression expression) {
+            return toTypedExpression(Expressions.operate(tree(), operator, expression.tree()));
         }
 
         @NotNull
-        RawTypeExpression operate(Operator operator, List<? extends Expression> expressions) {
+        default AbstractTypeExpression operate(Operator operator, List<? extends Expression> expressions) {
             List<Expression> list = expressions.stream().map(Expression::tree).collect(Collectors.toList());
             return operate0(operator, list);
         }
 
         @NotNull
-        RawTypeExpression operate0(Operator operator, List<Expression> list) {
-            return new RawTypeExpression(Expressions.operate(tree(), operator, list));
+        default AbstractTypeExpression operate0(Operator operator, List<Expression> list) {
+            return toTypedExpression(Expressions.operate(tree(), operator, list));
         }
 
         @NotNull
-        RawTypeExpression operate(Operator operator) {
-            return new RawTypeExpression(Expressions.operate(tree(), operator));
+        default AbstractTypeExpression operate(Operator operator) {
+            return toTypedExpression(Expressions.operate(tree(), operator));
         }
 
         @NotNull
@@ -566,25 +542,21 @@ public class TypedExpressions {
         }
 
         @NotNull
-        StringExpression<?> asString() {
+        default StringExpression<?> asString() {
             return this;
         }
 
-        BasicExpression<?, ?> asBasic() {
+        default BasicExpression<?, ?> asBasic() {
             return this;
         }
 
-        NumberExpression<?, ?> asNumber() {
+        default NumberExpression<?, ?> asNumber() {
             return this;
         }
 
-        List<? extends TypedExpression<?, ?>> asTypeExpressions(List<?> list) {
+        default List<? extends TypedExpression<?, ?>> asTypeExpressions(List<?> list) {
             return TypeCastUtil.cast(list);
         }
 
-        @Override
-        public ExpressionTree tree() {
-            return expression;
-        }
     }
 }

@@ -1,8 +1,5 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.ColumnImpl;
-import io.github.nextentity.core.ExpressionTrees.ConstantImpl;
-import io.github.nextentity.core.ExpressionTrees.OperationImpl;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
@@ -41,7 +38,7 @@ public interface Expressions {
         } else if (value instanceof Path<?, ?>) {
             return of((Path<?, ?>) value);
         }
-        return new ConstantImpl<>(value);
+        return ExpressionTrees.newConstant(value);
     }
 
     static Column of(Path<?, ?> path) {
@@ -64,7 +61,7 @@ public interface Expressions {
         if (paths.getClass() != ArrayList.class) {
             paths = new ArrayList<>(paths);
         }
-        return new ColumnImpl<>(paths.toArray(String[]::new));
+        return ExpressionTrees.newColumn(paths.toArray(String[]::new));
     }
 
     static ExpressionTree operate(Expression l, Operator o, Expression r) {
@@ -95,7 +92,7 @@ public interface Expressions {
         for (Expression expression : r) {
             operands.add(expression.tree());
         }
-        return new OperationImpl<>(operands, o);
+        return ExpressionTrees.newOperation(operands, o);
     }
 
     static <T> List<PathExpression<T, ?>> toExpressionList(Collection<Path<T, ?>> paths) {

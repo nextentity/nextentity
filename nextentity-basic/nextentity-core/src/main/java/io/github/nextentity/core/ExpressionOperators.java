@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.TypedExpressions.RawTypeExpression;
+import io.github.nextentity.core.TypedExpressions.AbstractTypeExpression;
 import io.github.nextentity.core.api.ExpressionOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
@@ -48,11 +48,11 @@ public class ExpressionOperators {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     static class RawTypeExpressionOperator implements PathOperator, StringOperator, NumberOperator {
-        private final RawTypeExpression base;
+        private final AbstractTypeExpression base;
         private final Function<? super BasicExpression, ?> operatedCallback;
 
         RawTypeExpressionOperator(BasicExpression<?, ?> base, Function<? super BasicExpression<?, ?>, ?> operatedCallback) {
-            this.base = TypedExpressions.raw(base);
+            this.base = TypedExpressions.toTypedExpression(base);
             this.operatedCallback = TypeCastUtil.unsafeCast(operatedCallback);
         }
 
@@ -61,7 +61,7 @@ public class ExpressionOperators {
         }
 
         protected Object applyCallback(TypedExpression<?, ?> expression) {
-            return operatedCallback.apply(TypedExpressions.raw(expression));
+            return operatedCallback.apply(TypedExpressions.toTypedExpression(expression));
         }
 
         @Override
