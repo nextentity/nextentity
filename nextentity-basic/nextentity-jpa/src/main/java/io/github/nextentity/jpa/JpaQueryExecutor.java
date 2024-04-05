@@ -6,6 +6,7 @@ import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.From;
 import io.github.nextentity.core.api.From.FromSubQuery;
 import io.github.nextentity.core.api.Lists;
@@ -131,11 +132,12 @@ public class JpaQueryExecutor implements QueryExecutor {
     }
 
     private boolean hasSubQuery(Expression expression) {
-        if (expression instanceof QueryStructure) {
+        ExpressionTree tree = expression.tree();
+        if (tree instanceof QueryStructure) {
             return true;
         }
-        if (expression instanceof Operation) {
-            List<? extends Expression> expressions = ((Operation) expression).operands();
+        if (tree instanceof Operation) {
+            List<? extends Expression> expressions = ((Operation) tree).operands();
             return hasSubQuery(expressions);
         }
         return false;

@@ -182,7 +182,7 @@ final class ExpressionTrees {
     @lombok.Data
     @Accessors(fluent = true)
     static final class OperationImpl<T, R> implements Operation, TypedExpression<T, R> {
-        private final List<? extends Expression> operands;
+        private final List<? extends ExpressionTree> operands;
         private final Operator operator;
     }
 

@@ -1,15 +1,17 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
-import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
+import io.github.nextentity.core.api.Expression.Operation;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.From;
 import io.github.nextentity.core.api.From.Entity;
 import io.github.nextentity.core.api.From.FromSubQuery;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Order.SortOrder;
@@ -18,7 +20,6 @@ import io.github.nextentity.core.api.Selection.EntitySelected;
 import io.github.nextentity.core.api.Selection.MultiSelected;
 import io.github.nextentity.core.api.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.meta.AnyToOneAttribute;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.BasicAttribute;
@@ -191,7 +192,8 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         private void appendSelectAlias(Expression expression) {
-            if (selectIndex.get() != 0 || !(expression instanceof Column) || ((Column) expression).size() != 1) {
+            ExpressionTree tree = expression.tree();
+            if (selectIndex.get() != 0 || !(tree instanceof Column) || ((Column) tree).size() != 1) {
                 int index = selectIndex.getAndIncrement();
                 String alias = Integer.toString(index, Character.MAX_RADIX);
                 sql.append(" as _").append(alias);
@@ -309,19 +311,23 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         protected void appendExpression(List<Object> args, Expression expression) {
-            if (expression instanceof Constant) {
-                Constant constant = (Constant) expression;
+            appendExpression(args, expression.tree());
+        }
+
+        private void appendExpression(List<Object> args, ExpressionTree tree) {
+            if (tree instanceof Constant) {
+                Constant constant = (Constant) tree;
                 appendConstant(args, constant);
-            } else if (expression instanceof Column) {
-                Column column = (Column) expression;
+            } else if (tree instanceof Column) {
+                Column column = (Column) tree;
                 appendPaths(column);
-            } else if (expression instanceof Operation) {
-                Operation operation = (Operation) expression;
+            } else if (tree instanceof Operation) {
+                Operation operation = (Operation) tree;
                 appendOperation(args, operation);
-            } else if (expression instanceof QueryStructure) {
-                appendSubQuery(((QueryStructure) expression));
+            } else if (tree instanceof QueryStructure) {
+                appendSubQuery(((QueryStructure) tree));
             } else {
-                throw new UnsupportedOperationException("unknown type " + expression.getClass());
+                throw new UnsupportedOperationException("unknown type " + tree.getClass());
             }
         }
 
@@ -567,8 +573,9 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             return k.parent();
         }
 
-        Operator getOperator(Expression e) {
-            return e instanceof Operation ? ((Operation) e).operator() : null;
+        Operator getOperator(Expression expression) {
+            ExpressionTree tree = expression.tree();
+            return tree instanceof Operation ? ((Operation) tree).operator() : null;
         }
 
         protected StringBuilder appendTableAttribute(StringBuilder sb, Attribute attribute, Integer index) {

@@ -2,6 +2,7 @@ package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
@@ -44,9 +45,9 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
         QueryStructureImpl structure = queryStructure.copy();
         List<Column> list = new ArrayList<>(expressions.size());
         for (PathExpression<T, ?> expression : expressions) {
-            Expression expr = expression.tree();
-            if (expr instanceof Column) {
-                Column column = (Column) expr;
+            ExpressionTree tree = expression.tree();
+            if (tree instanceof Column) {
+                Column column = (Column) tree;
                 list.add(column);
             }
         }

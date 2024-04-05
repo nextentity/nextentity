@@ -1,9 +1,10 @@
 package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
-import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -35,20 +36,24 @@ public class ExpressionBuilder {
     }
 
     public jakarta.persistence.criteria.Expression<?> toExpression(Expression expression) {
-        if (expression instanceof Constant) {
-            Constant cv = (Constant) expression;
+        return toExpression(expression.tree());
+    }
+
+    public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionTree tree) {
+        if (tree instanceof Constant) {
+            Constant cv = (Constant) tree;
             return cb.literal(cv.value());
         }
-        if (expression instanceof Column) {
-            Column pv = (Column) expression;
+        if (tree instanceof Column) {
+            Column pv = (Column) tree;
             return getPath(pv);
         }
-        if (expression instanceof Operation) {
-            Operation ov = (Operation) expression;
+        if (tree instanceof Operation) {
+            Operation ov = (Operation) tree;
             Operator operator = ov.operator();
             jakarta.persistence.criteria.Expression<?> e0 = toExpression(ov.firstOperand());
-            Expression e1 = ov.secondOperand();
-            Expression e2 = ov.thirdOperand();
+            ExpressionTree tree1 = ov.secondOperand();
+            ExpressionTree tree2 = ov.thirdOperand();
             switch (operator) {
                 case NOT:
                     return cb.not(cast(e0));
@@ -61,8 +66,8 @@ public class ExpressionBuilder {
                     return cb.or(predicates);
                 }
                 case GT: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         if (cv.value() instanceof Number) {
                             return cb.gt(cast(e0), (Number) cv.value());
                         } else if (cv.value() instanceof Comparable) {
@@ -70,25 +75,25 @@ public class ExpressionBuilder {
                             return cb.greaterThan(cast(e0), value);
                         }
                     }
-                    return cb.gt(cast(e0), cast(toExpression(e1)));
+                    return cb.gt(cast(e0), cast(toExpression(tree1)));
                 }
                 case EQ: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         return cb.equal(cast(e0), cv.value());
                     }
-                    return cb.equal(e0, toExpression(e1));
+                    return cb.equal(e0, toExpression(tree1));
                 }
                 case NE: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         return cb.notEqual(e0, cv.value());
                     }
-                    return cb.notEqual(e0, toExpression(e1));
+                    return cb.notEqual(e0, toExpression(tree1));
                 }
                 case GE: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         if (cv.value() instanceof Number) {
                             return cb.ge(cast(e0), (Number) cv.value());
                         } else if (cv.value() instanceof Comparable) {
@@ -96,11 +101,11 @@ public class ExpressionBuilder {
                             return cb.greaterThanOrEqualTo(cast(e0), comparable);
                         }
                     }
-                    return cb.ge(cast(e0), cast(toExpression(e1)));
+                    return cb.ge(cast(e0), cast(toExpression(tree1)));
                 }
                 case LT: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         Object ve1 = cv.value();
                         if (ve1 instanceof Number) {
                             return cb.lt(cast(e0), (Number) ve1);
@@ -109,11 +114,11 @@ public class ExpressionBuilder {
                             return cb.lessThan(cast(e0), ve11);
                         }
                     }
-                    return cb.lt(cast(e0), cast(toExpression(e1)));
+                    return cb.lt(cast(e0), cast(toExpression(tree1)));
                 }
                 case LE: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         Object ve1 = cv.value();
                         if (ve1 instanceof Number) {
                             return cb.le(cast(e0), (Number) ve1);
@@ -122,21 +127,21 @@ public class ExpressionBuilder {
                             return cb.lessThanOrEqualTo(cast(e0), ve11);
                         }
                     }
-                    return cb.le(cast(e0), cast(toExpression(e1)));
+                    return cb.le(cast(e0), cast(toExpression(tree1)));
                 }
                 case LIKE: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof String) {
-                        String scv = (String) ((Constant) e1).value();
+                    if (tree1 instanceof Constant && ((Constant) tree1).value() instanceof String) {
+                        String scv = (String) ((Constant) tree1).value();
                         return cb.like(cast(e0), scv);
                     }
-                    return cb.like(cast(e0), cast(toExpression(e1)));
+                    return cb.like(cast(e0), cast(toExpression(tree1)));
                 }
                 case IS_NULL:
                     return cb.isNull(e0);
                 case IS_NOT_NULL:
                     return cb.isNotNull(e0);
                 case IN: {
-                    List<? extends Expression> operands = ov.operands();
+                    List<? extends ExpressionTree> operands = ov.operands();
                     if (operands.size() <= 1) {
                         return cb.literal(false);
                     } else {
@@ -154,20 +159,20 @@ public class ExpressionBuilder {
                     }
                 }
                 case BETWEEN: {
-                    if (e1 instanceof Constant
-                        && e2 instanceof Constant
-                        && ((Constant) e1).value() instanceof Comparable
-                        && ((Constant) e2).value() instanceof Comparable) {
-                        Constant cv2 = (Constant) e2;
-                        Constant cv1 = (Constant) e1;
+                    if (tree1 instanceof Constant
+                        && tree2 instanceof Constant
+                        && ((Constant) tree1).value() instanceof Comparable
+                        && ((Constant) tree2).value() instanceof Comparable) {
+                        Constant cv2 = (Constant) tree2;
+                        Constant cv1 = (Constant) tree1;
                         Comparable<Object> v1 = unsafeCast(cv1.value());
                         Comparable<Object> v2 = unsafeCast(cv2.value());
                         return cb.between(cast(e0), v1, v2);
                     }
                     return cb.between(
                             cast(e0),
-                            cast(toExpression(e1)),
-                            cast(toExpression(e2))
+                            cast(toExpression(tree1)),
+                            cast(toExpression(tree2))
                     );
                 }
                 case LOWER:
@@ -177,25 +182,25 @@ public class ExpressionBuilder {
                 case SUBSTRING: {
                     List<? extends Expression> operands = ov.operands();
                     if (operands.size() == 2) {
-                        if (e1 instanceof Constant
-                            && ((Constant) e1).value() instanceof Number) {
-                            Number number = (Number) ((Constant) e1).value();
+                        if (tree1 instanceof Constant
+                            && ((Constant) tree1).value() instanceof Number) {
+                            Number number = (Number) ((Constant) tree1).value();
                             return cb.substring(cast(e0), number.intValue());
                         }
-                        return cb.substring(cast(e0), cast(toExpression(e1)));
+                        return cb.substring(cast(e0), cast(toExpression(tree1)));
                     } else if (operands.size() == 3) {
-                        if (e1 instanceof Constant
-                            && ((Constant) e1).value() instanceof Number
-                            && e2 instanceof Constant
-                            && ((Constant) e2).value() instanceof Number) {
-                            Number n2 = (Number) ((Constant) e2).value();
-                            Number n1 = (Number) ((Constant) e1).value();
+                        if (tree1 instanceof Constant
+                            && ((Constant) tree1).value() instanceof Number
+                            && tree2 instanceof Constant
+                            && ((Constant) tree2).value() instanceof Number) {
+                            Number n2 = (Number) ((Constant) tree2).value();
+                            Number n1 = (Number) ((Constant) tree1).value();
                             return cb.substring(cast(e0), n1.intValue(), n2.intValue());
                         }
                         return cb.substring(
                                 cast(e0),
-                                cast(toExpression(e1)),
-                                cast(toExpression(e2))
+                                cast(toExpression(tree1)),
+                                cast(toExpression(tree2))
                         );
                     } else {
                         throw new IllegalArgumentException("argument length error");
@@ -206,54 +211,54 @@ public class ExpressionBuilder {
                 case LENGTH:
                     return cb.length(cast(e0));
                 case ADD: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Number number = (Number) ((Constant) e1).value();
+                    if (tree1 instanceof Constant && ((Constant) tree1).value() instanceof Number) {
+                        Number number = (Number) ((Constant) tree1).value();
                         return cb.sum(cast(e0), number);
                     }
-                    return cb.sum(cast(e0), cast(toExpression(e1)));
+                    return cb.sum(cast(e0), cast(toExpression(tree1)));
                 }
                 case SUBTRACT: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Number number = (Number) ((Constant) e1).value();
+                    if (tree1 instanceof Constant && ((Constant) tree1).value() instanceof Number) {
+                        Number number = (Number) ((Constant) tree1).value();
                         return cb.diff(cast(e0), number);
                     }
-                    return cb.diff(cast(e0), cast(toExpression(e1)));
+                    return cb.diff(cast(e0), cast(toExpression(tree1)));
                 }
                 case MULTIPLY: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Constant cv1 = (Constant) e1;
+                    if (tree1 instanceof Constant && ((Constant) tree1).value() instanceof Number) {
+                        Constant cv1 = (Constant) tree1;
                         return cb.prod(cast(e0), (Number) cv1.value());
                     }
-                    return cb.prod(cast(e0), cast(toExpression(e1)));
+                    return cb.prod(cast(e0), cast(toExpression(tree1)));
                 }
                 case DIVIDE: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Number number = (Number) ((Constant) e1).value();
+                    if (tree1 instanceof Constant && ((Constant) tree1).value() instanceof Number) {
+                        Number number = (Number) ((Constant) tree1).value();
                         return cb.quot(cast(e0), number);
                     }
-                    return cb.quot(cast(e0), cast(toExpression(e1)));
+                    return cb.quot(cast(e0), cast(toExpression(tree1)));
                 }
                 case MOD: {
-                    if (e1 instanceof Constant
-                        && ((Constant) e1).value() instanceof Integer) {
-                        Constant cv1 = (Constant) e1;
+                    if (tree1 instanceof Constant
+                        && ((Constant) tree1).value() instanceof Integer) {
+                        Constant cv1 = (Constant) tree1;
                         return cb.mod(cast(e0), ((Integer) cv1.value()));
                     }
-                    return cb.mod(cast(e0), cast(toExpression(e1)));
+                    return cb.mod(cast(e0), cast(toExpression(tree1)));
                 }
                 case NULLIF: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         return cb.nullif(cast(e0), ((Integer) cv.value()));
                     }
-                    return cb.nullif(e0, toExpression(e1));
+                    return cb.nullif(e0, toExpression(tree1));
                 }
                 case IF_NULL: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
+                    if (tree1 instanceof Constant) {
+                        Constant cv = (Constant) tree1;
                         return cb.coalesce(cast(e0), ((Integer) cv.value()));
                     }
-                    return cb.coalesce(e0, toExpression(e1));
+                    return cb.coalesce(e0, toExpression(tree1));
                 }
                 case MIN:
                     return cb.min(cast(e0));
@@ -269,7 +274,7 @@ public class ExpressionBuilder {
                     throw new UnsupportedOperationException(operator.name());
             }
         } else {
-            throw new UnsupportedOperationException("unknown expression type " + expression.getClass());
+            throw new UnsupportedOperationException("unknown expression type " + tree.getClass());
         }
     }
 

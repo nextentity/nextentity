@@ -3,6 +3,7 @@ package io.github.nextentity.core;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
@@ -40,17 +41,18 @@ public class ExpressionTypeResolver {
     }
 
     public Class<?> getExpressionType(Expression expression, Class<?> entityType) {
-        if (expression instanceof Column) {
-            return getColumnType((Column) expression, entityType);
+        ExpressionTree tree = expression.tree();
+        if (tree instanceof Column) {
+            return getColumnType((Column) tree, entityType);
         }
-        if (expression instanceof Constant) {
-            return getConstantType((Constant) expression);
+        if (tree instanceof Constant) {
+            return getConstantType((Constant) tree);
         }
-        if (expression instanceof Operation) {
-            return getOperationType((Operation) expression, entityType);
+        if (tree instanceof Operation) {
+            return getOperationType((Operation) tree, entityType);
         }
-        if (expression instanceof QueryStructure) {
-            return getSubQueryType((QueryStructure) expression);
+        if (tree instanceof QueryStructure) {
+            return getSubQueryType((QueryStructure) tree);
         }
         return Object.class;
     }

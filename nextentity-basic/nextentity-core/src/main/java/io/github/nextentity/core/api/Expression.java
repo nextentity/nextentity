@@ -32,24 +32,24 @@ public interface Expression extends Serializable {
     }
 
     non-sealed interface Operation extends ExpressionTree {
-        List<? extends Expression> operands();
+        List<? extends ExpressionTree> operands();
 
         Operator operator();
 
-        default Expression operand(int index) {
-            List<? extends Expression> args = operands();
+        default ExpressionTree operand(int index) {
+            List<? extends ExpressionTree> args = operands();
             return args == null || args.size() < (index + 1) ? null : args.get(index);
         }
 
-        default Expression firstOperand() {
+        default ExpressionTree firstOperand() {
             return operand(0);
         }
 
-        default Expression secondOperand() {
+        default ExpressionTree secondOperand() {
             return operand(1);
         }
 
-        default Expression thirdOperand() {
+        default ExpressionTree thirdOperand() {
             return operand(2);
         }
     }

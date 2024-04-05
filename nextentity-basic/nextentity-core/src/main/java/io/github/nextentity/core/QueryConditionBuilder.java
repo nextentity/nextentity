@@ -4,6 +4,7 @@ import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
 import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
@@ -154,11 +155,10 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return false;
     }
 
-    protected boolean requiredCountSubQuery(Expression expr) {
-        if (expr instanceof Column) {
-            return false;
-        } else if (expr instanceof Operation) {
-            Operation operation = (Operation) expr;
+    protected boolean requiredCountSubQuery(Expression expression) {
+        ExpressionTree tree = expression.tree();
+        if (tree instanceof Operation) {
+            Operation operation = (Operation) tree;
             if (operation.operator().isAgg()) {
                 return true;
             }
