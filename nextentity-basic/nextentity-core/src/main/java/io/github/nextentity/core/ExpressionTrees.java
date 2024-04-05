@@ -1,8 +1,8 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.From;
 import io.github.nextentity.core.api.From.Entity;
@@ -36,13 +36,13 @@ final class ExpressionTrees {
 
         From from;
 
-        Expression where = Expressions.TRUE;
+        ExpressionTree where = Expressions.TRUE;
 
-        List<? extends Expression> groupBy = Lists.of();
+        List<? extends ExpressionTree> groupBy = Lists.of();
 
         List<? extends Order<?>> orderBy = Lists.of();
 
-        Expression having = Expressions.TRUE;
+        ExpressionTree having = Expressions.TRUE;
 
         List<? extends Column> fetch = Lists.of();
 
@@ -81,12 +81,12 @@ final class ExpressionTrees {
         }
 
         @Override
-        public Expression where() {
+        public ExpressionTree where() {
             return where;
         }
 
         @Override
-        public List<? extends Expression> groupBy() {
+        public List<? extends ExpressionTree> groupBy() {
             return groupBy;
         }
 
@@ -96,7 +96,7 @@ final class ExpressionTrees {
         }
 
         @Override
-        public Expression having() {
+        public ExpressionTree having() {
             return having;
         }
 
@@ -131,7 +131,7 @@ final class ExpressionTrees {
     @lombok.Data
     @Accessors(fluent = true)
     static final class OrderImpl<T> implements Order<T> {
-        private final Expression expression;
+        private final ExpressionTree expression;
         private final SortOrder order;
     }
 
@@ -152,7 +152,7 @@ final class ExpressionTrees {
     @lombok.Data
     @Accessors(fluent = true)
     static final class MultiSelectedImpl implements MultiSelected {
-        private final List<? extends Expression> expressions;
+        private final List<? extends ExpressionTree> expressions;
         private final boolean distinct;
     }
 
@@ -160,7 +160,7 @@ final class ExpressionTrees {
     @Accessors(fluent = true)
     static final class SingleSelectedImpl implements SingleSelected {
         private final Class<?> resultType;
-        private final Expression expression;
+        private final ExpressionTree expression;
         private final boolean distinct;
     }
 

@@ -3,7 +3,6 @@ package io.github.nextentity.core;
 import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
 import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Expression.QueryStructure;
@@ -78,7 +77,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
 
     static void whereAnd(QueryStructureImpl structure, Expression expression) {
         if (Expressions.isNullOrTrue(structure.where)) {
-            structure.where = expression;
+            structure.where = expression.tree();
         } else {
             structure.where = Expressions.operate(structure.where, Operator.AND, expression);
         }
@@ -135,10 +134,10 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     boolean requiredCountSubQuery(QueryStructureImpl structure) {
         Selection select = structure.select();
         if (select instanceof SingleSelectedImpl) {
-            Expression column = ((SingleSelectedImpl) select).expression();
+            ExpressionTree column = ((SingleSelectedImpl) select).expression();
             return requiredCountSubQuery(column);
         } else if (select instanceof MultiSelected) {
-            List<? extends Expression> columns = ((MultiSelected) select).expressions();
+            List<? extends ExpressionTree> columns = ((MultiSelected) select).expressions();
             if (requiredCountSubQuery(columns)) {
                 return true;
             }
@@ -146,8 +145,8 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return requiredCountSubQuery(structure.having());
     }
 
-    protected boolean requiredCountSubQuery(List<? extends Expression> expressions) {
-        for (Expression expression : expressions) {
+    protected boolean requiredCountSubQuery(List<? extends ExpressionTree> expressions) {
+        for (ExpressionTree expression : expressions) {
             if (requiredCountSubQuery(expression)) {
                 return true;
             }
@@ -155,16 +154,15 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return false;
     }
 
-    protected boolean requiredCountSubQuery(Expression expression) {
-        ExpressionTree tree = expression.tree();
-        if (tree instanceof Operation) {
-            Operation operation = (Operation) tree;
+    protected boolean requiredCountSubQuery(ExpressionTree expression) {
+        if (expression instanceof Operation) {
+            Operation operation = (Operation) expression;
             if (operation.operator().isAgg()) {
                 return true;
             }
-            List<? extends Expression> args = operation.operands();
+            List<? extends ExpressionTree> args = operation.operands();
             if (args != null) {
-                for (Expression arg : args) {
+                for (ExpressionTree arg : args) {
                     if (requiredCountSubQuery(arg)) {
                         return true;
                     }

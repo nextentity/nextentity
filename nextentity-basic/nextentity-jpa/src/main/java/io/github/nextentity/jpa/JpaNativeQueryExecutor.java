@@ -1,10 +1,10 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.ExpressionTypeResolver;
+import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.Selection;
 import io.github.nextentity.core.api.Selection.EntitySelected;
@@ -135,7 +135,7 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
             if (1 != columnsCount) {
                 throw new IllegalStateException();
             }
-            Expression expression = ((SingleSelected) select).expression();
+            ExpressionTree expression = ((SingleSelected) select).expression();
             ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
             Class<?> type = typeResolver.getExpressionType(expression, structure.from().type());
             for (Object r : resultSet) {

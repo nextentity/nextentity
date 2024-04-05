@@ -151,7 +151,7 @@ public class JpaQueryExecutor implements QueryExecutor {
         return new EntityBuilder(root, cb, query, structure).getResultList();
     }
 
-    private List<Object[]> getObjectsList(@NotNull Expression.QueryStructure structure, List<? extends Expression> columns) {
+    private List<Object[]> getObjectsList(@NotNull Expression.QueryStructure structure, List<? extends ExpressionTree> columns) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<?> query = cb.createQuery(Object[].class);
         Root<?> root = query.from(structure.from().type());
@@ -160,13 +160,13 @@ public class JpaQueryExecutor implements QueryExecutor {
 
     class ObjectArrayBuilder extends Builder {
 
-        private final List<? extends Expression> selects;
+        private final List<? extends ExpressionTree> selects;
 
         public ObjectArrayBuilder(Root<?> root,
                                   CriteriaBuilder cb,
                                   CriteriaQuery<?> query,
                                   QueryStructure structure,
-                                  List<? extends Expression> selects) {
+                                  List<? extends ExpressionTree> selects) {
             super(root, cb, query, structure);
             this.selects = selects;
         }
@@ -229,20 +229,20 @@ public class JpaQueryExecutor implements QueryExecutor {
             }
         }
 
-        protected void setWhere(Expression where) {
+        protected void setWhere(ExpressionTree where) {
             if (!Expressions.isNullOrTrue(where)) {
                 query.where(toPredicate(where));
             }
         }
 
-        protected void setGroupBy(List<? extends Expression> groupBy) {
+        protected void setGroupBy(List<? extends ExpressionTree> groupBy) {
             if (groupBy != null && !groupBy.isEmpty()) {
                 List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream().map(this::toExpression).collect(Collectors.toList());
                 query.groupBy(grouping);
             }
         }
 
-        protected void setHaving(Expression having) {
+        protected void setHaving(ExpressionTree having) {
             if (!Expressions.isNullOrTrue(having)) {
                 query.having(toPredicate(having));
             }

@@ -2,12 +2,11 @@ package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression.Constant;
-import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Expression.Operation;
-import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Expression.QueryStructure;
+import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.Type;
@@ -40,19 +39,18 @@ public class ExpressionTypeResolver {
         this.metamodel = metamodel;
     }
 
-    public Class<?> getExpressionType(Expression expression, Class<?> entityType) {
-        ExpressionTree tree = expression.tree();
-        if (tree instanceof Column) {
-            return getColumnType((Column) tree, entityType);
+    public Class<?> getExpressionType(ExpressionTree expression, Class<?> entityType) {
+        if (expression instanceof Column) {
+            return getColumnType((Column) expression, entityType);
         }
-        if (tree instanceof Constant) {
-            return getConstantType((Constant) tree);
+        if (expression instanceof Constant) {
+            return getConstantType((Constant) expression);
         }
-        if (tree instanceof Operation) {
-            return getOperationType((Operation) tree, entityType);
+        if (expression instanceof Operation) {
+            return getOperationType((Operation) expression, entityType);
         }
-        if (tree instanceof QueryStructure) {
-            return getSubQueryType((QueryStructure) tree);
+        if (expression instanceof QueryStructure) {
+            return getSubQueryType((QueryStructure) expression);
         }
         return Object.class;
     }
@@ -115,7 +113,7 @@ public class ExpressionTypeResolver {
 
     private Class<?> getNumberType(Operation expression, Class<?> entityType) {
         int index = -1;
-        for (Expression operand : expression.operands()) {
+        for (ExpressionTree operand : expression.operands()) {
             Class<?> type = getExpressionType(operand, entityType);
             if (type.isPrimitive()) {
                 type = PrimitiveTypes.getWrapper(type);

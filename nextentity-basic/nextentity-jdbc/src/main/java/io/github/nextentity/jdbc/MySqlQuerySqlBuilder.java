@@ -75,7 +75,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
 
         protected final EntityType entity;
         protected final Metamodel mappers;
-        protected final List<Expression> selectedExpressions = new ArrayList<>();
+        protected final List<ExpressionTree> selectedExpressions = new ArrayList<>();
         protected final List<Attribute> selectedAttributes = new ArrayList<>();
 
         protected final String fromAlias;
@@ -183,7 +183,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                 sql.append(DISTINCT);
             }
             String join = NONE_DELIMITER;
-            for (Expression expression : selectedExpressions) {
+            for (ExpressionTree expression : selectedExpressions) {
                 sql.append(join);
                 appendExpression(expression);
                 appendSelectAlias(expression);
@@ -191,9 +191,8 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             }
         }
 
-        private void appendSelectAlias(Expression expression) {
-            ExpressionTree tree = expression.tree();
-            if (selectIndex.get() != 0 || !(tree instanceof Column) || ((Column) tree).size() != 1) {
+        private void appendSelectAlias(ExpressionTree expression) {
+            if (selectIndex.get() != 0 || !(expression instanceof Column) || ((Column) expression).size() != 1) {
                 int index = selectIndex.getAndIncrement();
                 String alias = Integer.toString(index, Character.MAX_RADIX);
                 sql.append(" as _").append(alias);
@@ -314,20 +313,20 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             appendExpression(args, expression.tree());
         }
 
-        private void appendExpression(List<Object> args, ExpressionTree tree) {
-            if (tree instanceof Constant) {
-                Constant constant = (Constant) tree;
+        private void appendExpression(List<Object> args, ExpressionTree expression) {
+            if (expression instanceof Constant) {
+                Constant constant = (Constant) expression;
                 appendConstant(args, constant);
-            } else if (tree instanceof Column) {
-                Column column = (Column) tree;
+            } else if (expression instanceof Column) {
+                Column column = (Column) expression;
                 appendPaths(column);
-            } else if (tree instanceof Operation) {
-                Operation operation = (Operation) tree;
+            } else if (expression instanceof Operation) {
+                Operation operation = (Operation) expression;
                 appendOperation(args, operation);
-            } else if (tree instanceof QueryStructure) {
-                appendSubQuery(((QueryStructure) tree));
+            } else if (expression instanceof QueryStructure) {
+                appendSubQuery(((QueryStructure) expression));
             } else {
-                throw new UnsupportedOperationException("unknown type " + tree.getClass());
+                throw new UnsupportedOperationException("unknown type " + expression.getClass());
             }
         }
 
@@ -344,7 +343,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
 
         private void appendOperation(List<Object> args, Operation operation) {
             Operator operator = operation.operator();
-            Expression leftOperand = operation.firstOperand();
+            ExpressionTree leftOperand = operation.firstOperand();
             Operator operator0 = getOperator(leftOperand);
             switch (operator) {
                 case NOT: {
@@ -381,9 +380,9 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                     } else {
                         appendExpression(args, leftOperand);
                     }
-                    List<? extends Expression> operands = operation.operands();
+                    List<? extends ExpressionTree> operands = operation.operands();
                     for (int i = 1; i < operands.size(); i++) {
-                        Expression value = operands.get(i);
+                        ExpressionTree value = operands.get(i);
                         appendOperator(operator);
                         Operator operator1 = getOperator(value);
                         if (operator1 != null && operator1.priority() >= operator.priority()) {
@@ -573,9 +572,8 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             return k.parent();
         }
 
-        Operator getOperator(Expression expression) {
-            ExpressionTree tree = expression.tree();
-            return tree instanceof Operation ? ((Operation) tree).operator() : null;
+        Operator getOperator(ExpressionTree expression) {
+            return expression instanceof Operation ? ((Operation) expression).operator() : null;
         }
 
         protected StringBuilder appendTableAttribute(StringBuilder sb, Attribute attribute, Integer index) {

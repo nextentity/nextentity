@@ -1,5 +1,6 @@
 package io.github.nextentity.core.api;
 
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.util.tuple.Tuple;
 
 import java.io.Serializable;
@@ -12,7 +13,7 @@ public interface Selection extends Serializable {
     boolean distinct();
 
     interface MultiSelected extends Selection {
-        List<? extends Expression> expressions();
+        List<? extends ExpressionTree> expressions();
 
         @Override
         default Class<?> resultType() {
@@ -22,7 +23,7 @@ public interface Selection extends Serializable {
     }
 
     interface SingleSelected extends Selection {
-        Expression expression();
+        ExpressionTree expression();
 
     }
 

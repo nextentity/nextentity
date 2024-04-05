@@ -11,11 +11,9 @@ import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.util.Paths;
 
-import javax.security.auth.login.CredentialNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,22 +23,19 @@ import java.util.stream.Collectors;
 @SuppressWarnings("PatternVariableCanBeUsed")
 public interface Expressions {
 
-    Expression TRUE = of(true);
+    ExpressionTree TRUE = of(true);
 
     static boolean isNullOrTrue(Expression expression) {
         return expression == null || Expressions.isTrue(expression);
     }
 
     static boolean isTrue(Expression expression) {
-        if (expression == null) {
-            return false;
-        }
         ExpressionTree tree = expression.tree();
         return tree instanceof Constant
                && Boolean.TRUE.equals(((Constant) tree).value());
     }
 
-    static Expression of(Object value) {
+    static ExpressionTree of(Object value) {
         if (value instanceof Expression) {
             return ((Expression) value).tree();
         } else if (value instanceof Path<?, ?>) {
@@ -72,15 +67,15 @@ public interface Expressions {
         return new ColumnImpl<>(paths.toArray(String[]::new));
     }
 
-    static Expression operate(Expression l, Operator o, Expression r) {
+    static ExpressionTree operate(Expression l, Operator o, Expression r) {
         return operate(l, o, Lists.of(r));
     }
 
-    static Expression operate(Expression l, Operator o) {
+    static ExpressionTree operate(Expression l, Operator o) {
         return operate(l, o, Lists.of());
     }
 
-    static Expression operate(Expression l, Operator o, List<? extends Expression> r) {
+    static ExpressionTree operate(Expression l, Operator o, List<? extends Expression> r) {
         ExpressionTree tree = l.tree();
         if (o == Operator.NOT
             && tree instanceof Operation

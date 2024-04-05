@@ -60,13 +60,13 @@ public interface Expression extends Serializable {
 
         From from();
 
-        Expression where();
+        ExpressionTree where();
 
-        List<? extends Expression> groupBy();
+        List<? extends ExpressionTree> groupBy();
 
         List<? extends Order<?>> orderBy();
 
-        Expression having();
+        ExpressionTree having();
 
         Integer offset();
 
