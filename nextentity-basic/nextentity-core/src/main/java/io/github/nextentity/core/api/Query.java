@@ -3,7 +3,6 @@ package io.github.nextentity.core.api;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
-import io.github.nextentity.core.api.Order.SortOrder;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
@@ -258,19 +257,19 @@ public interface Query {
 
     interface OrderBy<T, U> extends Collector<U>, RootProvider<T> {
 
-        Collector<U> orderBy(List<? extends Order<T>> orders);
+        Collector<U> orderBy(List<? extends Expression.Order<T>> orders);
 
-        Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder);
+        Collector<U> orderBy(Function<Root<T>, List<? extends Expression.Order<T>>> ordersBuilder);
 
-        default Collector<U> orderBy(Order<T> order) {
+        default Collector<U> orderBy(Expression.Order<T> order) {
             return orderBy(Lists.of(order));
         }
 
-        default Collector<U> orderBy(Order<T> p0, Order<T> p1) {
+        default Collector<U> orderBy(Expression.Order<T> p0, Expression.Order<T> p1) {
             return orderBy(Lists.of(p0, p1));
         }
 
-        default Collector<U> orderBy(Order<T> order1, Order<T> order2, Order<T> order3) {
+        default Collector<U> orderBy(Expression.Order<T> order1, Expression.Order<T> order2, Expression.Order<T> order3) {
             return orderBy(Lists.of(order1, order2, order3));
         }
 
@@ -303,7 +302,7 @@ public interface Query {
             return sort(SortOrder.DESC);
         }
 
-        OrderBy<T, U> sort(Order.SortOrder order);
+        OrderBy<T, U> sort(SortOrder order);
     }
 
     interface Collector<T> {
@@ -456,7 +455,6 @@ public interface Query {
 
         TypedExpression<T, U> getFirst(int offset);
     }
-
 
     @Data
     @Accessors(fluent = true)

@@ -1,8 +1,8 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.ExpressionTrees.OrderImpl;
-import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.OrOperator;
@@ -11,14 +11,13 @@ import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.Order.SortOrder;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.Root;
+import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.BasicExpression;
 import io.github.nextentity.core.api.TypedExpression.BooleanPathExpression;
@@ -138,7 +137,7 @@ public class TypedExpressions {
     }
 
     private static <T extends TypedExpression<?, ?>> T newTypedExpression(Expression expression) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression));
+        return TypeCastUtil.unsafeCast(new RawTypeExpression(expression.tree()));
     }
 
     static RawTypeExpression raw(TypedExpression<?, ?> expression) {
@@ -159,9 +158,9 @@ public class TypedExpressions {
 
         static final RawTypeExpression EMPTY = new RawTypeExpression(null);
 
-        final Expression expression;
+        final ExpressionTree expression;
 
-        public RawTypeExpression(Expression expression) {
+        public RawTypeExpression(ExpressionTree expression) {
             this.expression = expression;
         }
 
@@ -531,12 +530,12 @@ public class TypedExpressions {
         @NotNull
         private RawTypeExpression get0(PathExpression<?, ?> pathExpression) {
             Column expression = (Column) pathExpression.tree();
-            Expression expr = tree();
+            ExpressionTree expr = tree();
             return new RawTypeExpression(((Column) expr).get(expression));
         }
 
         RawTypeExpression not(TypedExpression<?, ?> expression) {
-            Expression operate = Expressions.operate(expression.tree(), NOT);
+            ExpressionTree operate = Expressions.operate(expression.tree(), NOT);
             return new RawTypeExpression(operate);
         }
 
@@ -585,7 +584,7 @@ public class TypedExpressions {
 
         @Override
         public ExpressionTree tree() {
-            return expression == null ? null : expression.tree();
+            return expression;
         }
     }
 }

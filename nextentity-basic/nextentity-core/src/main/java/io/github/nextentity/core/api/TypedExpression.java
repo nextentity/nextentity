@@ -1,7 +1,6 @@
 package io.github.nextentity.core.api;
 
 import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
-import io.github.nextentity.core.api.Order.SortOrder;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;

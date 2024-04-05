@@ -1,5 +1,7 @@
 package io.github.nextentity.core.api;
 
+import io.github.nextentity.core.util.tuple.Tuple;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -75,5 +77,60 @@ public interface Expression extends Serializable {
         LockModeType lockType();
 
         List<? extends Column> fetch();
+    }
+
+    interface From extends Serializable {
+
+        Class<?> type();
+
+        interface Entity extends From {
+
+        }
+
+        interface FromSubQuery extends From, QueryStructure {
+            @Override
+            default Class<?> type() {
+                return select().resultType();
+            }
+        }
+
+    }
+
+    @SuppressWarnings("unused")
+    interface Order<T> extends Serializable {
+
+        ExpressionTree expression();
+
+        SortOrder order();
+
+    }
+
+    interface Selection extends Serializable {
+
+        Class<?> resultType();
+
+        boolean distinct();
+
+        interface MultiSelected extends Selection {
+            List<? extends ExpressionTree> expressions();
+
+            @Override
+            default Class<?> resultType() {
+                return Tuple.class;
+            }
+
+        }
+
+        interface SingleSelected extends Selection {
+            ExpressionTree expression();
+
+        }
+
+        interface ProjectionSelected extends Selection {
+        }
+
+        interface EntitySelected extends Selection {
+        }
+
     }
 }

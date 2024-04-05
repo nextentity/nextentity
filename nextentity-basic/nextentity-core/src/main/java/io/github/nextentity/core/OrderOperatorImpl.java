@@ -1,8 +1,7 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.api.Expression.Order;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.Order.SortOrder;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
@@ -14,6 +13,7 @@ import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
+import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +32,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @NotNull
-    private List<Order<T>> asOrderList(Order.SortOrder sort) {
+    private List<Order<T>> asOrderList(SortOrder sort) {
         return orderByPaths
                 .stream()
                 .map(path -> Paths.get(path).sort(sort))
