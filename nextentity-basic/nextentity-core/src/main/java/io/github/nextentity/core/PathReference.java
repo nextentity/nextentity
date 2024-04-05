@@ -111,10 +111,12 @@ public class PathReference {
         expr = matcher.group(1);
         return Arrays.stream(expr.split(";"))
                 .filter(s -> !s.isBlank())
-                .map(s -> s.replace("L", "").replace("/", "."))
                 .map(s -> {
                     try {
-                        return Class.forName(s);
+                        String className = s
+                                .replaceFirst("L", "")
+                                .replace("/", ".");
+                        return Class.forName(className);
                     } catch (ClassNotFoundException e) {
                         throw Exceptions.sneakyThrow(e);
                     }
