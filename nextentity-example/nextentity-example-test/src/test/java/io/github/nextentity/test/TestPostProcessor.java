@@ -1,10 +1,10 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Query.QueryStructureBuilder;
-import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.QueryConditionBuilder;
 import io.github.nextentity.core.QueryStructurePostProcessor;
+import io.github.nextentity.core.api.Expression.QueryStructure;
+import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;

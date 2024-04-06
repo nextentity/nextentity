@@ -7,21 +7,20 @@ import io.github.nextentity.core.api.Expression.Constant;
 import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Expression.Operation;
 import io.github.nextentity.core.api.Operator;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.FetchParent;
-import jakarta.persistence.criteria.From;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import org.jetbrains.annotations.NotNull;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.FetchParent;
+import javax.persistence.criteria.From;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 public class JpaExpressionBuilder {
 
     protected final Root<?> root;
@@ -35,7 +34,7 @@ public class JpaExpressionBuilder {
         this.cb = cb;
     }
 
-    public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionTree expression) {
+    public javax.persistence.criteria.Expression<?> toExpression(ExpressionTree expression) {
         if (expression instanceof Constant) {
             Constant cv = (Constant) expression;
             return cb.literal(cv.value());
@@ -47,7 +46,7 @@ public class JpaExpressionBuilder {
         if (expression instanceof Operation) {
             Operation ov = (Operation) expression;
             Operator operator = ov.operator();
-            jakarta.persistence.criteria.Expression<?> e0 = toExpression(ov.firstOperand());
+            javax.persistence.criteria.Expression<?> e0 = toExpression(ov.firstOperand());
             ExpressionTree e1 = ov.secondOperand();
             ExpressionTree e2 = ov.thirdOperand();
             switch (operator) {
@@ -163,7 +162,7 @@ public class JpaExpressionBuilder {
         return toPredicate(toExpression(expression));
     }
 
-    private Predicate toPredicate(jakarta.persistence.criteria.Expression<?> result) {
+    private Predicate toPredicate(javax.persistence.criteria.Expression<?> result) {
         if (result instanceof Predicate) {
             return (Predicate) result;
         }
@@ -177,7 +176,7 @@ public class JpaExpressionBuilder {
                 .toArray(Predicate[]::new);
     }
 
-    public static <T> jakarta.persistence.criteria.Expression<T> cast(jakarta.persistence.criteria.Expression<?> expression) {
+    public static <T> javax.persistence.criteria.Expression<T> cast(javax.persistence.criteria.Expression<?> expression) {
         return unsafeCast(expression);
     }
 

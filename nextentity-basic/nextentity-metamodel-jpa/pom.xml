@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-basic</artifactId>
-    <version>1.0.2</version><!-- project version -->
+    <version>1.0.2-jdk8</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -20,8 +20,8 @@
     </dependency>
 
     <dependency>
-      <groupId>jakarta.persistence</groupId>
-      <artifactId>jakarta.persistence-api</artifactId>
+      <groupId>javax.persistence</groupId>
+      <artifactId>javax.persistence-api</artifactId>
       <scope>provided</scope>
     </dependency>
 

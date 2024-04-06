@@ -1,23 +1,23 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.TypedExpressions;
+import io.github.nextentity.core.Updaters.UpdaterImpl;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.Updaters.UpdaterImpl;
 import io.github.nextentity.core.reflect.ReflectUtil;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceUnitUtil;
-import jakarta.persistence.metamodel.EntityType;
-import jakarta.persistence.metamodel.SingularAttribute;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceUnitUtil;
+import javax.persistence.metamodel.EntityType;
+import javax.persistence.metamodel.SingularAttribute;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

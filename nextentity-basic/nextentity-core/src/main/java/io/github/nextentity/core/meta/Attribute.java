@@ -1,7 +1,7 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.exception.BeanReflectiveException;
 import io.github.nextentity.core.reflect.ReflectUtil;
 

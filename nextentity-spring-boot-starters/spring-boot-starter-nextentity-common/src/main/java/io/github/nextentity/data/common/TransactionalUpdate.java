@@ -1,6 +1,5 @@
 package io.github.nextentity.data.common;
 
-import io.github.nextentity.core.UpdaterImpl;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
 import org.jetbrains.annotations.NotNull;

@@ -253,7 +253,7 @@ public class TypedExpressions {
 
         @Override
         default Predicate between(TypedExpression l, TypedExpression r) {
-            return operate(BETWEEN, List.of(l, r));
+            return operate(BETWEEN, Lists.of(l, r));
         }
 
         @Override
@@ -504,7 +504,7 @@ public class TypedExpressions {
         }
 
         @NotNull
-        private AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
+        default AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
             Column expression = (Column) pathExpression.tree();
             ExpressionTree expr = tree();
             return toTypedExpression(((Column) expr).get(expression));

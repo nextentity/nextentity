@@ -19,7 +19,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
-@SuppressWarnings("PatternVariableCanBeUsed")
 public class Expressions {
 
     public static final ExpressionTree TRUE = of(true);
@@ -70,7 +69,7 @@ public class Expressions {
         if (paths.getClass() != ArrayList.class) {
             paths = new ArrayList<>(paths);
         }
-        return ExpressionTrees.newColumn(paths.toArray(String[]::new));
+        return ExpressionTrees.newColumn(paths.toArray(new String[0]));
     }
 
     public static ExpressionTree operate(Expression l, Operator o, Expression r) {

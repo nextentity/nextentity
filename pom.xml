@@ -6,7 +6,7 @@
 
   <groupId>io.github.nextentity</groupId>
   <artifactId>nextentity</artifactId>
-  <version>1.0.2</version><!-- project version -->
+  <version>1.0.2-jdk8</version><!-- project version -->
 
   <packaging>pom</packaging>
 
@@ -17,24 +17,24 @@
   </modules>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
 
     <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <lombok.version>1.18.30</lombok.version>
     <mysql.version>8.2.0</mysql.version>
-    <logback.version>1.4.12</logback.version>
-    <slf4j.version>2.0.1</slf4j.version>
-    <hibernate.version>6.1.7.Final</hibernate.version>
-    <persistence-api.version>3.1.0</persistence-api.version>
+    <logback.version>1.2.12</logback.version>
+    <slf4j.version>1.7.36</slf4j.version>
+    <spring.boot.version>2.7.18</spring.boot.version>
+    <hibernate.version>5.6.15.Final</hibernate.version>
+    <persistence-api.version>2.2</persistence-api.version>
     <annotations.version>23.0.0</annotations.version>
     <jackson.version>2.17.0</jackson.version>
-    <spring.boot.version>3.2.3</spring.boot.version>
-    <spring.version>6.1.5</spring.version>
+    <spring.version>5.3.33</spring.version>
     <junit.version>5.10.0</junit.version>
+    <hikaricp.version>4.0.3</hikaricp.version>
   </properties>
 
   <licenses>
@@ -80,12 +80,12 @@
         <version>${mysql.version}</version>
       </dependency>
       <dependency>
-        <groupId>jakarta.persistence</groupId>
-        <artifactId>jakarta.persistence-api</artifactId>
+        <groupId>javax.persistence</groupId>
+        <artifactId>javax.persistence-api</artifactId>
         <version>${persistence-api.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.hibernate.orm</groupId>
+        <groupId>org.hibernate</groupId>
         <artifactId>hibernate-core</artifactId>
         <version>${hibernate.version}</version>
       </dependency>
@@ -168,7 +168,6 @@
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
-          <release>${maven.compiler.release}</release>
           <annotationProcessorPaths>
             <annotationProcessorPath>
               <groupId>org.projectlombok</groupId>

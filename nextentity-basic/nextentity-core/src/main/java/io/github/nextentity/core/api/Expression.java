@@ -8,14 +8,14 @@ import java.util.List;
 public interface Expression extends Serializable {
     ExpressionTree tree();
 
-    sealed interface ExpressionTree extends Serializable, Expression permits Constant, Column, Operation, QueryStructure {
+    interface ExpressionTree extends Serializable, Expression {
         @Override
         default ExpressionTree tree() {
             return this;
         }
     }
 
-    non-sealed interface Column extends ExpressionTree, Iterable<String> {
+    interface Column extends ExpressionTree, Iterable<String> {
         int size();
 
         String get(int i);
@@ -29,11 +29,11 @@ public interface Expression extends Serializable {
         Column subLength(int len);
     }
 
-    non-sealed interface Constant extends ExpressionTree {
+    interface Constant extends ExpressionTree {
         Object value();
     }
 
-    non-sealed interface Operation extends ExpressionTree {
+    interface Operation extends ExpressionTree {
         List<? extends ExpressionTree> operands();
 
         Operator operator();
@@ -56,7 +56,7 @@ public interface Expression extends Serializable {
         }
     }
 
-    non-sealed interface QueryStructure extends ExpressionTree {
+    interface QueryStructure extends ExpressionTree {
 
         Selection select();
 

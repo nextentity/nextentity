@@ -61,9 +61,9 @@ class QueryBuilderTest {
         Assertions.assertEquals(first1.getId(), f2.getId());
         Assertions.assertEquals(first1.getRandomNumber(), f2.getRandomNumber());
         if (f2.getParentUser() != null) {
-            Assertions.assertEquals(first1.getParentUser().username(), f2.getParentUser().getUsername());
-            Assertions.assertEquals(first1.getParentUser().id(), f2.getParentUser().getId());
-            Assertions.assertEquals(first1.getParentUser().randomNumber(), f2.getParentUser().getRandomNumber());
+            Assertions.assertEquals(first1.getParentUser().getUsername(), f2.getParentUser().getUsername());
+            Assertions.assertEquals(first1.getParentUser().getId(), f2.getParentUser().getId());
+            Assertions.assertEquals(first1.getParentUser().getRandomNumber(), f2.getParentUser().getRandomNumber());
         }
 
         User first3 = userQuery.fetch(User::getParentUser).getFirst(offset);

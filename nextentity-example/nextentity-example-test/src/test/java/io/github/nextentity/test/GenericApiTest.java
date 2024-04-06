@@ -2,6 +2,7 @@ package io.github.nextentity.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
@@ -10,7 +11,6 @@ import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
-import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;
@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -318,7 +319,7 @@ public class GenericApiTest {
         User u = allUsers.stream()
                 .filter(it -> it.getId() == userId)
                 .findAny()
-                .orElseThrow();
+                .orElseThrow(() -> new NoSuchElementException("No value present"));
 
         if (user.getPid() != null) {
             User parentUser = user.getParentUser();
@@ -438,8 +439,8 @@ public class GenericApiTest {
                 .requireSingle();
 
         assertNotNull(aggregated);
-        assertEquals(getUserIdStream().min().orElseThrow(), aggregated.<Integer>get(0));
-        assertEquals(getUserIdStream().max().orElseThrow(), aggregated.<Integer>get(1));
+        assertEquals(getUserIdStream().min().orElseThrow(() -> new NoSuchElementException("No value present")), aggregated.<Integer>get(0));
+        assertEquals(getUserIdStream().max().orElseThrow(() -> new NoSuchElementException("No value present")), aggregated.<Integer>get(1));
         assertEquals(getUserIdStream().count(), aggregated.<Long>get(2));
         OptionalDouble average = getUserIdStream().average();
         assertEquals(average.orElse(0), aggregated.<Number>get(3).doubleValue(), 0.0001);

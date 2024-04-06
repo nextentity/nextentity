@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-spring-boot-starters</artifactId>
-    <version>1.0.2</version><!-- project version -->
+    <version>1.0.2-jdk8</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -32,7 +32,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hibernate.orm</groupId>
+      <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
     </dependency>
 

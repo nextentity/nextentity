@@ -22,7 +22,7 @@ public interface Predicates {
 
     @SafeVarargs
     static <T> Predicate<T> and(TypedExpression<T, Boolean> predicate,
-                                        TypedExpression<T, Boolean>... predicates) {
+                                TypedExpression<T, Boolean>... predicates) {
         List<Expression> metas = Arrays.stream(predicates)
                 .map(TypedExpression::tree)
                 .collect(Collectors.toList());
@@ -32,7 +32,7 @@ public interface Predicates {
 
     @SafeVarargs
     static <T> Predicate<T> or(TypedExpression<T, Boolean> predicate,
-                                       TypedExpression<T, Boolean>... predicates) {
+                               TypedExpression<T, Boolean>... predicates) {
         List<Expression> metas = Arrays.stream(predicates)
                 .map(TypedExpression::tree)
                 .collect(Collectors.toList());
@@ -42,7 +42,7 @@ public interface Predicates {
 
     @SafeVarargs
     static <T> Predicate<T> orNot(TypedExpression<T, Boolean> predicate,
-                                          TypedExpression<T, Boolean>... predicates) {
+                                  TypedExpression<T, Boolean>... predicates) {
         List<Expression> metas = Arrays.stream(predicates)
                 .map(TypedExpression::tree)
                 .collect(Collectors.toList());

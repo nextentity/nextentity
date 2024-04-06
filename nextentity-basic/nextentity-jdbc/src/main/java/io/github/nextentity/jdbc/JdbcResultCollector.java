@@ -53,7 +53,8 @@ public class JdbcResultCollector implements ResultCollector {
         Selection select = structure.select();
         int columnsCount = resultSet.getMetaData().getColumnCount();
 
-        if (select instanceof MultiSelected multiSelected) {
+        if (select instanceof MultiSelected) {
+            MultiSelected multiSelected = (MultiSelected) select;
             if (multiSelected.expressions().size() != columnsCount) {
                 throw new IllegalStateException();
             }
@@ -69,7 +70,6 @@ public class JdbcResultCollector implements ResultCollector {
             if (1 != columnsCount) {
                 throw new IllegalStateException();
             }
-            // noinspection PatternVariableCanBeUsed
             SingleSelected sc = (SingleSelected) select;
             while (resultSet.next()) {
                 T row = getSingleObj(resultSet, sc);

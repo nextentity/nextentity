@@ -7,7 +7,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-example</artifactId>
-    <version>1.0.2</version><!-- project version -->
+    <version>1.0.2-jdk8</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -30,8 +30,8 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>jakarta.persistence</groupId>
-      <artifactId>jakarta.persistence-api</artifactId>
+      <groupId>javax.persistence</groupId>
+      <artifactId>javax.persistence-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -66,7 +66,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hibernate.orm</groupId>
+      <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
     </dependency>
 
