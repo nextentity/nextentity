@@ -2,6 +2,8 @@ package io.github.nextentity.core.converter;
 
 import io.github.nextentity.core.api.Lists;
 
+import java.util.List;
+
 /**
  * @author HuangChengwei
  * @since 2024-03-25 11:37
@@ -16,6 +18,10 @@ public interface TypeConverter {
 
     static TypeConverter of(TypeConverter... converters) {
         return new TypeConverters(Lists.of(converters));
+    }
+
+    static TypeConverter of(List<TypeConverter> converters) {
+        return new TypeConverters(converters);
     }
 
 }

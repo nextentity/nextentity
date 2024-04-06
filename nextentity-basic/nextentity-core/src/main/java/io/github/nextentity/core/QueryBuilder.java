@@ -1,20 +1,20 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.QueryStructures.MultiSelectedImpl;
-import io.github.nextentity.core.QueryStructures.ProjectionSelectedImpl;
-import io.github.nextentity.core.QueryStructures.QueryStructureImpl;
-import io.github.nextentity.core.QueryStructures.SingleSelectedImpl;
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.ExpressionTrees.MultiSelectedImpl;
+import io.github.nextentity.core.ExpressionTrees.ProjectionSelectedImpl;
+import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
+import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.Fetch;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.QueryExecutor;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
+import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+@SuppressWarnings("PatternVariableCanBeUsed")
 public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Select<T>, Fetch<T> {
 
     public QueryBuilder(QueryExecutor queryExecutor, Class<T> type, QueryStructurePostProcessor structurePostProcessor) {
@@ -42,7 +44,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
         QueryStructureImpl structure = queryStructure.copy();
         List<Column> list = new ArrayList<>(expressions.size());
         for (PathExpression<T, ?> expression : expressions) {
-            Expression expr = expression.expression();
+            ExpressionTree expr = expression.tree();
             if (expr instanceof Column) {
                 Column column = (Column) expr;
                 list.add(column);
@@ -54,7 +56,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     @Override
     public Where0<T, Tuple> select(ExpressionsBuilder<T> selectBuilder) {
-        return select(selectBuilder.apply(RootImpl.of()));
+        return select(selectBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -86,7 +88,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     public <R> Where0<T, R> select(boolean distinct, Path<T, ? extends R> path) {
         QueryStructureImpl structure = queryStructure.copy();
-        Expression paths = Expressions.of(path);
+        ExpressionTree paths = Expressions.of(path);
         Class<?> type = getType(path);
         structure.select = new SingleSelectedImpl(type, paths, distinct);
         return update(structure);
@@ -151,7 +153,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     @Override
     public Where0<T, Tuple> selectDistinct(ExpressionsBuilder<T> selectBuilder) {
-        return selectDistinct(selectBuilder.apply(RootImpl.of()));
+        return selectDistinct(selectBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -205,8 +207,8 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     public Where0<T, Tuple> select(boolean distinct, List<? extends TypedExpression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<Expression> selectExpressions = expressions.stream()
-                .map(TypedExpression::expression)
+        List<ExpressionTree> selectExpressions = expressions.stream()
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
         structure.select = new MultiSelectedImpl(selectExpressions, distinct);
         return update(structure);
@@ -214,7 +216,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     public <R extends Tuple> Where0<T, R> selectTuple(boolean distinct, List<? extends Path<T, ?>> paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<Expression> selectExpressions = paths.stream()
+        List<ExpressionTree> selectExpressions = paths.stream()
                 .map(Expressions::of)
                 .collect(Collectors.toList());
         structure.select = new MultiSelectedImpl(selectExpressions, distinct);
@@ -315,8 +317,8 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
     @SafeVarargs
     public final <R extends Tuple> Where0<T, R> selectTupleByExpr(boolean distinct, TypedExpression<T, ?>... paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<Expression> selectExpressions = Arrays.stream(paths)
-                .map(TypedExpression::expression)
+        List<ExpressionTree> selectExpressions = Arrays.stream(paths)
+                .map(TypedExpression::tree)
                 .collect(Collectors.toList());
         structure.select = new MultiSelectedImpl(selectExpressions, distinct);
         return update(structure);
@@ -332,7 +334,7 @@ public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Sele
 
     public <R> Where0<T, R> select(boolean distinct, TypedExpression<T, R> paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        Expression expression = paths.expression();
+        ExpressionTree expression = paths.tree();
         Class<?> type = Object.class;
         structure.select = new SingleSelectedImpl(type, expression, distinct);
         return update(structure);

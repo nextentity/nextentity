@@ -11,7 +11,6 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -57,10 +56,11 @@ public class PathReference {
             int implMethodKind = serializedLambda.getImplMethodKind();
             if (implMethodKind != MethodHandleInfo.REF_invokeVirtual
                 && implMethodKind != MethodHandleInfo.REF_invokeInterface) {
-                throw new IllegalStateException("implMethodKind error: required "
-                                                + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeVirtual)
-                                                + " or " + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeInterface)
-                                                + " but is " + MethodHandleInfo.referenceKindToString(implMethodKind));
+                throw new IllegalStateException(
+                        "implMethodKind error: required "
+                        + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeVirtual)
+                        + " or " + MethodHandleInfo.referenceKindToString(MethodHandleInfo.REF_invokeInterface)
+                        + " but is " + MethodHandleInfo.referenceKindToString(implMethodKind));
             }
             return new PathReference(serializedLambda);
         } catch (ReflectiveOperationException e) {
@@ -111,17 +111,19 @@ public class PathReference {
         }
         expr = matcher.group(1);
         return Arrays.stream(expr.split(";"))
-                .filter(s -> !s.isEmpty())
-                .map(s -> s.replace("L", "").replace("/", "."))
+                .filter(s -> !s.isBlank())
                 .map(s -> {
                     try {
-                        return Class.forName(s);
+                        String className = s
+                                .replaceFirst("L", "")
+                                .replace("/", ".");
+                        return Class.forName(className);
                     } catch (ClassNotFoundException e) {
                         throw Exceptions.sneakyThrow(e);
                     }
                 })
                 .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("No value present"));
+                .orElseThrow();
     }
 
 }

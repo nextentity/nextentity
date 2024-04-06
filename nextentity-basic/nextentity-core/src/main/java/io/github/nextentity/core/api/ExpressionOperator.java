@@ -1,11 +1,8 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.api.Path.BooleanPath;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
-import io.github.nextentity.core.api.TypedExpression.ComparableExpression;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -45,51 +42,49 @@ public interface ExpressionOperator<T, U, B> {
 
     B isNotNull();
 
-    interface ComparableOperator<T, U extends Comparable<U>, B> extends ExpressionOperator<T, U, B> {
 
-        B ge(U value);
+    B ge(U value);
 
-        B gt(U value);
+    B gt(U value);
 
-        B le(U value);
+    B le(U value);
 
-        B lt(U value);
+    B lt(U value);
 
-        B geIfNotNull(U value);
+    B geIfNotNull(U value);
 
-        B gtIfNotNull(U value);
+    B gtIfNotNull(U value);
 
-        B leIfNotNull(U value);
+    B leIfNotNull(U value);
 
-        B ltIfNotNull(U value);
+    B ltIfNotNull(U value);
 
-        B between(U l, U r);
+    B between(U l, U r);
 
-        B notBetween(U l, U r);
+    B notBetween(U l, U r);
 
-        B ge(TypedExpression<T, U> expression);
+    B ge(TypedExpression<T, U> expression);
 
-        B gt(TypedExpression<T, U> expression);
+    B gt(TypedExpression<T, U> expression);
 
-        B le(TypedExpression<T, U> expression);
+    B le(TypedExpression<T, U> expression);
 
-        B lt(TypedExpression<T, U> expression);
+    B lt(TypedExpression<T, U> expression);
 
-        B between(TypedExpression<T, U> l, TypedExpression<T, U> r);
+    B between(TypedExpression<T, U> l, TypedExpression<T, U> r);
 
-        B between(TypedExpression<T, U> l, U r);
+    B between(TypedExpression<T, U> l, U r);
 
-        B between(U l, TypedExpression<T, U> r);
+    B between(U l, TypedExpression<T, U> r);
 
-        B notBetween(TypedExpression<T, U> l, TypedExpression<T, U> r);
+    B notBetween(TypedExpression<T, U> l, TypedExpression<T, U> r);
 
-        B notBetween(TypedExpression<T, U> l, U r);
+    B notBetween(TypedExpression<T, U> l, U r);
 
-        B notBetween(U l, TypedExpression<T, U> r);
+    B notBetween(U l, TypedExpression<T, U> r);
 
-    }
 
-    interface NumberOperator<T, U extends Number & Comparable<U>, B> extends ComparableOperator<T, U, B> {
+    interface NumberOperator<T, U extends Number, B> extends ExpressionOperator<T, U, B> {
         NumberOperator<T, U, B> add(U value);
 
         NumberOperator<T, U, B> subtract(U value);
@@ -100,15 +95,25 @@ public interface ExpressionOperator<T, U, B> {
 
         NumberOperator<T, U, B> mod(U value);
 
-        NumberOperator<T, U, B> addIfNotNull(U value);
+        default NumberOperator<T, U, B> addIfNotNull(U value) {
+            return value == null ? this : add(value);
+        }
 
-        NumberOperator<T, U, B> subtractIfNotNull(U value);
+        default NumberOperator<T, U, B> subtractIfNotNull(U value) {
+            return value == null ? this : subtract(value);
+        }
 
-        NumberOperator<T, U, B> multiplyIfNotNull(U value);
+        default NumberOperator<T, U, B> multiplyIfNotNull(U value) {
+            return value == null ? this : multiply(value);
+        }
 
-        NumberOperator<T, U, B> divideIfNotNull(U value);
+        default NumberOperator<T, U, B> divideIfNotNull(U value) {
+            return value == null ? this : divide(value);
+        }
 
-        NumberOperator<T, U, B> modIfNotNull(U value);
+        default NumberOperator<T, U, B> modIfNotNull(U value) {
+            return value == null ? this : mod(value);
+        }
 
         NumberOperator<T, U, B> add(TypedExpression<T, U> expression);
 
@@ -128,17 +133,11 @@ public interface ExpressionOperator<T, U, B> {
 
         StringOperator<T, B> get(StringPath<U> path);
 
-        <V extends Number & Comparable<V>> NumberOperator<T, V, B> get(NumberPath<U, V> path);
-
-        <V extends Comparable<V>> ComparableOperator<T, V, B> get(ComparablePath<U, V> path);
-
-        default ComparableOperator<T, Boolean, B> get(BooleanPath<U> path) {
-            return get((ComparablePath<U, Boolean>) path);
-        }
+        <V extends Number> NumberOperator<T, V, B> get(NumberPath<U, V> path);
 
     }
 
-    interface StringOperator<T, B> extends ComparableOperator<T, String, B> {
+    interface StringOperator<T, B> extends ExpressionOperator<T, String, B> {
 
         B like(String value);
 
@@ -211,57 +210,38 @@ public interface ExpressionOperator<T, U, B> {
 
     }
 
-    interface AndOperator<T> extends ComparableExpression<T, Boolean> {
+    interface AndOperator<T> extends TypedExpression<T, Boolean> {
 
-        <R> PathOperator<T, R, ExpressionOperator.AndOperator<T>> and(Path<T, R> path);
+        <R> PathOperator<T, R, AndOperator<T>> and(Path<T, R> path);
 
-        <R extends Comparable<R>> ComparableOperator<T, R, ExpressionOperator.AndOperator<T>> and(ComparablePath<T, R> path);
+        <R extends Number> NumberOperator<T, R, AndOperator<T>> and(NumberPath<T, R> path);
 
-        <R extends Number & Comparable<R>> NumberOperator<T, R, ExpressionOperator.AndOperator<T>> and(NumberPath<T, R> path);
+        StringOperator<T, AndOperator<T>> and(StringPath<T> path);
 
-        ExpressionOperator.AndOperator<T> and(BooleanPath<T> path);
+        AndOperator<T> and(TypedExpression<T, Boolean> expression);
 
-        StringOperator<T, ExpressionOperator.AndOperator<T>> and(StringPath<T> path);
+        AndOperator<T> andIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        ExpressionOperator.AndOperator<T> and(TypedExpression<T, Boolean> expression);
-
-        default ExpressionOperator.AndOperator<T> andIf(boolean predicate, PredicateBuilder<T> predicateBuilder) {
-            if (predicate) {
-                return and(predicateBuilder.build(root()));
-            }
-            return this;
-        }
-
-        ExpressionOperator.AndOperator<T> and(List<? extends TypedExpression<T, Boolean>> expressions);
-
-        Predicate<T> then();
+        AndOperator<T> and(List<? extends TypedExpression<T, Boolean>> expressions);
 
     }
 
-    interface OrOperator<T> extends ComparableExpression<T, Boolean> {
+    interface OrOperator<T> extends TypedExpression<T, Boolean> {
 
-        <N> PathOperator<T, N, ExpressionOperator.OrOperator<T>> or(Path<T, N> path);
+        <N> PathOperator<T, N, OrOperator<T>> or(Path<T, N> path);
 
-        <N extends Number & Comparable<N>> NumberOperator<T, N, ExpressionOperator.OrOperator<T>> or(NumberPath<T, N> path);
+        <N extends Number> NumberOperator<T, N, OrOperator<T>> or(NumberPath<T, N> path);
 
-        <N extends Comparable<N>> ComparableOperator<T, N, ExpressionOperator.OrOperator<T>> or(ComparablePath<T, N> path);
+        StringOperator<T, ? extends OrOperator<T>> or(StringPath<T> path);
 
-        StringOperator<T, ? extends ExpressionOperator.OrOperator<T>> or(StringPath<T> path);
+        OrOperator<T> or(TypedExpression<T, Boolean> predicate);
 
-        ExpressionOperator.OrOperator<T> or(BooleanPath<T> path);
+        OrOperator<T> orIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        ExpressionOperator.OrOperator<T> or(TypedExpression<T, Boolean> predicate);
+        OrOperator<T> or(List<? extends TypedExpression<T, Boolean>> expressions);
 
-        default ExpressionOperator.OrOperator<T> orIf(boolean predicate, PredicateBuilder<T> predicateBuilder) {
-            if (predicate) {
-                return or(predicateBuilder.build(root()));
-            }
-            return this;
-        }
+    }
 
-        ExpressionOperator.OrOperator<T> or(List<? extends TypedExpression<T, Boolean>> expressions);
-
-        Predicate<T> then();
-
+    interface PredicateOperator<T> extends AndOperator<T>, OrOperator<T> {
     }
 }

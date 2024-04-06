@@ -1,47 +1,59 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Constant;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.From;
-import io.github.nextentity.core.api.From.Entity;
+import io.github.nextentity.core.TypedExpressions.AbstractTypeExpression;
+import io.github.nextentity.core.api.Expression.Column;
+import io.github.nextentity.core.api.Expression.Constant;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
+import io.github.nextentity.core.api.Expression.From.Entity;
+import io.github.nextentity.core.api.Expression.From.FromSubQuery;
+import io.github.nextentity.core.api.Expression.Operation;
+import io.github.nextentity.core.api.Expression.Order;
+import io.github.nextentity.core.api.Expression.Selection.EntitySelected;
+import io.github.nextentity.core.api.Expression.Selection.MultiSelected;
+import io.github.nextentity.core.api.Expression.Selection.ProjectionSelected;
+import io.github.nextentity.core.api.Expression.Selection.SingleSelected;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operation;
 import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.QueryStructure;
-import io.github.nextentity.core.api.Selection;
-import io.github.nextentity.core.api.Selection.EntitySelected;
-import io.github.nextentity.core.api.Selection.MultiSelected;
-import io.github.nextentity.core.api.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.Selection.SingleSelected;
 import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.api.SubQuery;
+import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Exceptions;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.List;
 
-final class QueryStructures {
+final class ExpressionTrees {
+
+    public static ExpressionTree newConstant(Object value) {
+        return new ConstantImpl(value);
+    }
+
+    public static Column newColumn(String[] path) {
+        return new ColumnImpl(path);
+    }
+
+    public static ExpressionTree newOperation(List<ExpressionTree> operands, Operator operator) {
+        return new ExpressionTrees.OperationImpl(operands, operator);
+    }
 
     @EqualsAndHashCode
-    static class QueryStructureImpl implements QueryStructure, Cloneable {
+    static class QueryStructureImpl implements FromSubQuery, Cloneable {
 
         Selection select;
 
         From from;
 
-        Expression where = Expressions.TRUE;
+        ExpressionTree where = Expressions.TRUE;
 
-        List<? extends Expression> groupBy = Lists.of();
+        List<? extends ExpressionTree> groupBy = Lists.of();
 
         List<? extends Order<?>> orderBy = Lists.of();
 
-        Expression having = Expressions.TRUE;
+        ExpressionTree having = Expressions.TRUE;
 
         List<? extends Column> fetch = Lists.of();
 
@@ -80,12 +92,12 @@ final class QueryStructures {
         }
 
         @Override
-        public Expression where() {
+        public ExpressionTree where() {
             return where;
         }
 
         @Override
-        public List<? extends Expression> groupBy() {
+        public List<? extends ExpressionTree> groupBy() {
             return groupBy;
         }
 
@@ -95,7 +107,7 @@ final class QueryStructures {
         }
 
         @Override
-        public Expression having() {
+        public ExpressionTree having() {
             return having;
         }
 
@@ -129,14 +141,8 @@ final class QueryStructures {
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class FromSubQuery implements From.FromSubQuery {
-        private final QueryStructure queryStructure;
-    }
-
-    @lombok.Data
-    @Accessors(fluent = true)
     static final class OrderImpl<T> implements Order<T> {
-        private final Expression expression;
+        private final ExpressionTree expression;
         private final SortOrder order;
     }
 
@@ -157,7 +163,7 @@ final class QueryStructures {
     @lombok.Data
     @Accessors(fluent = true)
     static final class MultiSelectedImpl implements MultiSelected {
-        private final List<? extends Expression> expressions;
+        private final List<? extends ExpressionTree> expressions;
         private final boolean distinct;
     }
 
@@ -165,7 +171,7 @@ final class QueryStructures {
     @Accessors(fluent = true)
     static final class SingleSelectedImpl implements SingleSelected {
         private final Class<?> resultType;
-        private final Expression expression;
+        private final ExpressionTree expression;
         private final boolean distinct;
     }
 
@@ -180,20 +186,20 @@ final class QueryStructures {
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class ConstantImpl implements Constant {
+    private static final class ConstantImpl implements Constant, AbstractTypeExpression {
         private final Object value;
     }
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class OperationImpl implements Operation {
-        private final List<? extends Expression> operands;
+    private static final class OperationImpl implements Operation, AbstractTypeExpression {
+        private final List<? extends ExpressionTree> operands;
         private final Operator operator;
     }
 
     @lombok.Data
     @Accessors(fluent = true)
-    static final class ColumnImpl implements Column {
+    private static final class ColumnImpl implements Column, AbstractTypeExpression {
         private final String[] paths;
 
         @Override
@@ -216,10 +222,26 @@ final class QueryStructures {
 
         @Override
         public Column parent() {
-            if (size() <= 1) {
+            return sub(size() - 1);
+        }
+
+        @Override
+        public Column subLength(int len) {
+            if (len == size()) {
+                return this;
+            }
+            if (len > size()) {
+                throw new IndexOutOfBoundsException();
+            }
+            return sub(len);
+        }
+
+        @Nullable
+        private Column sub(int len) {
+            if (len <= 0) {
                 return null;
             }
-            String[] strings = new String[size() - 1];
+            String[] strings = new String[len];
             System.arraycopy(paths, 0, strings, 0, strings.length);
             return new ColumnImpl(strings);
         }
@@ -244,12 +266,6 @@ final class QueryStructures {
         }
     }
 
-    @lombok.Data
-    @Accessors(fluent = true)
-    static class SubQueryExpr implements SubQuery {
-        private final QueryStructure queryStructure;
-    }
-
-    private QueryStructures() {
+    private ExpressionTrees() {
     }
 }

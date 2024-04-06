@@ -3,6 +3,7 @@ package io.github.nextentity.data.jdbc;
 import io.github.nextentity.core.QueryStructurePostProcessor;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
+import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.data.common.AccessTypeUtil;
@@ -29,6 +30,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Configuration
 public class JdbcAccessConfiguration {
@@ -66,8 +68,8 @@ public class JdbcAccessConfiguration {
     }
 
     @Bean
-    protected ResultCollector jdbcResultCollector() {
-        return new JdbcResultCollector();
+    protected ResultCollector jdbcResultCollector(List<TypeConverter> typeConverters) {
+        return new JdbcResultCollector(TypeConverter.of(typeConverters));
     }
 
     @Bean
@@ -101,6 +103,12 @@ public class JdbcAccessConfiguration {
     @ConditionalOnMissingBean
     protected Metamodel jpaMetamodel() {
         return JpaMetamodel.of();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    protected TypeConverter typeConverter() {
+        return TypeConverter.ofDefault();
     }
 
 }

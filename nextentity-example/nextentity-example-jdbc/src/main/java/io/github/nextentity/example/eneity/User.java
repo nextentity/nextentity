@@ -1,8 +1,8 @@
 package io.github.nextentity.example.eneity;
 
-import io.github.nextentity.core.api.TypedExpression.ComparablePathExpression;
 import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
 import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
+import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,7 +31,7 @@ public class User {
 
     public static StringPathExpression<User> Username = get(User::getUsername);
     public static EntityPathExpression<User, User> ParentUser = get(User::getParentUser);
-    public static ComparablePathExpression<User, Gender> Gender = get(User::getGender);
+    public static PathExpression<User, Gender> Gender = get(User::getGender);
     public static NumberPathExpression<User, Long> Pid = get(User::getPid);
 
     @Id

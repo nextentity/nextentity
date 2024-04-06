@@ -1,21 +1,23 @@
 package io.github.nextentity.core.api;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 public interface Updater<T> {
 
-    T insert(T entity);
+    T insert(@NotNull T entity);
 
-    List<T> insert(List<T> entities);
+    List<T> insert(@NotNull Iterable<T> entities);
 
-    List<T> update(List<T> entities);
+    List<T> update(@NotNull Iterable<T> entities);
 
-    T update(T entity);
+    T update(@NotNull T entity);
 
-    void delete(Iterable<T> entities);
+    void delete(@NotNull Iterable<T> entities);
 
-    void delete(T entity);
+    void delete(@NotNull T entity);
 
-    T updateNonNullColumn(T entity);
+    T updateNonNullColumn(@NotNull T entity);
 
 }

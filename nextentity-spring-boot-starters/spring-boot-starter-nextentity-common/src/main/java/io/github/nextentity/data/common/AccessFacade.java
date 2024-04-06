@@ -3,17 +3,16 @@ package io.github.nextentity.data.common;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.api.Column;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.ExpressionOperator.ComparableOperator;
+import io.github.nextentity.core.Updaters;
+import io.github.nextentity.core.api.Expression.Order;
 import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
 import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
+import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
 import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.Order;
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query;
@@ -29,6 +28,7 @@ import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.TypedExpression;
+import io.github.nextentity.core.api.TypedExpression.BasicExpression;
 import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
@@ -44,6 +44,7 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,44 +55,40 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class AccessFacade<T, ID> {
+public class AccessFacade<T, ID> implements Access<T, ID> {
 
     protected Select<T> select;
-    protected Column idColumn;
     protected Updater<T> updater;
-    protected Attribute idAttribute;
+
+    protected BasicExpression<T, ID> id;
+    protected Function<T, ID> getId;
 
     protected void init(Class<T> entityType, Query query, Update update, Metamodel metamodel) {
         this.select = query.from(entityType);
-        this.updater = update.getUpdater(entityType);
-        this.idAttribute = metamodel.getEntity(entityType).id();
-        this.idColumn = Expressions.column(idAttribute.name());
+        this.updater = Updaters.create(update, entityType);
+        Attribute idAttribute = metamodel.getEntity(entityType).id();
+        this.id = TypedExpressions.ofBasic(Expressions.column(idAttribute.name()));
+        this.getId = t -> TypeCastUtil.unsafeCast(idAttribute.get(t));
     }
 
     public T get(ID id) {
-        Expression operate = Expressions.operate(idColumn, Operator.EQ, Expressions.of(id));
-        TypedExpression<T, Boolean> predicate = TypedExpressions.of(operate);
-        return where(predicate).getSingle();
+        return where(this.id.eq(id)).getSingle();
     }
 
     public List<T> getAll(Iterable<? extends ID> ids) {
-        List<Expression> idsExpression = StreamSupport.stream(ids.spliterator(), false)
-                .map(Expressions::of).collect(Collectors.toList());
-        if (idsExpression.isEmpty()) {
+        Collection<? extends ID> idList = ids instanceof Collection<?>
+                ? (Collection<? extends ID>) ids
+                : StreamSupport.stream(ids.spliterator(), false).collect(Collectors.toList());
+        if (idList.isEmpty()) {
             return Collections.emptyList();
         }
-        Expression operate = Expressions.operate(idColumn, Operator.IN, idsExpression);
-        TypedExpression<T, Boolean> predicate = TypedExpressions.of(operate);
+        PredicateOperator<T> predicate = id.in(idList);
         return where(predicate).getList();
     }
 
     public Map<ID, T> getMap(Iterable<? extends ID> ids) {
         List<T> entities = getAll(ids);
-        return entities.stream()
-                .collect(Collectors.toMap(
-                        it -> TypeCastUtil.unsafeCast(idAttribute.get(it)),
-                        Function.identity()
-                ));
+        return entities.stream().collect(Collectors.toMap(getId, Function.identity()));
     }
 
     public <R> Where<T, R> select(Class<R> projectionType) {
@@ -326,11 +323,7 @@ public class AccessFacade<T, ID> {
         return select.where(path);
     }
 
-    public <N extends Number & Comparable<N>> NumberOperator<T, N, ? extends Where<T, T>> where(NumberPath<T, N> path) {
-        return select.where(path);
-    }
-
-    public <N extends Comparable<N>> ComparableOperator<T, N, ? extends Where<T, T>> where(ComparablePath<T, N> path) {
+    public <N extends Number> NumberOperator<T, N, ? extends Where<T, T>> where(NumberPath<T, N> path) {
         return select.where(path);
     }
 
@@ -478,6 +471,7 @@ public class AccessFacade<T, ID> {
         return select.getList(lockModeType);
     }
 
+    @Override
     public <R> R slice(Sliceable<T, R> sliceable) {
         return select.slice(sliceable);
     }
@@ -490,6 +484,11 @@ public class AccessFacade<T, ID> {
         return select.asSubQuery();
     }
 
+    @Override
+    public Page<T> getPage(Pageable pageable) {
+        return select.getPage(pageable);
+    }
+
     public QueryStructureBuilder buildMetadata() {
         return select.buildMetadata();
     }
@@ -498,31 +497,31 @@ public class AccessFacade<T, ID> {
         return select.root();
     }
 
-    public T insert(T entity) {
+    public T insert(@NotNull T entity) {
         return updater.insert(entity);
     }
 
-    public List<T> insert(List<T> entities) {
+    public List<T> insert(@NotNull Iterable<T> entities) {
         return updater.insert(entities);
     }
 
-    public List<T> update(List<T> entities) {
+    public List<T> update(@NotNull Iterable<T> entities) {
         return updater.update(entities);
     }
 
-    public T update(T entity) {
+    public T update(@NotNull T entity) {
         return updater.update(entity);
     }
 
-    public void delete(Iterable<T> entities) {
+    public void delete(@NotNull Iterable<T> entities) {
         updater.delete(entities);
     }
 
-    public void delete(T entity) {
+    public void delete(@NotNull T entity) {
         updater.delete(entity);
     }
 
-    public T updateNonNullColumn(T entity) {
+    public T updateNonNullColumn(@NotNull T entity) {
         return updater.updateNonNullColumn(entity);
     }
 }

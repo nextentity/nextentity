@@ -1,6 +1,7 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.TypedExpression;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class TypeCastUtil {
         return unsafeCast(expression);
     }
 
-    public static <T> RootImpl<T> cast(RootImpl<?> builder) {
+    public static <T> Root<T> cast(Root<?> builder) {
         return unsafeCast(builder);
     }
 

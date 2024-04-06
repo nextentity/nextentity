@@ -1,9 +1,8 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.core.Updaters;
 import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.jdbc.JdbcUpdate;
-import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
 import io.github.nextentity.jdbc.MysqlUpdateSqlBuilder;
 import io.github.nextentity.jpa.JpaQueryExecutor;
 import io.github.nextentity.jpa.JpaUpdate;
@@ -35,13 +34,12 @@ public class UserUpdaterProvider implements ArgumentsProvider {
                 SingleConnectionProvider.CONNECTION_PROVIDER,
                 JpaMetamodel.of()
         );
-        return jdbcUpdate.getUpdater(User.class);
+        return Updaters.create(jdbcUpdate, User.class);
     }
 
     private static Updater<User> jpa() {
         EntityManager em = EntityManagers.getEntityManager();
-        MySqlQuerySqlBuilder sqlBuilder = new MySqlQuerySqlBuilder();
-        JpaQueryExecutor jpaQueryExecutor = new JpaQueryExecutor(em, JpaMetamodel.of(), sqlBuilder, TypeConverter.ofDefault());
-        return new JpaUpdate(em, jpaQueryExecutor).getUpdater(User.class);
+        JpaQueryExecutor jpaQueryExecutor = new JpaQueryExecutor(em, JpaMetamodel.of(), UserQueryProvider.getJpaQueryExecutor());
+        return Updaters.create(new JpaUpdate(em, jpaQueryExecutor), User.class);
     }
 }

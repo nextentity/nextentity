@@ -1,7 +1,7 @@
 package io.github.nextentity.core.meta;
 
+import io.github.nextentity.core.api.Expression.Column;
 import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.api.Column;
 import io.github.nextentity.core.exception.BeanReflectiveException;
 import io.github.nextentity.core.reflect.ReflectUtil;
 
@@ -66,6 +66,7 @@ public interface Attribute extends Type {
         ArrayDeque<Attribute> attributes = new ArrayDeque<>(2);
         while (true) {
             if (cur instanceof Attribute) {
+                // noinspection PatternVariableCanBeUsed
                 Attribute attribute = (Attribute) cur;
                 attributes.addFirst(attribute);
                 cur = attribute.declaringType();
@@ -73,6 +74,7 @@ public interface Attribute extends Type {
                 break;
             }
         }
+        // noinspection Java9CollectionFactory
         return Collections.unmodifiableList(new ArrayList<>(attributes));
     }
 

@@ -1,9 +1,15 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.QueryExecutor;
+import org.jetbrains.annotations.NotNull;
 
-public interface AbstractQueryExecutor extends QueryExecutor {
+import java.util.List;
+
+public interface QueryExecutor {
+
+    <T> List<T> getList(@NotNull Expression.QueryStructure queryStructure);
+
     default Query createQuery() {
         return createQuery(QueryStructurePostProcessor.NONE);
     }

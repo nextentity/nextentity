@@ -2,6 +2,7 @@ package io.github.nextentity.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.nextentity.core.Tuples;
+import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
@@ -9,11 +10,11 @@ import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
-import io.github.nextentity.core.api.QueryStructure;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.Exceptions;
@@ -49,7 +50,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -62,11 +62,7 @@ import static io.github.nextentity.core.util.Paths.get;
 import static io.github.nextentity.core.util.Predicates.and;
 import static io.github.nextentity.core.util.Predicates.not;
 import static io.github.nextentity.core.util.Predicates.or;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 public class GenericApiTest {
@@ -94,7 +90,7 @@ public class GenericApiTest {
                         metamodel);
                 resetData(connection, jdbcUpdate, query);
                 allUsers = queryAllUsers(query);
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 throw new UncheckedSQLException(e);
             }
         });
@@ -322,7 +318,7 @@ public class GenericApiTest {
         User u = allUsers.stream()
                 .filter(it -> it.getId() == userId)
                 .findAny()
-                .orElseThrow(() -> new NoSuchElementException("No value present"));
+                .orElseThrow();
 
         if (user.getPid() != null) {
             User parentUser = user.getParentUser();
@@ -442,8 +438,8 @@ public class GenericApiTest {
                 .requireSingle();
 
         assertNotNull(aggregated);
-        assertEquals(getUserIdStream().min().orElseThrow(() -> new NoSuchElementException("No value present")), aggregated.<Integer>get(0));
-        assertEquals(getUserIdStream().max().orElseThrow(() -> new NoSuchElementException("No value present")), aggregated.<Integer>get(1));
+        assertEquals(getUserIdStream().min().orElseThrow(), aggregated.<Integer>get(0));
+        assertEquals(getUserIdStream().max().orElseThrow(), aggregated.<Integer>get(1));
         assertEquals(getUserIdStream().count(), aggregated.<Long>get(2));
         OptionalDouble average = getUserIdStream().average();
         assertEquals(average.orElse(0), aggregated.<Number>get(3).doubleValue(), 0.0001);
@@ -695,9 +691,8 @@ public class GenericApiTest {
         assertEquals(qList, fList);
 
         qList = userQuery.where(
-                        get(User::getUsername).eq("Jeremy Keynes")
-                                .or(get(User::getId).eq(3))
-                                .then().not()
+                        not(get(User::getUsername).eq("Jeremy Keynes")
+                                .or(get(User::getId).eq(3)))
                 )
                 .getList();
         fList = allUsers.stream()
@@ -707,10 +702,9 @@ public class GenericApiTest {
         assertEquals(qList, fList);
 
         qList = userQuery
-                .where(get(User::getUsername).eq("Jeremy Keynes")
+                .where(not(get(User::getUsername).eq("Jeremy Keynes")
                         .and(get(User::getId).eq(3))
-                        .then().not()
-                )
+                ))
                 .getList();
         fList = allUsers.stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
@@ -749,10 +743,9 @@ public class GenericApiTest {
                 .getList();
         assertEquals(qList, fList);
 
-        qList = userQuery.where(get(User::getUsername).eq("Jeremy Keynes")
+        qList = userQuery.where(not(get(User::getUsername).eq("Jeremy Keynes")
                         .or(get(User::getId).eq(3))
-                        .then().not()
-                )
+                ))
                 .getList();
         fList = allUsers.stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
@@ -820,9 +813,198 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
+    public void testOperatorIfNotNull(Select<User> userQuery) {
+        List<User> qList = userQuery.where(User::getRandomNumber).eq(10).getList();
+        List<User> fList = allUsers.stream().filter(u -> u.getRandomNumber() == 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getRandomNumber).gtIfNotNull(null)
+                .where(User::getRandomNumber).geIfNotNull(null)
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null).getList();
+        assertEquals(qList, allUsers);
+
+
+        qList = userQuery.where(get(User::getRandomNumber).eqIfNotNull(null)).getList();
+        assertEquals(qList, allUsers);
+        qList = userQuery.where(get(User::getRandomNumber).gtIfNotNull(null)).getList();
+        assertEquals(qList, allUsers);
+        qList = userQuery.where(get(User::getRandomNumber).geIfNotNull(null)).getList();
+        assertEquals(qList, allUsers);
+        qList = userQuery.where(get(User::getRandomNumber).ltIfNotNull(null)).getList();
+        assertEquals(qList, allUsers);
+        qList = userQuery.where(get(User::getRandomNumber).leIfNotNull(null)).getList();
+        assertEquals(qList, allUsers);
+
+
+        qList = userQuery.where(get(User::getRandomNumber).eqIfNotNull(20)).getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() == 20)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        AndOperator<User> predicate = get(User::getRandomNumber).eq(20).and(User::getUsername).eqIfNotNull(null);
+        qList = userQuery.where(predicate).getList();
+
+        assertEquals(qList, fList);
+        qList = userQuery.where(get(User::getRandomNumber).gtIfNotNull(20)).getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() > 20)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+        qList = userQuery.where(get(User::getRandomNumber).geIfNotNull(20)).getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() >= 20)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+        qList = userQuery.where(get(User::getRandomNumber).ltIfNotNull(20)).getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() < 20)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+        qList = userQuery.where(get(User::getRandomNumber).leIfNotNull(20)).getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() <= 20)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).eq(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() == 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).eqIfNotNull(10)
+                .getList();
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).geIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() >= 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).gtIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() > 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).leIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() <= 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).addIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).subtractIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).multiplyIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).divideIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).modIfNotNull(null).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).ltIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() < 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).addIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).subtractIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).multiplyIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).divideIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).modIfNotNull(null).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).addIfNotNull(null).ltIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() < 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).addIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).subtractIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).multiplyIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).divideIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).modIfNotNull(null).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).addIfNotNull(3).ltIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() + 3 < 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).addIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).subtractIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).multiplyIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).divideIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).modIfNotNull(null).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).subtractIfNotNull(-3).ltIfNotNull(10)
+                .getList();
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).addIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).subtractIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).multiplyIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).divideIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).modIfNotNull(null).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).multiplyIfNotNull(3).ltIfNotNull(50)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() * 3 < 50)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+        qList = userQuery
+                .where(User::getRandomUser).eqIfNotNull(null)
+                .where(User::getId).addIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).subtractIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).multiplyIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).divideIfNotNull(null).eqIfNotNull(null)
+                .where(User::getId).modIfNotNull(null).eqIfNotNull(null)
+                .where(User::getUsername).eqIfNotNull(null)
+                .where(User::getRandomNumber).divideIfNotNull(3).ltIfNotNull(10)
+                .getList();
+        fList = allUsers.stream().filter(u -> u.getRandomNumber() / 3.0 < 10)
+                .collect(Collectors.toList());
+        assertEquals(qList, fList);
+
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
     public void testOperator(Select<User> userQuery) {
 
-        BooleanExpression<User> isValid = get(User::isValid);
+        Predicate<User> isValid = get(User::isValid);
         List<User> qList = userQuery.where(isValid).getList();
         List<User> validUsers = allUsers.stream().filter(User::isValid)
                 .collect(Collectors.toList());
@@ -1400,6 +1582,21 @@ public class GenericApiTest {
 
         assertEquals(l0, l1);
         assertEquals(l0, l2);
+
+        User user = allUsers.stream()
+                .filter(it -> it.getParentUser() != null)
+                .findAny()
+                .orElse(allUsers.get(0));
+        UserInterface userInterface = userQuery.select(UserInterface.class)
+                .where(User::getId).eq(user.getId())
+                .getSingle();
+
+        assertEquals(userInterface.getId(), user.getId());
+        assertEquals(userInterface.getRandomNumber(), user.getRandomNumber());
+        assertEquals(userInterface.getUsername(), user.getUsername());
+        assertEquals(userInterface.getPid(), user.getPid());
+        assertEquals(userInterface.isValid(), user.isValid());
+        assertEquals(userInterface.getParentUsername(), user.getParentUser().getUsername());
 
     }
 

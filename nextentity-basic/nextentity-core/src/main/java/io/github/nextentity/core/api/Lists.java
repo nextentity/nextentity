@@ -63,4 +63,14 @@ public interface Lists {
                 .collect(Collectors.toList());
     }
 
+    static <T> List<T> toArrayList(Iterable<T> iterable) {
+        if (iterable.getClass() == ArrayList.class) {
+            return (List<T>) iterable;
+        } else if (iterable instanceof Collection) {
+            return new ArrayList<>((Collection<? extends T>) iterable);
+        } else {
+            return StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList());
+        }
+    }
+
 }
