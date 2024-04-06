@@ -1,14 +1,18 @@
 package io.github.nextentity.example.service;
 
+import io.github.nextentity.core.Pages;
+import io.github.nextentity.core.api.Page;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.example.eneity.User;
+import io.github.nextentity.example.projection.IUsernameGender;
+import io.github.nextentity.example.projection.UsernameGender;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.Random;
 
 /**
  * @author HuangChengwei
@@ -21,9 +25,6 @@ class UserServiceTest {
     UserService userService;
     @Autowired
     Access<User, Long> userAccess;
-    @Autowired
-    @Qualifier("jdbcAccess")
-    Access<User, Long> jdbcAccess;
 
     @Test
     void getByUsername() {
@@ -42,5 +43,46 @@ class UserServiceTest {
         User first = userAccess.getFirst();
         User updated = userService.updateRandomNumber(first.getRandomNumber());
         Assertions.assertNotEquals(first.getOptLock(), updated.getOptLock());
+    }
+
+    @Test
+    void page() {
+        Page<User> page = userService.page(null, Pages.pageable(1, 12));
+        System.out.println(page);
+        page = userService.page("Marjorie Minnie", Pages.pageable(1, 12));
+        System.out.println(page);
+    }
+
+
+    @Test
+    void usernameGenderPage() {
+        Page<UsernameGender> page = userService.usernameGenderPage(null, Pages.pageable(1, 12));
+        System.out.println(page);
+        page = userService.usernameGenderPage("Marjorie Minnie", Pages.pageable(1, 12));
+        System.out.println(page);
+    }
+
+    @Test
+    void iUsernameGenderPage() {
+        IUsernameGender first = userAccess.select(IUsernameGender.class).getFirst();
+        IUsernameGender first2 = userAccess.select(IUsernameGender.class).getFirst();
+        System.out.println(first2.equals(first));
+
+
+        Page<IUsernameGender> page = userService.iUsernameGenderPage(null, Pages.pageable(1, 12));
+        System.out.println(toString(page));
+        page = userService.iUsernameGenderPage("Marjorie Minnie", Pages.pageable(1, 12));
+        System.out.println(toString(page));
+    }
+
+    private String toString(Object page) {
+        return String.valueOf(page);
+    }
+
+    @Test
+    void updateUser() {
+        User first = userAccess.getFirst();
+        first.setTestInteger(new Random().nextInt());
+        userService.updateUser(first);
     }
 }
