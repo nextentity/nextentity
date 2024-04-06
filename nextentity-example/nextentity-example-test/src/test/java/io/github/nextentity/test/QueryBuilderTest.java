@@ -884,6 +884,13 @@ class QueryBuilderTest {
 
     }
 
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void testEmptyIn(Select<User> userQuery) {
+        List<User> list = userQuery.where(User::getId).notIn().getList();
+        assertEquals(list, users());
+    }
+
     private static void testOrderBy(List<Checker<User, OrderBy<User, User>>> testcase) {
         for (Checker<User, OrderBy<User, User>> checker : testcase) {
             ArrayList<User> sorted = new ArrayList<>(checker.expected);
