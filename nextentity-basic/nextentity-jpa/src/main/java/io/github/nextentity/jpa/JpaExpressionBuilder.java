@@ -35,14 +35,6 @@ public class JpaExpressionBuilder {
         this.cb = cb;
     }
 
-    public Predicate toPredicate(ExpressionTree expression) {
-        jakarta.persistence.criteria.Expression<?> result = toExpression(expression);
-        if (result instanceof Predicate) {
-            return (Predicate) result;
-        }
-        return cb.isTrue(cast(result));
-    }
-
     public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionTree expression) {
         if (expression instanceof Constant) {
             Constant cv = (Constant) expression;
@@ -60,84 +52,34 @@ public class JpaExpressionBuilder {
             ExpressionTree e2 = ov.thirdOperand();
             switch (operator) {
                 case NOT:
-                    return cb.not(cast(e0));
+                    return toPredicate(e0).not();
                 case AND: {
-                    Predicate[] predicates = getPredicates(ov.operands());
+                    Predicate[] predicates = toPredicateArray(ov.operands());
                     return cb.and(predicates);
                 }
                 case OR: {
-                    Predicate[] predicates = getPredicates(ov.operands());
+                    Predicate[] predicates = toPredicateArray(ov.operands());
                     return cb.or(predicates);
                 }
-                case GT: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        if (cv.value() instanceof Number) {
-                            return cb.gt(cast(e0), (Number) cv.value());
-                        } else if (cv.value() instanceof Comparable) {
-                            Comparable<Object> value = unsafeCast(cv.value());
-                            return cb.greaterThan(cast(e0), value);
-                        }
-                    }
-                    return cb.gt(cast(e0), cast(toExpression(e1)));
-                }
                 case EQ: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        return cb.equal(cast(e0), cv.value());
-                    }
                     return cb.equal(e0, toExpression(e1));
                 }
                 case NE: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        return cb.notEqual(e0, cv.value());
-                    }
                     return cb.notEqual(e0, toExpression(e1));
                 }
+                case GT: {
+                    return cb.gt(cast(e0), cast(toExpression(e1)));
+                }
                 case GE: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        if (cv.value() instanceof Number) {
-                            return cb.ge(cast(e0), (Number) cv.value());
-                        } else if (cv.value() instanceof Comparable) {
-                            Comparable<Object> comparable = unsafeCast(cv.value());
-                            return cb.greaterThanOrEqualTo(cast(e0), comparable);
-                        }
-                    }
                     return cb.ge(cast(e0), cast(toExpression(e1)));
                 }
                 case LT: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        Object ve1 = cv.value();
-                        if (ve1 instanceof Number) {
-                            return cb.lt(cast(e0), (Number) ve1);
-                        } else if (ve1 instanceof Comparable) {
-                            Comparable<Object> ve11 = unsafeCast(ve1);
-                            return cb.lessThan(cast(e0), ve11);
-                        }
-                    }
                     return cb.lt(cast(e0), cast(toExpression(e1)));
                 }
                 case LE: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        Object ve1 = cv.value();
-                        if (ve1 instanceof Number) {
-                            return cb.le(cast(e0), (Number) ve1);
-                        } else if (ve1 instanceof Comparable) {
-                            Comparable<Object> ve11 = unsafeCast(ve1);
-                            return cb.lessThanOrEqualTo(cast(e0), ve11);
-                        }
-                    }
                     return cb.le(cast(e0), cast(toExpression(e1)));
                 }
                 case LIKE: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof String) {
-                        String scv = (String) ((Constant) e1).value();
-                        return cb.like(cast(e0), scv);
-                    }
                     return cb.like(cast(e0), cast(toExpression(e1)));
                 }
                 case IS_NULL:
@@ -152,32 +94,13 @@ public class JpaExpressionBuilder {
                         CriteriaBuilder.In<Object> in = cb.in(e0);
                         for (int i = 1; i < operands.size(); i++) {
                             ExpressionTree arg = operands.get(i);
-                            if (arg instanceof Constant) {
-                                Constant cv = (Constant) arg;
-                                in = in.value(cv.value());
-                            } else {
-                                in = in.value(toExpression(arg));
-                            }
+                            in = in.value(toExpression(arg));
                         }
                         return in;
                     }
                 }
                 case BETWEEN: {
-                    if (e1 instanceof Constant
-                        && e2 instanceof Constant
-                        && ((Constant) e1).value() instanceof Comparable
-                        && ((Constant) e2).value() instanceof Comparable) {
-                        Constant cv2 = (Constant) e2;
-                        Constant cv1 = (Constant) e1;
-                        Comparable<Object> v1 = unsafeCast(cv1.value());
-                        Comparable<Object> v2 = unsafeCast(cv2.value());
-                        return cb.between(cast(e0), v1, v2);
-                    }
-                    return cb.between(
-                            cast(e0),
-                            cast(toExpression(e1)),
-                            cast(toExpression(e2))
-                    );
+                    return cb.between(cast(e0), cast(toExpression(e1)), cast(toExpression(e2)));
                 }
                 case LOWER:
                     return cb.lower(cast(e0));
@@ -186,26 +109,9 @@ public class JpaExpressionBuilder {
                 case SUBSTRING: {
                     List<? extends Expression> operands = ov.operands();
                     if (operands.size() == 2) {
-                        if (e1 instanceof Constant
-                            && ((Constant) e1).value() instanceof Number) {
-                            Number number = (Number) ((Constant) e1).value();
-                            return cb.substring(cast(e0), number.intValue());
-                        }
                         return cb.substring(cast(e0), cast(toExpression(e1)));
                     } else if (operands.size() == 3) {
-                        if (e1 instanceof Constant
-                            && ((Constant) e1).value() instanceof Number
-                            && e2 instanceof Constant
-                            && ((Constant) e2).value() instanceof Number) {
-                            Number n2 = (Number) ((Constant) e2).value();
-                            Number n1 = (Number) ((Constant) e1).value();
-                            return cb.substring(cast(e0), n1.intValue(), n2.intValue());
-                        }
-                        return cb.substring(
-                                cast(e0),
-                                cast(toExpression(e1)),
-                                cast(toExpression(e2))
-                        );
+                        return cb.substring(cast(e0), cast(toExpression(e1)), cast(toExpression(e2)));
                     } else {
                         throw new IllegalArgumentException("argument length error");
                     }
@@ -215,53 +121,24 @@ public class JpaExpressionBuilder {
                 case LENGTH:
                     return cb.length(cast(e0));
                 case ADD: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Number number = (Number) ((Constant) e1).value();
-                        return cb.sum(cast(e0), number);
-                    }
                     return cb.sum(cast(e0), cast(toExpression(e1)));
                 }
                 case SUBTRACT: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Number number = (Number) ((Constant) e1).value();
-                        return cb.diff(cast(e0), number);
-                    }
                     return cb.diff(cast(e0), cast(toExpression(e1)));
                 }
                 case MULTIPLY: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Constant cv1 = (Constant) e1;
-                        return cb.prod(cast(e0), (Number) cv1.value());
-                    }
                     return cb.prod(cast(e0), cast(toExpression(e1)));
                 }
                 case DIVIDE: {
-                    if (e1 instanceof Constant && ((Constant) e1).value() instanceof Number) {
-                        Number number = (Number) ((Constant) e1).value();
-                        return cb.quot(cast(e0), number);
-                    }
                     return cb.quot(cast(e0), cast(toExpression(e1)));
                 }
                 case MOD: {
-                    if (e1 instanceof Constant
-                        && ((Constant) e1).value() instanceof Integer) {
-                        Constant cv1 = (Constant) e1;
-                        return cb.mod(cast(e0), ((Integer) cv1.value()));
-                    }
                     return cb.mod(cast(e0), cast(toExpression(e1)));
                 }
                 case NULLIF: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        return cb.nullif(cast(e0), ((Integer) cv.value()));
-                    }
                     return cb.nullif(e0, toExpression(e1));
                 }
                 case IF_NULL: {
-                    if (e1 instanceof Constant) {
-                        Constant cv = (Constant) e1;
-                        return cb.coalesce(cast(e0), ((Integer) cv.value()));
-                    }
                     return cb.coalesce(e0, toExpression(e1));
                 }
                 case MIN:
@@ -282,17 +159,21 @@ public class JpaExpressionBuilder {
         }
     }
 
+    public Predicate toPredicate(ExpressionTree expression) {
+        return toPredicate(toExpression(expression));
+    }
+
+    private Predicate toPredicate(jakarta.persistence.criteria.Expression<?> result) {
+        if (result instanceof Predicate) {
+            return (Predicate) result;
+        }
+        return cb.isTrue(cast(result));
+    }
+
     @NotNull
-    private Predicate[] getPredicates(List<? extends ExpressionTree> operands) {
+    private Predicate[] toPredicateArray(List<? extends ExpressionTree> operands) {
         return operands.stream()
-                .map(this::toExpression)
-                .map(expr -> {
-                    if (expr instanceof Predicate) {
-                        return (Predicate) expr;
-                    } else {
-                        return cb.equal(expr, true);
-                    }
-                })
+                .map(this::toPredicate)
                 .toArray(Predicate[]::new);
     }
 
