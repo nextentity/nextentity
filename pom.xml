@@ -6,7 +6,7 @@
 
   <groupId>io.github.nextentity</groupId>
   <artifactId>nextentity</artifactId>
-  <version>1.0.1</version><!-- project version -->
+  <version>1.0.2</version><!-- project version -->
 
   <packaging>pom</packaging>
 
