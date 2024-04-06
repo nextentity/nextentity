@@ -11,7 +11,7 @@ public class EntityManagerTest {
     @Test
     void test() {
         Select<UserSummary> from = UserQueryProvider.jpaQuery().from(UserSummary.class);
-        List<UserSummary> list = from.where(UserSummary::getMaxRandomNumber).eq(33).getList();
+        List<UserSummary> list = from.where(UserSummary::getMaxRandomNumber).le(33).getList();
         System.out.println(list);
 
     }

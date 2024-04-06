@@ -1,12 +1,10 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.RootImpl;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Path.ComparablePath;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderBy;
@@ -15,7 +13,7 @@ import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BooleanExpression;
+import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -57,11 +55,16 @@ class QueryBuilderTest {
     void select(Select<User> userQuery) {
 
         int offset = 90;
-        User f2 = userQuery.getFirst(offset);
+        User f2 = userQuery.fetch(User::getParentUser).getFirst(offset);
         IUser first1 = userQuery.select(IUser.class).getFirst(offset);
         Assertions.assertEquals(first1.getUsername(), f2.getUsername());
         Assertions.assertEquals(first1.getId(), f2.getId());
         Assertions.assertEquals(first1.getRandomNumber(), f2.getRandomNumber());
+        if (f2.getParentUser() != null) {
+            Assertions.assertEquals(first1.getParentUser().username(), f2.getParentUser().getUsername());
+            Assertions.assertEquals(first1.getParentUser().id(), f2.getParentUser().getId());
+            Assertions.assertEquals(first1.getParentUser().randomNumber(), f2.getParentUser().getRandomNumber());
+        }
 
         User first3 = userQuery.fetch(User::getParentUser).getFirst(offset);
         System.out.println(first3);
@@ -881,6 +884,13 @@ class QueryBuilderTest {
 
     }
 
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void testEmptyIn(Select<User> userQuery) {
+        List<User> list = userQuery.where(User::getId).notIn().getList();
+        assertEquals(list, users());
+    }
+
     private static void testOrderBy(List<Checker<User, OrderBy<User, User>>> testcase) {
         for (Checker<User, OrderBy<User, User>> checker : testcase) {
             ArrayList<User> sorted = new ArrayList<>(checker.expected);
@@ -904,7 +914,7 @@ class QueryBuilderTest {
             assertEquals(slice.total(), sorted.size());
             Root<User> root = checker.collector
                     .orderBy(User::getRandomNumber, User::getId).root();
-            assertEquals(root, RootImpl.of());
+            assertEquals(root, Paths.root());
 
             users = checker.collector
                     .orderBy((Root<User> r) -> Lists.of(
@@ -1007,7 +1017,7 @@ class QueryBuilderTest {
         result.add(new Checker<>(stream, collector));
 
 
-        BooleanExpression<User> isValid = get(User::isValid);
+        Predicate<User> isValid = get(User::isValid);
         collector = userQuery.where(isValid);
         stream = users().stream().filter(User::isValid);
 
@@ -1103,7 +1113,7 @@ class QueryBuilderTest {
         List<User> users = check.expected.stream().filter(it -> it.getRandomNumber() == 1).collect(Collectors.toList());
         OrderBy<User, User> collector = check.collector.where(User::getRandomNumber).eq(1);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where((ComparablePath<User, Integer>) User::getRandomNumber).eq(1);
+        collector = check.collector.where(User::getRandomNumber).eq(1);
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1));
         result.add(new Checker<>(users, collector));
@@ -1116,7 +1126,7 @@ class QueryBuilderTest {
                 .orIf(true, root -> root.get(User::getRandomNumber).eq(2))
                 .orIf(false, root -> root.get(User::getId).eq(2)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).eq(1).or((ComparablePath<User, Integer>) User::getRandomNumber).eq(2));
+        collector = check.collector.where(get(User::getRandomNumber).eq(1).or(User::getRandomNumber).eq(2));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1).or(Lists.of(get(User::getRandomNumber).eq(2))));
         result.add(new Checker<>(users, collector));
@@ -1128,7 +1138,7 @@ class QueryBuilderTest {
         collector = check.collector.where(User::getRandomNumber).eq(1)
                 .where((Path<User, Boolean>) User::isValid).eq(TypedExpressions.ofTrue());
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).eq(1).and(User::isValid));
+        collector = check.collector.where(get(User::getRandomNumber).eq(1).and(User::isValid).eq(true));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1)
                 .andIf(true, root -> root.get(User::isValid)));

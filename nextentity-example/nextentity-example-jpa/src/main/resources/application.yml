@@ -8,4 +8,5 @@ spring:
     open-in-view: false
 logging:
   level:
-    io.github.nextentity.jdbc.JdbcQueryExecutor: debug
+    io.github.nextentity.sql: debug
+    org.hibernate.SQL: debug

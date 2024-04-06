@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-spring-boot-starters</artifactId>
-    <version>1.0.0</version><!-- project version -->
+    <version>1.0.2</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -39,11 +39,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-orm</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
+      <version>${spring.version}</version>
     </dependency>
   </dependencies>
 

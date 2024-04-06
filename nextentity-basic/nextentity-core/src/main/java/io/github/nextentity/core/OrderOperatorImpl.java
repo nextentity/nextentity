@@ -1,8 +1,9 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.api.Expression.Order;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.Order.SortOrder;
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Query.OrderBy;
@@ -12,7 +13,7 @@ import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.api.TypedExpression.ComparableExpression;
+import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,14 +32,10 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @NotNull
-    private List<Order<T>> asOrderList(Order.SortOrder sort) {
+    private List<Order<T>> asOrderList(SortOrder sort) {
         return orderByPaths
                 .stream()
-                .map(path -> {
-                    ComparableExpression<T, ?> expression =
-                            Paths.comparable(TypeCastUtil.unsafeCast(path));
-                    return expression.sort(sort);
-                })
+                .map(path -> Paths.get(path).sort(sort))
                 .collect(Collectors.toList());
     }
 
@@ -54,7 +51,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
 
     @Override
     public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
-        return orderBy(ordersBuilder.apply(RootImpl.of()));
+        return orderBy(ordersBuilder.apply(Paths.root()));
     }
 
     @Override
@@ -98,7 +95,12 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
+    public Page<U> getPage(Pageable pageable) {
+        return asc().getPage(pageable);
+    }
+
+    @Override
     public Root<T> root() {
-        return RootImpl.of();
+        return Paths.root();
     }
 }

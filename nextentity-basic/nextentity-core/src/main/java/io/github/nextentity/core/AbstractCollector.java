@@ -1,10 +1,13 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.ExpressionTrees.SliceImpl;
 import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.api.Page;
+import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.QueryStructures.SliceImpl;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -32,4 +35,12 @@ public interface AbstractCollector<T> extends Collector<T> {
         }
     }
 
+    @Override
+    default Page<T> getPage(@NotNull Pageable pageable) {
+        long count = count();
+        List<T> list = count <= pageable.offset()
+                ? Lists.of()
+                : getList(pageable.offset(), pageable.size());
+        return Pages.page(list, count);
+    }
 }

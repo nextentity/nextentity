@@ -2,7 +2,7 @@ package io.github.nextentity.test;
 
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Query.QueryStructureBuilder;
-import io.github.nextentity.core.api.QueryStructure;
+import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.QueryConditionBuilder;
 import io.github.nextentity.core.QueryStructurePostProcessor;
 import org.junit.jupiter.api.Assertions;

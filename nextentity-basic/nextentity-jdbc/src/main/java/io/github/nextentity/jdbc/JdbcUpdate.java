@@ -1,9 +1,10 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.SQL;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.UpdaterImpl;
+import io.github.nextentity.core.Updaters.UpdaterImpl;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
@@ -14,6 +15,7 @@ import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.jdbc.ConnectionProvider.ConnectionCallback;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder.PreparedSql;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,20 +44,28 @@ public class JdbcUpdate implements Update {
     }
 
     @Override
-    public <T> List<T> insert(List<T> entities, Class<T> entityType) {
+    public <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
+        List<@NotNull T> list = Lists.toArrayList(entities);
+        if (list.isEmpty()) {
+            return list;
+        }
         EntityType entity = metamodel.getEntity(entityType);
         PreparedSql sql = sqlBuilder.buildInsert(entity);
-        return execute(connection -> doInsert(entities, entity, connection, sql));
+        return execute(connection -> doInsert(list, entity, connection, sql));
     }
 
     @Override
-    public <T> List<T> update(List<T> entities, Class<T> entityType) {
+    public <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
+        List<@NotNull T> list = Lists.toArrayList(entities);
+        if (list.isEmpty()) {
+            return list;
+        }
         PreparedSql preparedSql = sqlBuilder.buildUpdate(metamodel.getEntity(entityType));
         execute(connection -> {
             String sql = preparedSql.sql();
-            log.debug(sql);
+            SQL.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                setArgs(entities, preparedSql.columns(), statement);
+                setArgs(list, preparedSql.columns(), statement);
                 int[] updateRowCounts = statement.executeBatch();
                 List<BasicAttribute> bindAttributes = preparedSql.versionColumns();
                 boolean hasVersion = isNotEmpty(bindAttributes);
@@ -69,27 +79,30 @@ public class JdbcUpdate implements Update {
                     }
                 }
                 if (hasVersion) {
-                    for (T entity : entities) {
+                    for (T entity : list) {
                         setNewVersion(entity, preparedSql.versionColumns());
                     }
                 }
                 return null;
             }
         });
-        return entities;
+        return list;
     }
 
     @Override
-    public <T> void delete(Iterable<T> entities, Class<T> entityType) {
+    public <T> void delete(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
+        if (!entities.iterator().hasNext()) {
+            return;
+        }
         PreparedSql preparedSql = sqlBuilder.buildDelete(metamodel.getEntity(entityType));
         execute(connection -> {
             String sql = preparedSql.sql();
-            log.debug(sql);
+            SQL.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(entities, preparedSql.columns(), statement);
                 int[] result = statement.executeBatch();
-                if (log.isDebugEnabled()) {
-                    log.debug("executeBatch result: " + Arrays.toString(result));
+                if (log.isTraceEnabled()) {
+                    log.trace("executeBatch result: " + Arrays.toString(result));
                 }
                 return null;
             }
@@ -101,7 +114,7 @@ public class JdbcUpdate implements Update {
     }
 
     @Override
-    public <T> T updateNonNullColumn(T entity, Class<T> entityType) {
+    public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
         EntityType meta = metamodel.getEntity(entityType);
 
         List<BasicAttribute> nonNullColumn;
@@ -118,7 +131,7 @@ public class JdbcUpdate implements Update {
         }
         return execute(connection -> {
             String sql = preparedSql.sql();
-            log.debug(sql);
+            SQL.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(Lists.of(entity), preparedSql.columns(), statement);
                 int i = statement.executeUpdate();
@@ -142,7 +155,7 @@ public class JdbcUpdate implements Update {
     }
 
     @Override
-    public <T> Updater<T> getUpdater(Class<T> type) {
+    public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
         return new UpdaterImpl<>(this, type);
     }
 
@@ -180,7 +193,7 @@ public class JdbcUpdate implements Update {
                                  PreparedSql preparedSql)
             throws SQLException {
         String sql = preparedSql.sql();
-        log.debug(sql);
+        SQL.debug(sql);
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             List<BasicAttribute> columns = preparedSql.columns();
             setArgs(entities, columns, statement);

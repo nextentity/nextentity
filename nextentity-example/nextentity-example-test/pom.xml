@@ -7,7 +7,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-example</artifactId>
-    <version>1.0.0</version><!-- project version -->
+    <version>1.0.2</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -73,11 +73,13 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
     </dependency>
   </dependencies>
 

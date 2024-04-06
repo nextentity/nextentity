@@ -1,8 +1,9 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.SQL;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.QueryStructure;
-import io.github.nextentity.core.AbstractQueryExecutor;
+import io.github.nextentity.core.api.Expression.QueryStructure;
+import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Attribute;
@@ -16,7 +17,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 @Slf4j
-public class JdbcQueryExecutor implements AbstractQueryExecutor {
+public class JdbcQueryExecutor implements QueryExecutor {
 
     @NotNull
     private final Metamodel metamodel;
@@ -59,9 +60,9 @@ public class JdbcQueryExecutor implements AbstractQueryExecutor {
     }
 
     private static void printSql(PreparedSql sql) {
-        log.debug("SQL: {}", sql.sql());
+        SQL.debug("SQL: {}", sql.sql());
         if (!sql.args().isEmpty()) {
-            log.debug("ARGS: {}", sql.args());
+            SQL.debug("ARGS: {}", sql.args());
         }
     }
 

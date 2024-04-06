@@ -1,6 +1,6 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.api.Column;
+import io.github.nextentity.core.api.Expression.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

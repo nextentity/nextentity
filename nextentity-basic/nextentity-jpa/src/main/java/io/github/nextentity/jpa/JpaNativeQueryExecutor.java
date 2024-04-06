@@ -1,16 +1,16 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.QueryStructure;
-import io.github.nextentity.core.api.Selection;
-import io.github.nextentity.core.api.Selection.EntitySelected;
-import io.github.nextentity.core.api.Selection.MultiSelected;
-import io.github.nextentity.core.api.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.Selection.SingleSelected;
-import io.github.nextentity.core.AbstractQueryExecutor;
 import io.github.nextentity.core.ExpressionTypeResolver;
+import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.api.Expression.ExpressionTree;
+import io.github.nextentity.core.api.Expression.QueryStructure;
+import io.github.nextentity.core.api.Expression.Selection;
+import io.github.nextentity.core.api.Expression.Selection.EntitySelected;
+import io.github.nextentity.core.api.Expression.Selection.MultiSelected;
+import io.github.nextentity.core.api.Expression.Selection.ProjectionSelected;
+import io.github.nextentity.core.api.Expression.Selection.SingleSelected;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
@@ -19,19 +19,24 @@ import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import jakarta.persistence.EntityManager;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
+@Slf4j
+public class JpaNativeQueryExecutor implements QueryExecutor {
     private final QuerySqlBuilder sqlBuilder;
     private final EntityManager entityManager;
     private final Metamodel metamodel;
     private final TypeConverter typeConverter;
 
-    public JpaNativeQueryExecutor(QuerySqlBuilder sqlBuilder, EntityManager entityManager, Metamodel metamodel, TypeConverter typeConverter) {
+    public JpaNativeQueryExecutor(QuerySqlBuilder sqlBuilder,
+                                  EntityManager entityManager,
+                                  Metamodel metamodel,
+                                  TypeConverter typeConverter) {
         this.sqlBuilder = sqlBuilder;
         this.entityManager = entityManager;
         this.metamodel = metamodel;
@@ -68,7 +73,7 @@ public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
 
         if (select instanceof MultiSelected multiSelected) {
             if (multiSelected.expressions().size() != columnsCount) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("column count error");
             }
             ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
             List<Class<?>> types = multiSelected.expressions().stream()
@@ -88,7 +93,7 @@ public class JpaNativeQueryExecutor implements AbstractQueryExecutor {
             if (1 != columnsCount) {
                 throw new IllegalStateException();
             }
-            Expression expression = ((SingleSelected) select).expression();
+            ExpressionTree expression = ((SingleSelected) select).expression();
             ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
             Class<?> type = typeResolver.getExpressionType(expression, structure.from().type());
             for (Object r : resultSet) {
