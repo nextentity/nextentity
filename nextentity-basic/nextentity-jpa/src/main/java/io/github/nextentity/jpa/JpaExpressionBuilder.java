@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("PatternVariableCanBeUsed")
-public class ExpressionBuilder {
+public class JpaExpressionBuilder {
 
     protected final Root<?> root;
 
@@ -30,9 +30,17 @@ public class ExpressionBuilder {
 
     protected final Map<Column, FetchParent<?, ?>> fetched = new HashMap<>();
 
-    public ExpressionBuilder(Root<?> root, CriteriaBuilder cb) {
+    public JpaExpressionBuilder(Root<?> root, CriteriaBuilder cb) {
         this.root = root;
         this.cb = cb;
+    }
+
+    public Predicate toPredicate(ExpressionTree expression) {
+        jakarta.persistence.criteria.Expression<?> result = toExpression(expression);
+        if (result instanceof Predicate) {
+            return (Predicate) result;
+        }
+        return cb.isTrue(cast(result));
     }
 
     public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionTree expression) {

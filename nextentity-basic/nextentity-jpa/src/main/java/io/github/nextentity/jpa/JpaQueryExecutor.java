@@ -200,7 +200,7 @@ public class JpaQueryExecutor implements QueryExecutor {
 
     }
 
-    protected static abstract class Builder extends PredicateBuilder {
+    protected static abstract class Builder extends JpaExpressionBuilder {
         protected final QueryStructure structure;
         protected final CriteriaQuery<?> query;
 
