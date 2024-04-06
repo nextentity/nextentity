@@ -19,7 +19,6 @@ import io.github.nextentity.core.api.Expression.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.Expression.Selection.SingleSelected;
 import io.github.nextentity.core.api.Lists;
 import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.Projection;
@@ -27,7 +26,6 @@ import io.github.nextentity.core.meta.ProjectionAttribute;
 import io.github.nextentity.core.meta.SubSelectType;
 import io.github.nextentity.core.reflect.InstanceConstructor;
 import io.github.nextentity.core.reflect.ReflectUtil;
-import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
@@ -53,12 +51,6 @@ public class JpaQueryExecutor implements QueryExecutor {
         this.entityManager = entityManager;
         this.metamodel = metamodel;
         this.nativeQueryExecutor = nativeQueryExecutor;
-    }
-
-    public JpaQueryExecutor(EntityManager entityManager, Metamodel metamodel, QuerySqlBuilder querySqlBuilder, TypeConverter converter) {
-        this.entityManager = entityManager;
-        this.metamodel = metamodel;
-        this.nativeQueryExecutor = JpaNativeQueryExecutor.getExecutor(querySqlBuilder, entityManager, metamodel, converter);
     }
 
     @Override

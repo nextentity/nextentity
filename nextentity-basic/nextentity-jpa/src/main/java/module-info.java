@@ -6,7 +6,6 @@ module nextentity.jpa {
     requires nextentity.jdbc;
     requires static lombok;
     requires static org.slf4j;
-    requires static org.hibernate.orm.core;
 
     exports io.github.nextentity.jpa;
 }

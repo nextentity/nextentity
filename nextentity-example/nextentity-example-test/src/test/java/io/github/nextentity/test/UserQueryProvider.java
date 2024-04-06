@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
@@ -83,9 +84,15 @@ public class UserQueryProvider implements ArgumentsProvider {
     }
 
     public static Query jpaQuery() {
-        EntityManager manager = EntityManagers.getEntityManager();
-        return new JpaQueryExecutor(manager, JpaMetamodel.of(), new MySqlQuerySqlBuilder(), TypeConverter.ofDefault())
+        JpaQueryExecutor jpaQueryExecutor = getJpaQueryExecutor();
+        return jpaQueryExecutor
                 .createQuery(new TestPostProcessor());
+    }
+
+    @NotNull
+    public static JpaQueryExecutor getJpaQueryExecutor() {
+        EntityManager manager = EntityManagers.getEntityManager();
+        return new JpaQueryExecutor(manager, JpaMetamodel.of(), getJdbcQueryExecutor());
     }
 
     public static Query jpaNaviveQuery() {
@@ -102,11 +109,17 @@ public class UserQueryProvider implements ArgumentsProvider {
     }
 
     public static Query jdbcQuery() {
+        JdbcQueryExecutor queryExecutor = getJdbcQueryExecutor();
+        return queryExecutor.createQuery(new TestPostProcessor());
+    }
+
+    @NotNull
+    public static JdbcQueryExecutor getJdbcQueryExecutor() {
         ConnectionProvider sqlExecutor = SingleConnectionProvider.CONNECTION_PROVIDER;
         return new JdbcQueryExecutor(JpaMetamodel.of(),
                 new MySqlQuerySqlBuilder(),
                 sqlExecutor,
                 new JdbcResultCollector()
-        ).createQuery(new TestPostProcessor());
+        );
     }
 }
