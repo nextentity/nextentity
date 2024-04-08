@@ -11,10 +11,10 @@ public interface QueryExecutor {
     <T> List<T> getList(@NotNull QueryStructure queryStructure);
 
     default Query createQuery() {
-        return createQuery(QueryStructurePostProcessor.NONE);
+        return createQuery(QueryPostProcessor.NONE);
     }
 
-    default Query createQuery(QueryStructurePostProcessor structurePostProcessor) {
+    default Query createQuery(QueryPostProcessor structurePostProcessor) {
         return new QueryImpl(this, structurePostProcessor);
     }
 

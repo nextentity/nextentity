@@ -1,7 +1,7 @@
 package io.github.nextentity.test;
 
 import io.github.nextentity.core.api.Query.Select;
-import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.api.Update;
 import io.github.nextentity.test.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UpdateTest {
 
-    Select<User> query(Updater<User> updater) {
+    Select<User> query(Update<User> updater) {
         return updater == UserUpdaterProvider.jdbc
                 ? UserQueryProvider.jdbc
                 : UserQueryProvider.jpa;
@@ -26,11 +26,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void insert(Updater<User> userUpdater) {
+    void insert(Update<User> userUpdater) {
         Transaction.doInTransaction(() -> doInsert(userUpdater));
     }
 
-    private void doInsert(Updater<User> userUpdater) {
+    private void doInsert(Update<User> userUpdater) {
         List<User> existUsers = query(userUpdater).where(User::getId).in(10000000, 10000001, 10000002)
                 .getList();
         if (!existUsers.isEmpty()) {
@@ -60,11 +60,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void update(Updater<User> userUpdater) {
+    void update(Update<User> userUpdater) {
         Transaction.doInTransaction(() -> testUpdate(userUpdater));
     }
 
-    private void testUpdate(Updater<User> userUpdater) {
+    private void testUpdate(Update<User> userUpdater) {
         List<User> users = query(userUpdater).where(User::getId).in(1, 2, 3).getList();
         for (User user : users) {
             user.setRandomNumber(user.getRandomNumber() + 1);
@@ -81,11 +81,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void updateNonNullColumn(Updater<User> userUpdater) {
+    void updateNonNullColumn(Update<User> userUpdater) {
         Transaction.doInTransaction(() -> testUpdateNonNullColumn(userUpdater));
     }
 
-    private void testUpdateNonNullColumn(Updater<User> userUpdater) {
+    private void testUpdateNonNullColumn(Update<User> userUpdater) {
         List<User> users = query(userUpdater).where(User::getId).in(1, 2, 3).getList();
         List<User> users2 = new ArrayList<>(users.size());
         for (User user : users) {
@@ -107,7 +107,7 @@ public class UpdateTest {
     @Test
     public void test() {
         Transaction.doInTransaction(() -> {
-            Updater<User> updater = UserUpdaterProvider.jdbc;
+            Update<User> updater = UserUpdaterProvider.jdbc;
             Select<User> select = UserQueryProvider.jdbc;
             User user = select.where(User::getId).eq(10000006).getSingle();
             if (user != null) {
@@ -122,7 +122,7 @@ public class UpdateTest {
         });
 
         Transaction.doInTransaction(() -> {
-            Updater<User> updater = UserUpdaterProvider.jpa;
+            Update<User> updater = UserUpdaterProvider.jpa;
             Select<User> select = UserQueryProvider.jpa;
             User user = select.where(User::getId).eq(10000007).getSingle();
             if (user != null) {

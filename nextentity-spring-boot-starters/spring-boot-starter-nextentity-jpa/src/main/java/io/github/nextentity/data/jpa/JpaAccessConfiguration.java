@@ -1,12 +1,12 @@
 package io.github.nextentity.data.jpa;
 
-import io.github.nextentity.core.QueryStructurePostProcessor;
+import io.github.nextentity.core.QueryPostProcessor;
 import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.Update;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.data.common.Accesses;
-import io.github.nextentity.data.common.TransactionalUpdate;
+import io.github.nextentity.data.common.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jpa.JpaQueryExecutor;
 import io.github.nextentity.jpa.JpaUpdate;
@@ -31,7 +31,7 @@ public class JpaAccessConfiguration {
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     protected <T, ID extends Serializable> Access<T, ID> jpaAccess(DependencyDescriptor descriptor,
                                                                    @Qualifier("jpaQuery") Query query,
-                                                                   @Qualifier("jpaUpdate") Update update,
+                                                                   @Qualifier("jpaUpdate") UpdateExecutor update,
                                                                    Metamodel metamodel) {
         return Accesses.of(descriptor, query, update, metamodel);
     }
@@ -47,9 +47,9 @@ public class JpaAccessConfiguration {
 
     @Bean("jpaUpdate")
     @Primary
-    protected Update jpaUpdate(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
+    protected UpdateExecutor jpaUpdate(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
         JpaUpdate jpaUpdate = new JpaUpdate(entityManager, jpaQueryExecutor);
-        return new TransactionalUpdate(jpaUpdate);
+        return new TransactionalUpdateExecutor(jpaUpdate);
     }
 
     @Bean
@@ -61,7 +61,7 @@ public class JpaAccessConfiguration {
     @Primary
     protected Query jpaQuery(JpaQueryExecutor executor,
                              @Autowired(required = false)
-                             QueryStructurePostProcessor structurePostProcessor) {
+                             QueryPostProcessor structurePostProcessor) {
         return structurePostProcessor != null
                 ? executor.createQuery(structurePostProcessor)
                 : executor.createQuery();

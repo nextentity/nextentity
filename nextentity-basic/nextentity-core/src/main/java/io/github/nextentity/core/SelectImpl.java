@@ -8,12 +8,12 @@ import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.PathExpression;
 import io.github.nextentity.core.api.ExpressionTree.Column;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.Fetch;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where0;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
@@ -34,9 +34,12 @@ import java.util.stream.Collectors;
 
 
 @SuppressWarnings("PatternVariableCanBeUsed")
-public class QueryBuilder<T> extends QueryConditionBuilder<T, T> implements Select<T>, Fetch<T> {
+public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T> {
 
-    public QueryBuilder(QueryExecutor queryExecutor, Class<T> type, QueryStructurePostProcessor structurePostProcessor) {
+    SelectImpl() {
+    }
+
+    public SelectImpl(QueryExecutor queryExecutor, Class<T> type, QueryPostProcessor structurePostProcessor) {
         super(queryExecutor, type, structurePostProcessor);
     }
 

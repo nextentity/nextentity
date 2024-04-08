@@ -1,16 +1,16 @@
 package io.github.nextentity.data.common;
 
-import io.github.nextentity.core.api.Update;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public class TransactionalUpdate implements Update {
+public class TransactionalUpdateExecutor implements UpdateExecutor {
 
-    private final Update target;
+    private final UpdateExecutor target;
 
-    public TransactionalUpdate(Update target) {
+    public TransactionalUpdateExecutor(UpdateExecutor target) {
         this.target = target;
     }
 

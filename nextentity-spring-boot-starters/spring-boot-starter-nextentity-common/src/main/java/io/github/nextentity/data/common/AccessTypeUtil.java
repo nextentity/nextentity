@@ -2,7 +2,7 @@ package io.github.nextentity.data.common;
 
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Query.Select;
-import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.meta.Metamodel;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.config.DependencyDescriptor;
@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 public class AccessTypeUtil {
     public static <T> Class<T> getEntityType(DependencyDescriptor descriptor) {
-        Class<?> entityType = getEntityType(new Class<?>[]{Select.class, Updater.class}, descriptor);
+        Class<?> entityType = getEntityType(new Class<?>[]{Select.class, Update.class}, descriptor);
         Objects.requireNonNull(entityType);
         return TypeCastUtil.cast(entityType);
     }

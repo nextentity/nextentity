@@ -4,16 +4,16 @@ import io.github.nextentity.core.api.Query;
 
 public class QueryImpl implements Query {
     private final QueryExecutor executor;
-    private final QueryStructurePostProcessor structurePostProcessor;
+    private final QueryPostProcessor structurePostProcessor;
 
-    public QueryImpl(QueryExecutor executor, QueryStructurePostProcessor structurePostProcessor) {
+    public QueryImpl(QueryExecutor executor, QueryPostProcessor structurePostProcessor) {
         this.executor = executor;
         this.structurePostProcessor = structurePostProcessor;
     }
 
     @Override
     public <T> Select<T> from(Class<T> type) {
-        return new QueryBuilder<>(executor, type, structurePostProcessor);
+        return new SelectImpl<>(executor, type, structurePostProcessor);
     }
 
     @Override

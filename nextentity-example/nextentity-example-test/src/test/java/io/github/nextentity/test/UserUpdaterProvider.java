@@ -1,7 +1,7 @@
 package io.github.nextentity.test;
 
 import io.github.nextentity.core.Updaters;
-import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.api.Update;
 import io.github.nextentity.jdbc.JdbcUpdate;
 import io.github.nextentity.jdbc.MysqlUpdateSqlBuilder;
 import io.github.nextentity.jpa.JpaQueryExecutor;
@@ -16,8 +16,8 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import java.util.stream.Stream;
 
 public class UserUpdaterProvider implements ArgumentsProvider {
-    public static final Updater<User> jdbc = jdbc();
-    public static final Updater<User> jpa = jpa();
+    public static final Update<User> jdbc = jdbc();
+    public static final Update<User> jpa = jpa();
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
@@ -28,7 +28,7 @@ public class UserUpdaterProvider implements ArgumentsProvider {
         );
     }
 
-    private static Updater<User> jdbc() {
+    private static Update<User> jdbc() {
         JdbcUpdate jdbcUpdate = new JdbcUpdate(
                 new MysqlUpdateSqlBuilder(),
                 SingleConnectionProvider.CONNECTION_PROVIDER,
@@ -37,7 +37,7 @@ public class UserUpdaterProvider implements ArgumentsProvider {
         return Updaters.create(jdbcUpdate, User.class);
     }
 
-    private static Updater<User> jpa() {
+    private static Update<User> jpa() {
         EntityManager em = EntityManagers.getEntityManager();
         JpaQueryExecutor jpaQueryExecutor = new JpaQueryExecutor(em, JpaMetamodel.of(), UserQueryProvider.getJpaQueryExecutor());
         return Updaters.create(new JpaUpdate(em, jpaQueryExecutor), User.class);

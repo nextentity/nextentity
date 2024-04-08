@@ -1,6 +1,7 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.ExpressionTrees.OrderImpl;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.BooleanPathExpression;
 import io.github.nextentity.core.api.Expression.EntityPathExpression;
@@ -11,24 +12,23 @@ import io.github.nextentity.core.api.Expression.PathExpression;
 import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.Expression.StringExpression;
 import io.github.nextentity.core.api.Expression.StringPathExpression;
-import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.Column;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
+import io.github.nextentity.core.api.ExpressionTree;
+import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
-import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Iterators;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -44,10 +44,8 @@ import static io.github.nextentity.core.api.Operator.*;
 
 public class Expressions {
 
-    public static <T, U> Expression<T, U> of(ExpressionTree expression) {
-        return expression instanceof Expression<?, ?>
-                ? TypeCastUtil.cast(expression)
-                : expression::rootNode;
+    public static <T, U> OperatableExpression<T, U> of(ExpressionTree expression) {
+        return toTypedExpression(expression);
     }
 
     public static <T, U> Expression<T, U> of(U value) {

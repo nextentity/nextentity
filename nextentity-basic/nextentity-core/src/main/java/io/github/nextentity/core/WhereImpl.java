@@ -2,8 +2,12 @@ package io.github.nextentity.core;
 
 import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
 import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
+import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.ExpressionTree;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.ExpressionTree.Operation;
@@ -11,11 +15,7 @@ import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
-import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
-import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.NumberPath;
@@ -29,7 +29,7 @@ import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.EntityRoot;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,29 +39,41 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("PatternVariableCanBeUsed")
-public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, AbstractCollector<U> {
+public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractCollector<U> {
 
     static final SingleSelectedImpl SELECT_ANY = new SingleSelectedImpl(Integer.class, ExpressionTrees.TRUE, false);
 
     static final SingleSelectedImpl COUNT_ANY = new SingleSelectedImpl(Integer.class, ExpressionTrees.operate(ExpressionTrees.TRUE, Operator.COUNT), false);
 
-    final QueryExecutor queryExecutor;
-    final QueryStructureImpl queryStructure;
+    QueryExecutor queryExecutor;
+    QueryStructureImpl queryStructure;
 
-    protected final QueryStructurePostProcessor structurePostProcessor;
+    QueryPostProcessor structurePostProcessor;
 
-    public QueryConditionBuilder(QueryExecutor queryExecutor, Class<T> type, QueryStructurePostProcessor structurePostProcessor) {
-        this(queryExecutor, new QueryStructureImpl(type), structurePostProcessor);
+    public WhereImpl(QueryExecutor queryExecutor, Class<T> type, QueryPostProcessor structurePostProcessor) {
+        init(type, queryExecutor, structurePostProcessor);
     }
 
-    QueryConditionBuilder(QueryExecutor queryExecutor, QueryStructureImpl queryStructure, QueryStructurePostProcessor structurePostProcessor) {
+
+    WhereImpl(QueryExecutor queryExecutor, QueryStructureImpl queryStructure, QueryPostProcessor structurePostProcessor) {
+        init(queryExecutor, queryStructure, structurePostProcessor);
+    }
+
+    protected void init(Class<T> type, QueryExecutor queryExecutor, QueryPostProcessor structurePostProcessor) {
+        init(queryExecutor, new QueryStructureImpl(type), structurePostProcessor);
+    }
+
+    private void init(QueryExecutor queryExecutor, QueryStructureImpl queryStructure, QueryPostProcessor structurePostProcessor) {
         this.queryExecutor = queryExecutor;
         this.queryStructure = queryStructure;
-        this.structurePostProcessor = structurePostProcessor == null ? QueryStructurePostProcessor.NONE : structurePostProcessor;
+        this.structurePostProcessor = structurePostProcessor == null ? QueryPostProcessor.NONE : structurePostProcessor;
     }
 
-    <X, Y> QueryConditionBuilder<X, Y> update(QueryStructureImpl queryStructure) {
-        return new QueryConditionBuilder<>(queryExecutor, queryStructure, structurePostProcessor);
+    public WhereImpl() {
+    }
+
+    <X, Y> WhereImpl<X, Y> update(QueryStructureImpl queryStructure) {
+        return new WhereImpl<>(queryExecutor, queryStructure, structurePostProcessor);
     }
 
     @Override
@@ -98,7 +110,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return new OrderOperatorImpl<>(this, paths);
     }
 
-    QueryConditionBuilder<T, U> addOrderBy(List<? extends Order<T>> orders) {
+    WhereImpl<T, U> addOrderBy(List<? extends Order<T>> orders) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.orderBy = structure.orderBy == null ? orders : Lists.concat(structure.orderBy, orders);
         return update(structure);
@@ -305,35 +317,35 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         @Override
         public Expression<X, Long> count() {
             QueryStructure structure = buildCountData();
-            structure = structurePostProcessor.preCountQuery(QueryConditionBuilder.this, structure);
+            structure = structurePostProcessor.preCountQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public Expression<X, List<U>> slice(int offset, int maxResult) {
             QueryStructure structure = buildListData(offset, maxResult, null);
-            structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
+            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public Expression<X, U> getSingle(int offset) {
             QueryStructure structure = buildListData(offset, 2, null);
-            structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
+            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public Expression<X, U> getFirst(int offset) {
             QueryStructure structure = buildListData(offset, 1, null);
-            structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
+            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public ExpressionNode rootNode() {
             QueryStructure structure = buildListData(-1, -1, null);
-            structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
+            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return structure;
         }
 

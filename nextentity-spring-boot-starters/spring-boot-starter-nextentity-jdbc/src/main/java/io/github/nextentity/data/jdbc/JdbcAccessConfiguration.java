@@ -1,14 +1,14 @@
 package io.github.nextentity.data.jdbc;
 
-import io.github.nextentity.core.QueryStructurePostProcessor;
+import io.github.nextentity.core.QueryPostProcessor;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.common.Access;
 import io.github.nextentity.data.common.AccessTypeUtil;
 import io.github.nextentity.data.common.Accesses;
-import io.github.nextentity.data.common.TransactionalUpdate;
+import io.github.nextentity.data.common.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.ConnectionProvider;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
@@ -39,7 +39,7 @@ public class JdbcAccessConfiguration {
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     protected <T, ID extends Serializable> Access<T, ID> jdbcAccess(DependencyDescriptor descriptor,
                                                                     @Qualifier("jdbcQuery") Query query,
-                                                                    @Qualifier("jdbcUpdate") Update update,
+                                                                    @Qualifier("jdbcUpdate") UpdateExecutor update,
                                                                     Metamodel metamodel) {
         Class<T> entityType = AccessTypeUtil.getEntityType(descriptor);
         Class<?> dependencyType = descriptor.getDependencyType();
@@ -78,11 +78,11 @@ public class JdbcAccessConfiguration {
     }
 
     @Bean
-    protected Update jdbcUpdate(JdbcUpdateSqlBuilder sqlBuilder,
-                                ConnectionProvider connectionProvider,
-                                Metamodel metamodel) {
+    protected UpdateExecutor jdbcUpdate(JdbcUpdateSqlBuilder sqlBuilder,
+                                        ConnectionProvider connectionProvider,
+                                        Metamodel metamodel) {
         JdbcUpdate jdbcUpdate = new JdbcUpdate(sqlBuilder, connectionProvider, metamodel);
-        return new TransactionalUpdate(jdbcUpdate);
+        return new TransactionalUpdateExecutor(jdbcUpdate);
     }
 
     @Bean
@@ -93,7 +93,7 @@ public class JdbcAccessConfiguration {
     @Bean
     protected Query jdbcQuery(JdbcQueryExecutor executor,
                               @Autowired(required = false)
-                              QueryStructurePostProcessor structurePostProcessor) {
+                              QueryPostProcessor structurePostProcessor) {
         return structurePostProcessor != null
                 ? executor.createQuery(structurePostProcessor)
                 : executor.createQuery();

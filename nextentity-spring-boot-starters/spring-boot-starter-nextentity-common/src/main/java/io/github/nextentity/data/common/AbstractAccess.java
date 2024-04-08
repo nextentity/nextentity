@@ -2,15 +2,19 @@ package io.github.nextentity.data.common;
 
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.Update;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.meta.Metamodel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;
 
 public abstract class AbstractAccess<T, ID> extends AccessFacade<T, ID> implements Access<T, ID> {
 
+    public AbstractAccess() {
+        super();
+    }
+
     @Autowired
-    protected void init(Query query, Update update, Metamodel metamodel) {
+    protected void init(Query query, UpdateExecutor update, Metamodel metamodel) {
         ResolvableType type = ResolvableType.forClass(getClass())
                 .as(AbstractAccess.class);
         Class<?> entityType = type.resolveGeneric(0);

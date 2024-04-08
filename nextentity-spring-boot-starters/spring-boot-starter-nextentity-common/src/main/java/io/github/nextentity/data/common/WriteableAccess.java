@@ -1,11 +1,11 @@
 package io.github.nextentity.data.common;
 
-import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.api.Update;
 
 /**
  * @author HuangChengwei
  * @since 2024-03-27 13:09
  */
-public interface WriteableAccess<T> extends Updater<T> {
+public interface WriteableAccess<T> extends Update<T> {
 
 }

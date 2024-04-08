@@ -2,7 +2,7 @@ package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.SqlLogger;
 import io.github.nextentity.core.util.Lists;
-import io.github.nextentity.core.api.Update;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
@@ -27,7 +27,7 @@ import java.util.List;
 
 @SuppressWarnings("PatternVariableCanBeUsed")
 @Slf4j
-public class JdbcUpdate implements Update {
+public class JdbcUpdate implements UpdateExecutor {
 
     private final JdbcUpdateSqlBuilder sqlBuilder;
     private final ConnectionProvider connectionProvider;

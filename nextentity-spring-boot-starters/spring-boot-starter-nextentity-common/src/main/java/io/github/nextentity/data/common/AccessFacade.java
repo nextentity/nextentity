@@ -4,15 +4,17 @@ import io.github.nextentity.core.ExpressionTrees;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.Updaters;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
 import io.github.nextentity.core.api.Expression.PathExpression;
 import io.github.nextentity.core.api.Expression.Predicate;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
-import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
+import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
@@ -27,11 +29,9 @@ import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.api.Updater;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.tuple.Tuple;
@@ -58,12 +58,12 @@ import java.util.stream.StreamSupport;
 public class AccessFacade<T, ID> implements Access<T, ID> {
 
     protected Select<T> select;
-    protected Updater<T> updater;
+    protected Update<T> updater;
 
     protected OperatableExpression<T, ID> id;
     protected Function<T, ID> getId;
 
-    protected void init(Class<T> entityType, Query query, Update update, Metamodel metamodel) {
+    protected void init(Class<T> entityType, Query query, UpdateExecutor update, Metamodel metamodel) {
         this.select = query.from(entityType);
         this.updater = Updaters.create(update, entityType);
         Attribute idAttribute = metamodel.getEntity(entityType).id();

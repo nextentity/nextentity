@@ -23,10 +23,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
-    private final QueryConditionBuilder<T, U> builder;
+    private final WhereImpl<T, U> builder;
     private final Collection<Path<T, Comparable<?>>> orderByPaths;
 
-    public OrderOperatorImpl(QueryConditionBuilder<T, U> builder, Collection<Path<T, Comparable<?>>> orderByPaths) {
+    public OrderOperatorImpl(WhereImpl<T, U> builder, Collection<Path<T, Comparable<?>>> orderByPaths) {
         this.builder = builder;
         this.orderByPaths = orderByPaths;
     }
