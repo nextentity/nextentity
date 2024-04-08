@@ -1,6 +1,6 @@
 package io.github.nextentity.example.dao;
 
-import io.github.nextentity.data.common.Access;
+import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.example.eneity.Company;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +17,10 @@ class CompanyRepositoryTest {
     @Autowired
     CompanyRepository companyRepository;
     @Autowired
-    Access<Company, Integer> companyAccess;
+    Entities<Company, Integer> companyEntities;
 
     @Test
     void test() {
-        System.out.println(Objects.equals(companyRepository, companyAccess));
+        System.out.println(Objects.equals(companyRepository, companyEntities));
     }
 }

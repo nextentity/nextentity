@@ -1,8 +1,8 @@
 package io.github.nextentity.example.service;
 
 import io.github.nextentity.core.Pages;
+import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.Page;
-import io.github.nextentity.data.common.Access;
 import io.github.nextentity.example.eneity.User;
 import io.github.nextentity.example.projection.IUsernameGender;
 import io.github.nextentity.example.projection.UsernameGender;
@@ -24,11 +24,11 @@ class UserServiceTest {
     @Autowired
     UserService userService;
     @Autowired
-    Access<User, Long> userAccess;
+    Entities<User, Long> userEntities;
 
     @Test
     void getByUsername() {
-        User first = userAccess.getFirst();
+        User first = userEntities.getFirst();
         if (first != null) {
             List<User> users = userService.getByUsername(first.getUsername());
             Assertions.assertFalse(users.isEmpty());
@@ -40,7 +40,7 @@ class UserServiceTest {
 
     @Test
     void updateRandomNumber() {
-        User first = userAccess.getFirst();
+        User first = userEntities.getFirst();
         User updated = userService.updateRandomNumber(first.getRandomNumber());
         Assertions.assertNotEquals(first.getOptLock(), updated.getOptLock());
     }
@@ -64,8 +64,8 @@ class UserServiceTest {
 
     @Test
     void iUsernameGenderPage() {
-        IUsernameGender first = userAccess.select(IUsernameGender.class).getFirst();
-        IUsernameGender first2 = userAccess.select(IUsernameGender.class).getFirst();
+        IUsernameGender first = userEntities.select(IUsernameGender.class).getFirst();
+        IUsernameGender first2 = userEntities.select(IUsernameGender.class).getFirst();
         System.out.println(first2.equals(first));
 
 
@@ -81,7 +81,7 @@ class UserServiceTest {
 
     @Test
     void updateUser() {
-        User first = userAccess.getFirst();
+        User first = userEntities.getFirst();
         first.setTestInteger(new Random().nextInt());
         userService.updateUser(first);
     }

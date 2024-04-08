@@ -1,13 +1,13 @@
 package io.github.nextentity.data.jdbc;
 
+import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.QueryPostProcessor;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
+import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.data.common.Access;
 import io.github.nextentity.data.common.AccessTypeUtil;
-import io.github.nextentity.data.common.Accesses;
 import io.github.nextentity.data.common.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.ConnectionProvider;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
@@ -37,16 +37,21 @@ public class JdbcAccessConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Access<T, ID> jdbcAccess(DependencyDescriptor descriptor,
-                                                                    @Qualifier("jdbcQuery") Query query,
-                                                                    @Qualifier("jdbcUpdate") UpdateExecutor update,
-                                                                    Metamodel metamodel) {
+    protected <T, ID extends Serializable> Entities<T, ID> jdbcAccess(DependencyDescriptor descriptor,
+                                                                      @Qualifier("jdbcEntitiesFactory")
+                                                                      EntitiesFactory factory) {
         Class<T> entityType = AccessTypeUtil.getEntityType(descriptor);
-        Class<?> dependencyType = descriptor.getDependencyType();
-        if (Access.class.isAssignableFrom(dependencyType)) {
-            AccessTypeUtil.checkIdType(descriptor, metamodel, entityType);
-        }
-        return Accesses.of(entityType, query, update, metamodel);
+        AccessTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
+        return factory.getEntities(entityType);
+    }
+
+    @Bean(name = "jdbcEntitiesFactory")
+    protected EntitiesFactory jdbcEntitiesFactory(JdbcQueryExecutor queryExecutor,
+                                                  UpdateExecutor updateExecutor,
+                                                  @Autowired(required = false)
+                                                  QueryPostProcessor queryPostProcessor,
+                                                  Metamodel metamodel) {
+        return new EntitiesFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
     }
 
     @Bean

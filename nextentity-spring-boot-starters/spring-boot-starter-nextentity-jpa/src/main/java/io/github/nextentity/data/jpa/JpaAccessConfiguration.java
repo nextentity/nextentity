@@ -1,11 +1,12 @@
 package io.github.nextentity.data.jpa;
 
+import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.QueryPostProcessor;
-import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
+import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.data.common.Access;
-import io.github.nextentity.data.common.Accesses;
+import io.github.nextentity.data.common.AccessTypeUtil;
 import io.github.nextentity.data.common.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jpa.JpaQueryExecutor;
@@ -29,13 +30,23 @@ public class JpaAccessConfiguration {
     @Bean
     @Primary
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Access<T, ID> jpaAccess(DependencyDescriptor descriptor,
-                                                                   @Qualifier("jpaQuery") Query query,
-                                                                   @Qualifier("jpaUpdate") UpdateExecutor update,
-                                                                   Metamodel metamodel) {
-        return Accesses.of(descriptor, query, update, metamodel);
+    protected <T, ID extends Serializable> Entities<T, ID> jpaAccess(DependencyDescriptor descriptor,
+                                                                     @Qualifier("jpaEntitiesFactory")
+                                                                     EntitiesFactory factory) {
+        Class<T> entityType = AccessTypeUtil.getEntityType(descriptor);
+        AccessTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
+        return factory.getEntities(entityType);
     }
 
+    @Bean(name = "jpaEntitiesFactory")
+    @Primary
+    protected EntitiesFactory jpaEntitiesFactory(JpaQueryExecutor queryExecutor,
+                                                 UpdateExecutor updateExecutor,
+                                                 @Autowired(required = false)
+                                                 QueryPostProcessor queryPostProcessor,
+                                                 Metamodel metamodel) {
+        return new EntitiesFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
+    }
 
     @Bean
     @Primary

@@ -1,6 +1,7 @@
 package io.github.nextentity.data.common;
 
 import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.meta.Metamodel;
@@ -15,6 +16,7 @@ import java.util.Objects;
  * @since 2024-03-16
  */
 public class AccessTypeUtil {
+
     public static <T> Class<T> getEntityType(DependencyDescriptor descriptor) {
         Class<?> entityType = getEntityType(new Class<?>[]{Select.class, Update.class}, descriptor);
         Objects.requireNonNull(entityType);
@@ -38,7 +40,7 @@ public class AccessTypeUtil {
 
 
     public static <ID extends Serializable> Class<ID> getIdType(DependencyDescriptor descriptor) {
-        Class<?> type = descriptor.getResolvableType().as(ReadableAccess.class).resolveGeneric(1);
+        Class<?> type = descriptor.getResolvableType().as(Entities.class).resolveGeneric(1);
         return TypeCastUtil.cast(type);
     }
 
