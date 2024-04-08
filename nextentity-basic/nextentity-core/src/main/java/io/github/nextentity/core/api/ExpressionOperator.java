@@ -222,7 +222,7 @@ public interface ExpressionOperator<T, U, B> {
 
         AndOperator<T> andIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        AndOperator<T> and(List<? extends TypedExpression<T, Boolean>> expressions);
+        AndOperator<T> and(Iterable<? extends TypedExpression<T, Boolean>> expressions);
 
     }
 
@@ -238,7 +238,7 @@ public interface ExpressionOperator<T, U, B> {
 
         OrOperator<T> orIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        OrOperator<T> or(List<? extends TypedExpression<T, Boolean>> expressions);
+        OrOperator<T> or(Iterable<? extends TypedExpression<T, Boolean>> expressions);
 
     }
 

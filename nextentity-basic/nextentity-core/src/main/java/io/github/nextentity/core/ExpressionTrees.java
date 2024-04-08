@@ -18,6 +18,7 @@ import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Exceptions;
+import io.github.nextentity.core.util.Iterators;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -249,7 +250,7 @@ final class ExpressionTrees {
         @NotNull
         @Override
         public Iterator<String> iterator() {
-            return new ArrayIterator<>(paths);
+            return Iterators.iterate(paths);
         }
 
         @Override

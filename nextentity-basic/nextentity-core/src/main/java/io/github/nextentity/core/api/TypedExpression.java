@@ -208,6 +208,18 @@ public interface TypedExpression<T, U> extends Expression {
 
     interface Predicate<T> extends BasicExpression<T, Boolean>, PredicateOperator<T> {
         Predicate<T> not();
+
+        Predicate<T> and(TypedExpression<T, Boolean> predicate);
+
+        Predicate<T> or(TypedExpression<T, Boolean> predicate);
+
+        Predicate<T> and(TypedExpression<T, Boolean>[] predicate);
+
+        Predicate<T> or(TypedExpression<T, Boolean>[] predicate);
+
+        Predicate<T> and(Iterable<? extends TypedExpression<T, Boolean>> predicates);
+
+        Predicate<T> or(Iterable<? extends TypedExpression<T, Boolean>> predicates);
     }
 
     interface StringExpression<T> extends BasicExpression<T, String> {

@@ -1,5 +1,6 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -113,7 +114,7 @@ public class Tuples {
         @NotNull
         @Override
         public Iterator<Object> iterator() {
-            return new ArrayIterator<>(data);
+            return Iterators.iterate(data);
         }
 
     }

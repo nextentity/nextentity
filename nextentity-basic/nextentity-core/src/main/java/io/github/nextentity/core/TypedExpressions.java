@@ -28,6 +28,7 @@ import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
+import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +40,34 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static io.github.nextentity.core.TypedExpressions.TypeExpressionImpl.EMPTY;
-import static io.github.nextentity.core.api.Operator.*;
+import static io.github.nextentity.core.api.Operator.ADD;
+import static io.github.nextentity.core.api.Operator.AND;
+import static io.github.nextentity.core.api.Operator.AVG;
+import static io.github.nextentity.core.api.Operator.BETWEEN;
+import static io.github.nextentity.core.api.Operator.COUNT;
+import static io.github.nextentity.core.api.Operator.DIVIDE;
+import static io.github.nextentity.core.api.Operator.EQ;
+import static io.github.nextentity.core.api.Operator.GE;
+import static io.github.nextentity.core.api.Operator.GT;
+import static io.github.nextentity.core.api.Operator.IN;
+import static io.github.nextentity.core.api.Operator.IS_NULL;
+import static io.github.nextentity.core.api.Operator.LE;
+import static io.github.nextentity.core.api.Operator.LENGTH;
+import static io.github.nextentity.core.api.Operator.LIKE;
+import static io.github.nextentity.core.api.Operator.LOWER;
+import static io.github.nextentity.core.api.Operator.LT;
+import static io.github.nextentity.core.api.Operator.MAX;
+import static io.github.nextentity.core.api.Operator.MIN;
+import static io.github.nextentity.core.api.Operator.MOD;
+import static io.github.nextentity.core.api.Operator.MULTIPLY;
+import static io.github.nextentity.core.api.Operator.NE;
+import static io.github.nextentity.core.api.Operator.NOT;
+import static io.github.nextentity.core.api.Operator.OR;
+import static io.github.nextentity.core.api.Operator.SUBSTRING;
+import static io.github.nextentity.core.api.Operator.SUBTRACT;
+import static io.github.nextentity.core.api.Operator.SUM;
+import static io.github.nextentity.core.api.Operator.TRIM;
+import static io.github.nextentity.core.api.Operator.UPPER;
 
 public class TypedExpressions {
 
@@ -438,22 +466,12 @@ public class TypedExpressions {
         }
 
         @Override
-        default OrOperator or(List list) {
-            return operate(OR, asTypeExpressions(list));
-        }
-
-        @Override
-        default OrOperator or(TypedExpression predicate) {
+        default Predicate or(TypedExpression predicate) {
             return operate(OR, predicate);
         }
 
         @Override
-        default AndOperator and(List list) {
-            return operate(AND, asTypeExpressions(list));
-        }
-
-        @Override
-        default AndOperator and(TypedExpression expression) {
+        default Predicate and(TypedExpression expression) {
             return operate(AND, expression);
         }
 
@@ -496,6 +514,26 @@ public class TypedExpressions {
         @Override
         default Predicate not() {
             return operate(NOT);
+        }
+
+        @Override
+        default Predicate and(TypedExpression[] predicate) {
+            return operate(AND, Arrays.asList(predicate));
+        }
+
+        @Override
+        default Predicate or(TypedExpression[] predicate) {
+            return operate(OR, Arrays.asList(predicate));
+        }
+
+        @Override
+        default Predicate and(Iterable predicates) {
+            return operate(AND, TypeCastUtil.cast(Iterators.toList((Iterable<?>) predicates)));
+        }
+
+        @Override
+        default Predicate or(Iterable predicates) {
+            return operate(OR, TypeCastUtil.cast(Iterators.toList((Iterable<?>) predicates)));
         }
 
         default AbstractTypeExpression get0(Path<?, ?> path) {

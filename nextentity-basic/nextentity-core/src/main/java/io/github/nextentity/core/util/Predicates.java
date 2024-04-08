@@ -6,13 +6,7 @@ import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.TypedExpression;
 import io.github.nextentity.core.api.TypedExpression.Predicate;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static io.github.nextentity.core.api.Operator.AND;
 import static io.github.nextentity.core.api.Operator.NOT;
-import static io.github.nextentity.core.api.Operator.OR;
 
 /**
  * @author HuangChengwei
@@ -20,35 +14,26 @@ import static io.github.nextentity.core.api.Operator.OR;
  */
 public interface Predicates {
 
+    static <T> Predicate<T> of(TypedExpression<T, Boolean> predicate) {
+        return TypedExpressions.ofBoolean(predicate);
+    }
+
     @SafeVarargs
     static <T> Predicate<T> and(TypedExpression<T, Boolean> predicate,
-                                        TypedExpression<T, Boolean>... predicates) {
-        List<Expression> metas = Arrays.stream(predicates)
-                .map(TypedExpression::tree)
-                .collect(Collectors.toList());
-        Expression expression = Expressions.operate(predicate.tree(), AND, metas);
-        return TypedExpressions.ofBoolean(expression);
+                                TypedExpression<T, Boolean>... predicates) {
+        return of(predicate).and(predicates);
     }
 
     @SafeVarargs
     static <T> Predicate<T> or(TypedExpression<T, Boolean> predicate,
-                                       TypedExpression<T, Boolean>... predicates) {
-        List<Expression> metas = Arrays.stream(predicates)
-                .map(TypedExpression::tree)
-                .collect(Collectors.toList());
-        Expression expression = Expressions.operate(predicate.tree(), OR, metas);
-        return TypedExpressions.ofBoolean(expression);
+                               TypedExpression<T, Boolean>... predicates) {
+        return of(predicate).or(predicates);
     }
 
     @SafeVarargs
     static <T> Predicate<T> orNot(TypedExpression<T, Boolean> predicate,
-                                          TypedExpression<T, Boolean>... predicates) {
-        List<Expression> metas = Arrays.stream(predicates)
-                .map(TypedExpression::tree)
-                .collect(Collectors.toList());
-        Expression expression = Expressions.operate(predicate.tree(), OR, metas);
-        expression = Expressions.operate(expression, NOT);
-        return TypedExpressions.ofBoolean(expression);
+                                  TypedExpression<T, Boolean>... predicates) {
+        return of(predicate).or(predicates).not();
     }
 
     static <T> Predicate<T> not(TypedExpression<T, Boolean> lt) {
