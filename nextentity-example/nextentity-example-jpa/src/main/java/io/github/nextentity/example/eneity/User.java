@@ -1,9 +1,9 @@
 package io.github.nextentity.example.eneity;
 
-import io.github.nextentity.core.api.TypedExpression.EntityPathExpression;
-import io.github.nextentity.core.api.TypedExpression.NumberPathExpression;
-import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.api.TypedExpression.StringPathExpression;
+import io.github.nextentity.core.api.Expression.EntityPathExpression;
+import io.github.nextentity.core.api.Expression.NumberPathExpression;
+import io.github.nextentity.core.api.Expression.PathExpression;
+import io.github.nextentity.core.api.Expression.StringPathExpression;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;

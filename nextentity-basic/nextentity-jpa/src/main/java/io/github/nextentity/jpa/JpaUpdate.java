@@ -1,15 +1,13 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.api.Expression.Column;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.api.ExpressionTree;
+import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.Updaters.UpdaterImpl;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceUnitUtil;
@@ -48,7 +46,7 @@ public class JpaUpdate implements Update {
 
     @Override
     public <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
-        List<Expression> ids = new ArrayList<>();
+        List<ExpressionTree> ids = new ArrayList<>();
         Set<Object> uniqueValues = new HashSet<>();
         int size = 0;
         for (T entity : entities) {
@@ -56,7 +54,7 @@ public class JpaUpdate implements Update {
             Object id = requireId(entity);
             if (uniqueValues.add(id)) {
                 if (!util.isLoaded(entity)) {
-                    ids.add(Expressions.of(id));
+                    ids.add(ExpressionTrees.of(id));
                 }
             } else {
                 throw new IllegalArgumentException("duplicate id");
@@ -69,10 +67,10 @@ public class JpaUpdate implements Update {
             EntityType<T> entity = entityManager.getMetamodel().entity(entityType);
             SingularAttribute<? super T, ?> id = entity.getId(entity.getIdType().getJavaType());
             String name = id.getName();
-            Column idPath = Expressions.column(name);
-            Expression operate = Expressions.operate(idPath, Operator.IN, ids);
+            Column idPath = ExpressionTrees.column(name);
+            ExpressionTree operate = ExpressionTrees.operate(idPath, Operator.IN, ids);
             List<T> dbList = query.from(entityType)
-                    .where(TypedExpressions.of(operate))
+                    .where(Expressions.of(operate))
                     .getList();
             if (dbList.size() != size) {
                 throw new IllegalArgumentException("some id not found");
@@ -102,11 +100,6 @@ public class JpaUpdate implements Update {
         }
         ReflectUtil.copyTargetNullFields(t, entity, entityType);
         return entityManager.merge(entity);
-    }
-
-    @Override
-    public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
-        return new UpdaterImpl<>(this, type);
     }
 
     private <T> Object requireId(T entity) {

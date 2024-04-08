@@ -1,4 +1,4 @@
-package io.github.nextentity.core.api;
+package io.github.nextentity.core.util;
 
 import java.util.ArrayList;
 import java.util.Collection;

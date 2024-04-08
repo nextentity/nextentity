@@ -1,10 +1,10 @@
 package io.github.nextentity.core.util;
 
+import io.github.nextentity.core.ExpressionTrees;
 import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
+import io.github.nextentity.core.api.Expression.Predicate;
+import io.github.nextentity.core.api.ExpressionTree;
 
 import static io.github.nextentity.core.api.Operator.NOT;
 
@@ -14,31 +14,25 @@ import static io.github.nextentity.core.api.Operator.NOT;
  */
 public interface Predicates {
 
-    static <T> Predicate<T> of(TypedExpression<T, Boolean> predicate) {
-        return TypedExpressions.ofBoolean(predicate);
+    static <T> Predicate<T> of(Expression<T, Boolean> predicate) {
+        return Expressions.ofBoolean(predicate);
     }
 
     @SafeVarargs
-    static <T> Predicate<T> and(TypedExpression<T, Boolean> predicate,
-                                TypedExpression<T, Boolean>... predicates) {
+    static <T> Predicate<T> and(Expression<T, Boolean> predicate,
+                                Expression<T, Boolean>... predicates) {
         return of(predicate).and(predicates);
     }
 
     @SafeVarargs
-    static <T> Predicate<T> or(TypedExpression<T, Boolean> predicate,
-                               TypedExpression<T, Boolean>... predicates) {
+    static <T> Predicate<T> or(Expression<T, Boolean> predicate,
+                               Expression<T, Boolean>... predicates) {
         return of(predicate).or(predicates);
     }
 
-    @SafeVarargs
-    static <T> Predicate<T> orNot(TypedExpression<T, Boolean> predicate,
-                                  TypedExpression<T, Boolean>... predicates) {
-        return of(predicate).or(predicates).not();
-    }
-
-    static <T> Predicate<T> not(TypedExpression<T, Boolean> lt) {
-        Expression expression = Expressions.operate(lt.tree(), NOT);
-        return TypedExpressions.ofBoolean(expression);
+    static <T> Predicate<T> not(Expression<T, Boolean> lt) {
+        ExpressionTree expression = ExpressionTrees.operate(lt.rootNode(), NOT);
+        return Expressions.ofBoolean(expression);
     }
 
 }

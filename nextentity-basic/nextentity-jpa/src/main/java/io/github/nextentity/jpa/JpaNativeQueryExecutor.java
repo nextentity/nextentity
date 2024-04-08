@@ -4,13 +4,13 @@ import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Expression.QueryStructure;
-import io.github.nextentity.core.api.Expression.Selection;
-import io.github.nextentity.core.api.Expression.Selection.EntitySelected;
-import io.github.nextentity.core.api.Expression.Selection.MultiSelected;
-import io.github.nextentity.core.api.Expression.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.Expression.Selection.SingleSelected;
+import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.EntitySelected;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
@@ -93,7 +93,7 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
             if (1 != columnsCount) {
                 throw new IllegalStateException();
             }
-            ExpressionTree expression = ((SingleSelected) select).expression();
+            ExpressionNode expression = ((SingleSelected) select).expression();
             ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
             Class<?> type = typeResolver.getExpressionType(expression, structure.from().type());
             for (Object r : resultSet) {

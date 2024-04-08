@@ -1,6 +1,6 @@
 package io.github.nextentity.core.converter;
 
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.util.Lists;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;

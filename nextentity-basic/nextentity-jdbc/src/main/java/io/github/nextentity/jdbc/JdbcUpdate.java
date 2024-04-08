@@ -1,10 +1,8 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.SQL;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.SqlLogger;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.api.Updater;
-import io.github.nextentity.core.Updaters.UpdaterImpl;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
@@ -63,7 +61,7 @@ public class JdbcUpdate implements Update {
         PreparedSql preparedSql = sqlBuilder.buildUpdate(metamodel.getEntity(entityType));
         execute(connection -> {
             String sql = preparedSql.sql();
-            SQL.debug(sql);
+            SqlLogger.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(list, preparedSql.columns(), statement);
                 int[] updateRowCounts = statement.executeBatch();
@@ -97,7 +95,7 @@ public class JdbcUpdate implements Update {
         PreparedSql preparedSql = sqlBuilder.buildDelete(metamodel.getEntity(entityType));
         execute(connection -> {
             String sql = preparedSql.sql();
-            SQL.debug(sql);
+            SqlLogger.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(entities, preparedSql.columns(), statement);
                 int[] result = statement.executeBatch();
@@ -131,7 +129,7 @@ public class JdbcUpdate implements Update {
         }
         return execute(connection -> {
             String sql = preparedSql.sql();
-            SQL.debug(sql);
+            SqlLogger.debug(sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(Lists.of(entity), preparedSql.columns(), statement);
                 int i = statement.executeUpdate();
@@ -152,11 +150,6 @@ public class JdbcUpdate implements Update {
             }
             return entity;
         });
-    }
-
-    @Override
-    public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
-        return new UpdaterImpl<>(this, type);
     }
 
     private static void setNewVersion(Object entity, List<BasicAttribute> versions) {
@@ -193,7 +186,7 @@ public class JdbcUpdate implements Update {
                                  PreparedSql preparedSql)
             throws SQLException {
         String sql = preparedSql.sql();
-        SQL.debug(sql);
+        SqlLogger.debug(sql);
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             List<BasicAttribute> columns = preparedSql.columns();
             setArgs(entities, columns, statement);

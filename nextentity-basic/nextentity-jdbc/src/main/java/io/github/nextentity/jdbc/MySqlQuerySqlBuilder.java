@@ -1,22 +1,22 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Expression.Column;
-import io.github.nextentity.core.api.Expression.Constant;
-import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Expression.From;
-import io.github.nextentity.core.api.Expression.From.Entity;
-import io.github.nextentity.core.api.Expression.From.FromSubQuery;
-import io.github.nextentity.core.api.Expression.Operation;
-import io.github.nextentity.core.api.Expression.Order;
-import io.github.nextentity.core.api.Expression.QueryStructure;
-import io.github.nextentity.core.api.Expression.Selection;
-import io.github.nextentity.core.api.Expression.Selection.EntitySelected;
-import io.github.nextentity.core.api.Expression.Selection.MultiSelected;
-import io.github.nextentity.core.api.Expression.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.Expression.Selection.SingleSelected;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.api.ExpressionTree;
+import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
+import io.github.nextentity.core.api.ExpressionTree.Literal;
+import io.github.nextentity.core.api.ExpressionTree.Operation;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.Entity;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.FromSubQuery;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.EntitySelected;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.SortOrder;
@@ -75,7 +75,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
 
         protected final EntityType entity;
         protected final Metamodel mappers;
-        protected final List<ExpressionTree> selectedExpressions = new ArrayList<>();
+        protected final List<ExpressionNode> selectedExpressions = new ArrayList<>();
         protected final List<Attribute> selectedAttributes = new ArrayList<>();
 
         protected final String fromAlias;
@@ -149,7 +149,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                         continue;
                     }
                     BasicAttribute column = (BasicAttribute) attribute;
-                    Column columns = Expressions.column(column.name());
+                    Column columns = ExpressionTrees.column(column.name());
                     selectedExpressions.add(columns);
                     selectedAttributes.add(attribute);
                 }
@@ -183,7 +183,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                 sql.append(DISTINCT);
             }
             String join = NONE_DELIMITER;
-            for (ExpressionTree expression : selectedExpressions) {
+            for (ExpressionNode expression : selectedExpressions) {
                 sql.append(join);
                 appendExpression(expression);
                 appendSelectAlias(expression);
@@ -191,7 +191,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             }
         }
 
-        private void appendSelectAlias(ExpressionTree expression) {
+        private void appendSelectAlias(ExpressionNode expression) {
             if (selectIndex.get() != 0 || !(expression instanceof Column) || ((Column) expression).size() != 1) {
                 int index = selectIndex.getAndIncrement();
                 String alias = Integer.toString(index, Character.MAX_RADIX);
@@ -288,8 +288,8 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         protected void appendWhere() {
-            Expression where = queryStructure.where();
-            if (Expressions.isNullOrTrue(where)) {
+            ExpressionTree where = queryStructure.where();
+            if (ExpressionTrees.isNullOrTrue(where)) {
                 return;
             }
             sql.append(WHERE);
@@ -297,25 +297,25 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         protected void appendHaving() {
-            Expression having = queryStructure.having();
-            if (Expressions.isNullOrTrue(having)) {
+            ExpressionTree having = queryStructure.having();
+            if (ExpressionTrees.isNullOrTrue(having)) {
                 return;
             }
             sql.append(HAVING);
             appendExpression(having);
         }
 
-        protected void appendExpression(Expression expr) {
+        protected void appendExpression(ExpressionTree expr) {
             appendExpression(args, expr);
         }
 
-        protected void appendExpression(List<Object> args, Expression expression) {
-            appendExpression(args, expression.tree());
+        protected void appendExpression(List<Object> args, ExpressionTree expression) {
+            appendExpression(args, expression.rootNode());
         }
 
-        private void appendExpression(List<Object> args, ExpressionTree expression) {
-            if (expression instanceof Constant) {
-                Constant constant = (Constant) expression;
+        private void appendExpression(List<Object> args, ExpressionNode expression) {
+            if (expression instanceof Literal) {
+                Literal constant = (Literal) expression;
                 appendConstant(args, constant);
             } else if (expression instanceof Column) {
                 Column column = (Column) expression;
@@ -330,7 +330,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             }
         }
 
-        private void appendConstant(List<Object> args, Constant constant) {
+        private void appendConstant(List<Object> args, Literal constant) {
             Object value = constant.value();
             if (value instanceof Boolean) {
                 Boolean b = (Boolean) value;
@@ -343,7 +343,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
 
         private void appendOperation(List<Object> args, Operation operation) {
             Operator operator = operation.operator();
-            ExpressionTree leftOperand = operation.firstOperand();
+            ExpressionNode leftOperand = operation.firstOperand();
             Operator operator0 = getOperator(leftOperand);
             switch (operator) {
                 case NOT: {
@@ -380,9 +380,9 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                     } else {
                         appendExpression(args, leftOperand);
                     }
-                    List<? extends ExpressionTree> operands = operation.operands();
+                    List<? extends ExpressionNode> operands = operation.operands();
                     for (int i = 1; i < operands.size(); i++) {
-                        ExpressionTree value = operands.get(i);
+                        ExpressionNode value = operands.get(i);
                         appendOperator(operator);
                         Operator operator1 = getOperator(value);
                         if (operator1 != null && operator1.priority() >= operator.priority()) {
@@ -408,14 +408,14 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                 case AVG:
                 case SUM: {
                     appendOperator(operator);
-                    List<? extends Expression> operands = operation.operands();
+                    List<? extends ExpressionTree> operands = operation.operands();
                     boolean notSingleSubQuery = !(leftOperand instanceof QueryStructure) || operands.size() != 1;
                     if (notSingleSubQuery) {
                         sql.append('(');
                     }
                     appendExpression(args, leftOperand);
                     for (int i = 1; i < operands.size(); i++) {
-                        Expression expression = operands.get(i);
+                        ExpressionTree expression = operands.get(i);
                         sql.append(',');
                         appendExpression(args, expression);
                     }
@@ -431,11 +431,11 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                         appendBlank();
                         appendExpression(leftOperand);
                         appendOperator(operator);
-                        List<? extends Expression> operands = operation.operands();
+                        List<? extends ExpressionTree> operands = operation.operands();
                         boolean notSingleSubQuery = operands.size() != 2 || !(operands.get(1) instanceof QueryStructure);
                         char join = notSingleSubQuery ? '(' : ' ';
                         for (int i = 1; i < operands.size(); i++) {
-                            Expression expression = operands.get(i);
+                            ExpressionTree expression = operands.get(i);
                             sql.append(join);
                             appendExpression(args, expression);
                             join = ',';
@@ -451,7 +451,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
                     appendExpression(args, leftOperand);
                     appendOperator(operator);
                     appendBlank();
-                    Expression operate = Expressions
+                    ExpressionTree operate = ExpressionTrees
                             .operate(operation.secondOperand(), Operator.AND, Lists.of(operation.thirdOperand()));
                     appendExpression(args, operate);
                     break;
@@ -496,7 +496,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             }
             Class<?> type = queryStructure.from().type();
 
-            Column join = Expressions.column(Lists.of(column.get(0)));
+            Column join = ExpressionTrees.column(Lists.of(column.get(0)));
 
             for (String path : column) {
                 EntityType info = mappers.getEntity(type);
@@ -572,7 +572,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
             return k.parent();
         }
 
-        Operator getOperator(ExpressionTree expression) {
+        Operator getOperator(ExpressionNode expression) {
             return expression instanceof Operation ? ((Operation) expression).operator() : null;
         }
 
@@ -614,11 +614,11 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         private void appendGroupBy() {
-            List<? extends Expression> groupBy = queryStructure.groupBy();
+            List<? extends ExpressionTree> groupBy = queryStructure.groupBy();
             if (groupBy != null && !groupBy.isEmpty()) {
                 sql.append(" group by ");
                 boolean first = true;
-                for (Expression e : groupBy) {
+                for (ExpressionTree e : groupBy) {
                     if (first) {
                         first = false;
                     } else {

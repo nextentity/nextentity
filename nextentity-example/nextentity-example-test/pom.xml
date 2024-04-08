@@ -7,7 +7,7 @@
   <parent>
     <groupId>io.github.nextentity</groupId>
     <artifactId>nextentity-example</artifactId>
-    <version>1.0.3</version><!-- project version -->
+    <version>1.1.0</version><!-- project version -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 

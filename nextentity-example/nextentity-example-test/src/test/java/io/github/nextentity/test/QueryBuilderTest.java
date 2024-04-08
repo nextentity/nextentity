@@ -1,8 +1,10 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.Predicate;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query;
@@ -10,10 +12,8 @@ import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where;
-import io.github.nextentity.core.api.Root;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -822,7 +822,7 @@ class QueryBuilderTest {
         }
 
         ExpressionsBuilder<User> expressionsBuilder =
-                (Root<User> root) -> Lists.of(root.get(User::getRandomNumber));
+                (EntityRoot<User> root) -> Lists.of(root.get(User::getRandomNumber));
         list = userQuery
                 .select(Lists.of(
                         get(User::getRandomNumber),
@@ -912,12 +912,12 @@ class QueryBuilderTest {
                     .orderBy(User::getRandomNumber, User::getId)
                     .slice(0, 1);
             assertEquals(slice.total(), sorted.size());
-            Root<User> root = checker.collector
+            EntityRoot<User> root = checker.collector
                     .orderBy(User::getRandomNumber, User::getId).root();
             assertEquals(root, Paths.root());
 
             users = checker.collector
-                    .orderBy((Root<User> r) -> Lists.of(
+                    .orderBy((EntityRoot<User> r) -> Lists.of(
                             r.get(User::getRandomNumber).asc(),
                             r.get(User::getId).asc()
                     ))
@@ -1136,7 +1136,7 @@ class QueryBuilderTest {
         collector = check.collector.where(User::getRandomNumber).eq(1).where(User::isValid).eq(true);
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber).eq(1)
-                .where((Path<User, Boolean>) User::isValid).eq(TypedExpressions.ofTrue());
+                .where((Path<User, Boolean>) User::isValid).eq(Expressions.ofTrue());
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1).and(User::isValid).eq(true));
         result.add(new Checker<>(users, collector));
@@ -1164,7 +1164,7 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(get(User::getId)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where((Root<User> root) -> root.get(User::getRandomNumber).eq(root.get(User::getId)));
+        collector = check.collector.where((EntityRoot<User> root) -> root.get(User::getRandomNumber).eq(root.get(User::getId)));
         result.add(new Checker<>(users, collector));
         collector = check.collector
                 .whereIf(true, root -> root.get(User::getRandomNumber).eq(root.get(User::getId)))
@@ -1208,8 +1208,8 @@ class QueryBuilderTest {
             collector = check.collector.where(get(User::getRandomNumber).in(values));
             result.add(new Checker<>(users, collector));
 
-            List<TypedExpression<User, Integer>> collect = values.stream()
-                    .<TypedExpression<User, Integer>>map(TypedExpressions::of)
+            List<Expression<User, Integer>> collect = values.stream()
+                    .<Expression<User, Integer>>map(Expressions::of)
                     .collect(Collectors.toList());
             collector = check.collector.where(User::getRandomNumber).in(collect);
             result.add(new Checker<>(users, collector));
@@ -1255,9 +1255,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).ge(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).ge(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).ge(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).ge(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).ge(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1267,9 +1267,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).gt(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).gt(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).gt(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).gt(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).gt(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
         //
         //        B le(U value);
@@ -1278,9 +1278,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).le(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).le(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).le(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).le(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).le(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
         //
         //        B lt(U value);
@@ -1289,9 +1289,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).lt(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).lt(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).lt(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).lt(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).lt(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
         //
         //        B between(U l, U r);
@@ -1305,19 +1305,19 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).between(25, 73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).between(25, TypedExpressions.of(73));
+        collector = check.collector.where(User::getRandomNumber).between(25, Expressions.of(73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).between(25, TypedExpressions.of(73)));
+        collector = check.collector.where(get(User::getRandomNumber).between(25, Expressions.of(73)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).between(TypedExpressions.of(25), 73);
+        collector = check.collector.where(User::getRandomNumber).between(Expressions.of(25), 73);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).between(TypedExpressions.of(25), 73));
+        collector = check.collector.where(get(User::getRandomNumber).between(Expressions.of(25), 73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber)
-                .between(TypedExpressions.of(25), TypedExpressions.of(73));
+                .between(Expressions.of(25), Expressions.of(73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber)
-                .between(TypedExpressions.of(25), TypedExpressions.of(73)));
+                .between(Expressions.of(25), Expressions.of(73)));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1331,19 +1331,19 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).notBetween(25, 73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).notBetween(25, TypedExpressions.of(73));
+        collector = check.collector.where(User::getRandomNumber).notBetween(25, Expressions.of(73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).notBetween(25, TypedExpressions.of(73)));
+        collector = check.collector.where(get(User::getRandomNumber).notBetween(25, Expressions.of(73)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).notBetween(TypedExpressions.of(25), 73);
+        collector = check.collector.where(User::getRandomNumber).notBetween(Expressions.of(25), 73);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).notBetween(TypedExpressions.of(25), 73));
+        collector = check.collector.where(get(User::getRandomNumber).notBetween(Expressions.of(25), 73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber)
-                .notBetween(TypedExpressions.of(25), TypedExpressions.of(73));
+                .notBetween(Expressions.of(25), Expressions.of(73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber)
-                .notBetween(TypedExpressions.of(25), TypedExpressions.of(73)));
+                .notBetween(Expressions.of(25), Expressions.of(73)));
         result.add(new Checker<>(users, collector));
 
         //   NumberOperator<T, U, B> add(U value);
@@ -1352,9 +1352,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).add(1).eq(5));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).add(TypedExpressions.of(1)).eq(5);
+        collector = check.collector.where(User::getRandomNumber).add(Expressions.of(1)).eq(5);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).add(TypedExpressions.of(1)).eq(5));
+        collector = check.collector.where(get(User::getRandomNumber).add(Expressions.of(1)).eq(5));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1364,9 +1364,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).subtract(1).eq(5));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).subtract(TypedExpressions.of(1)).eq(5);
+        collector = check.collector.where(User::getRandomNumber).subtract(Expressions.of(1)).eq(5);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).subtract(TypedExpressions.of(1)).eq(5));
+        collector = check.collector.where(get(User::getRandomNumber).subtract(Expressions.of(1)).eq(5));
         result.add(new Checker<>(users, collector));
         //
         //        NumberOperator<T, U, B> multiply(U value);
@@ -1375,9 +1375,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).multiply(3).eq(45));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).multiply(TypedExpressions.of(3)).eq(45);
+        collector = check.collector.where(User::getRandomNumber).multiply(Expressions.of(3)).eq(45);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).multiply(TypedExpressions.of(3)).eq(45));
+        collector = check.collector.where(get(User::getRandomNumber).multiply(Expressions.of(3)).eq(45));
         result.add(new Checker<>(users, collector));
         //
         //        NumberOperator<T, U, B> divide(U value);
@@ -1386,9 +1386,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).divide(3).eq(12));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).divide(TypedExpressions.of(3)).eq(12);
+        collector = check.collector.where(User::getRandomNumber).divide(Expressions.of(3)).eq(12);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).divide(TypedExpressions.of(3)).eq(12));
+        collector = check.collector.where(get(User::getRandomNumber).divide(Expressions.of(3)).eq(12));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1399,9 +1399,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).mod(8).eq(2));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).mod(TypedExpressions.of(8)).eq(2);
+        collector = check.collector.where(User::getRandomNumber).mod(Expressions.of(8)).eq(2);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).mod(TypedExpressions.of(8)).eq(2));
+        collector = check.collector.where(get(User::getRandomNumber).mod(Expressions.of(8)).eq(2));
         result.add(new Checker<>(users, collector));
 
 

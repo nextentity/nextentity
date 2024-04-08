@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Expression.Order;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
@@ -10,7 +10,7 @@ import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
 import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
-import io.github.nextentity.core.api.Root;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.SortOrder;
@@ -50,7 +50,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
-    public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
+    public Collector<U> orderBy(Function<EntityRoot<T>, List<? extends Order<T>>> ordersBuilder) {
         return orderBy(ordersBuilder.apply(Paths.root()));
     }
 
@@ -100,7 +100,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
-    public Root<T> root() {
+    public EntityRoot<T> root() {
         return Paths.root();
     }
 }

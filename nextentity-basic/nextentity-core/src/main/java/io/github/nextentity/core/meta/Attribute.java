@@ -1,7 +1,7 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.api.Expression.Column;
-import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.api.ExpressionTree.Column;
 import io.github.nextentity.core.exception.BeanReflectiveException;
 import io.github.nextentity.core.reflect.ReflectUtil;
 
@@ -83,7 +83,7 @@ public interface Attribute extends Type {
         List<String> paths = attributes.stream()
                 .map(Attribute::name)
                 .collect(Collectors.toList());
-        return Expressions.column(paths);
+        return ExpressionTrees.column(paths);
     }
 
 }

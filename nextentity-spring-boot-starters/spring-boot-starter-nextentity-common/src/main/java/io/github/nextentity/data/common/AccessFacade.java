@@ -1,15 +1,18 @@
 package io.github.nextentity.data.common;
 
+import io.github.nextentity.core.ExpressionTrees;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.TypedExpressions;
 import io.github.nextentity.core.Updaters;
-import io.github.nextentity.core.api.Expression.Order;
-import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
-import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
-import io.github.nextentity.core.api.ExpressionOperator.PredicateOperator;
-import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
+import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.OperatableExpression;
+import io.github.nextentity.core.api.Expression.PathExpression;
+import io.github.nextentity.core.api.Expression.Predicate;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
@@ -24,12 +27,9 @@ import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.Root;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BasicExpression;
-import io.github.nextentity.core.api.TypedExpression.PathExpression;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.api.Updater;
 import io.github.nextentity.core.meta.Attribute;
@@ -60,14 +60,14 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
     protected Select<T> select;
     protected Updater<T> updater;
 
-    protected BasicExpression<T, ID> id;
+    protected OperatableExpression<T, ID> id;
     protected Function<T, ID> getId;
 
     protected void init(Class<T> entityType, Query query, Update update, Metamodel metamodel) {
         this.select = query.from(entityType);
         this.updater = Updaters.create(update, entityType);
         Attribute idAttribute = metamodel.getEntity(entityType).id();
-        this.id = TypedExpressions.ofBasic(Expressions.column(idAttribute.name()));
+        this.id = Expressions.ofBasic(ExpressionTrees.column(idAttribute.name()));
         this.getId = t -> TypeCastUtil.unsafeCast(idAttribute.get(t));
     }
 
@@ -82,7 +82,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         if (idList.isEmpty()) {
             return Collections.emptyList();
         }
-        PredicateOperator<T> predicate = id.in(idList);
+        Predicate<T> predicate = id.in(idList);
         return where(predicate).getList();
     }
 
@@ -95,7 +95,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.select(projectionType);
     }
 
-    public Where0<T, Tuple> select(List<? extends TypedExpression<T, ?>> paths) {
+    public Where0<T, Tuple> select(List<? extends Expression<T, ?>> paths) {
         return select.select(paths);
     }
 
@@ -103,7 +103,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.select(selectBuilder);
     }
 
-    public <R> Where0<T, R> select(TypedExpression<T, R> expression) {
+    public <R> Where0<T, R> select(Expression<T, R> expression) {
         return select.select(expression);
     }
 
@@ -151,39 +151,39 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.select(a, b, c, d, e, f, g, h, i, j);
     }
 
-    public <A, B> Where0<T, Tuple2<A, B>> select(TypedExpression<T, A> a, TypedExpression<T, B> b) {
+    public <A, B> Where0<T, Tuple2<A, B>> select(Expression<T, A> a, Expression<T, B> b) {
         return select.select(a, b);
     }
 
-    public <A, B, C> Where0<T, Tuple3<A, B, C>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c) {
+    public <A, B, C> Where0<T, Tuple3<A, B, C>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c) {
         return select.select(a, b, c);
     }
 
-    public <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d) {
+    public <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d) {
         return select.select(a, b, c, d);
     }
 
-    public <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e) {
+    public <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e) {
         return select.select(a, b, c, d, e);
     }
 
-    public <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f) {
+    public <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f) {
         return select.select(a, b, c, d, e, f);
     }
 
-    public <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g) {
+    public <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g) {
         return select.select(a, b, c, d, e, f, g);
     }
 
-    public <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h) {
+    public <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h) {
         return select.select(a, b, c, d, e, f, g, h);
     }
 
-    public <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i) {
+    public <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i) {
         return select.select(a, b, c, d, e, f, g, h, i);
     }
 
-    public <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i, TypedExpression<T, J> j) {
+    public <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i, Expression<T, J> j) {
         return select.select(a, b, c, d, e, f, g, h, i, j);
     }
 
@@ -191,7 +191,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.selectDistinct(projectionType);
     }
 
-    public Where0<T, Tuple> selectDistinct(List<? extends TypedExpression<T, ?>> paths) {
+    public Where0<T, Tuple> selectDistinct(List<? extends Expression<T, ?>> paths) {
         return select.selectDistinct(paths);
     }
 
@@ -199,7 +199,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.selectDistinct(selectBuilder);
     }
 
-    public <R> Where0<T, R> selectDistinct(TypedExpression<T, R> expression) {
+    public <R> Where0<T, R> selectDistinct(Expression<T, R> expression) {
         return select.selectDistinct(expression);
     }
 
@@ -247,39 +247,39 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.selectDistinct(a, b, c, d, e, f, g, h, i, j);
     }
 
-    public <A, B> Where0<T, Tuple2<A, B>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b) {
+    public <A, B> Where0<T, Tuple2<A, B>> selectDistinct(Expression<T, A> a, Expression<T, B> b) {
         return select.selectDistinct(a, b);
     }
 
-    public <A, B, C> Where0<T, Tuple3<A, B, C>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c) {
+    public <A, B, C> Where0<T, Tuple3<A, B, C>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c) {
         return select.selectDistinct(a, b, c);
     }
 
-    public <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d) {
+    public <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d) {
         return select.selectDistinct(a, b, c, d);
     }
 
-    public <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e) {
+    public <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e) {
         return select.selectDistinct(a, b, c, d, e);
     }
 
-    public <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f) {
+    public <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f) {
         return select.selectDistinct(a, b, c, d, e, f);
     }
 
-    public <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g) {
+    public <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g) {
         return select.selectDistinct(a, b, c, d, e, f, g);
     }
 
-    public <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h) {
+    public <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h) {
         return select.selectDistinct(a, b, c, d, e, f, g, h);
     }
 
-    public <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i) {
+    public <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i) {
         return select.selectDistinct(a, b, c, d, e, f, g, h, i);
     }
 
-    public <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i, TypedExpression<T, J> j) {
+    public <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i, Expression<T, J> j) {
         return select.selectDistinct(a, b, c, d, e, f, g, h, i, j);
     }
 
@@ -315,7 +315,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.fetch(p0, p1, p3);
     }
 
-    public Where<T, T> where(TypedExpression<T, Boolean> predicate) {
+    public Where<T, T> where(Expression<T, Boolean> predicate) {
         return select.where(predicate);
     }
 
@@ -335,7 +335,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.orderBy(orders);
     }
 
-    public Collector<T> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
+    public Collector<T> orderBy(Function<EntityRoot<T>, List<? extends Order<T>>> ordersBuilder) {
         return select.orderBy(ordersBuilder);
     }
 
@@ -493,7 +493,7 @@ public class AccessFacade<T, ID> implements Access<T, ID> {
         return select.buildMetadata();
     }
 
-    public Root<T> root() {
+    public EntityRoot<T> root() {
         return select.root();
     }
 

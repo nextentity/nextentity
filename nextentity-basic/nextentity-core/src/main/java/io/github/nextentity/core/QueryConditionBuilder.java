@@ -3,17 +3,19 @@ package io.github.nextentity.core;
 import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
 import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Expression.Operation;
-import io.github.nextentity.core.api.Expression.Order;
-import io.github.nextentity.core.api.Expression.QueryStructure;
-import io.github.nextentity.core.api.Expression.Selection;
-import io.github.nextentity.core.api.Expression.Selection.MultiSelected;
-import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
-import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
-import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.api.Expression.OperatableExpression;
+import io.github.nextentity.core.api.ExpressionTree;
+import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
+import io.github.nextentity.core.api.ExpressionTree.Operation;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.NumberPath;
@@ -27,9 +29,7 @@ import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.api.Root;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BasicExpression;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,9 +41,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings("PatternVariableCanBeUsed")
 public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, AbstractCollector<U> {
 
-    static final SingleSelectedImpl SELECT_ANY = new SingleSelectedImpl(Integer.class, Expressions.TRUE, false);
+    static final SingleSelectedImpl SELECT_ANY = new SingleSelectedImpl(Integer.class, ExpressionTrees.TRUE, false);
 
-    static final SingleSelectedImpl COUNT_ANY = new SingleSelectedImpl(Integer.class, Expressions.operate(Expressions.TRUE, Operator.COUNT), false);
+    static final SingleSelectedImpl COUNT_ANY = new SingleSelectedImpl(Integer.class, ExpressionTrees.operate(ExpressionTrees.TRUE, Operator.COUNT), false);
 
     final QueryExecutor queryExecutor;
     final QueryStructureImpl queryStructure;
@@ -65,9 +65,9 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     }
 
     @Override
-    public Where0<T, U> where(TypedExpression<T, Boolean> predicate) {
-        Expression expression = predicate.tree();
-        if (Expressions.isNullOrTrue(expression)) {
+    public Where0<T, U> where(Expression<T, Boolean> predicate) {
+        ExpressionTree expression = predicate.rootNode();
+        if (ExpressionTrees.isNullOrTrue(expression)) {
             return this;
         }
         QueryStructureImpl structure = queryStructure.copy();
@@ -75,11 +75,11 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return update(structure);
     }
 
-    static void whereAnd(QueryStructureImpl structure, Expression expression) {
-        if (Expressions.isNullOrTrue(structure.where)) {
-            structure.where = expression.tree();
+    static void whereAnd(QueryStructureImpl structure, ExpressionTree expression) {
+        if (ExpressionTrees.isNullOrTrue(structure.where)) {
+            structure.where = expression.rootNode();
         } else {
-            structure.where = Expressions.operate(structure.where, Operator.AND, expression);
+            structure.where = ExpressionTrees.operate(structure.where, Operator.AND, expression);
         }
     }
 
@@ -89,7 +89,7 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     }
 
     @Override
-    public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
+    public Collector<U> orderBy(Function<EntityRoot<T>, List<? extends Order<T>>> ordersBuilder) {
         return orderBy(ordersBuilder.apply(Paths.root()));
     }
 
@@ -134,10 +134,10 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     boolean requiredCountSubQuery(QueryStructureImpl structure) {
         Selection select = structure.select();
         if (select instanceof SingleSelectedImpl) {
-            ExpressionTree column = ((SingleSelectedImpl) select).expression();
+            ExpressionNode column = ((SingleSelectedImpl) select).expression();
             return requiredCountSubQuery(column);
         } else if (select instanceof MultiSelected) {
-            List<? extends ExpressionTree> columns = ((MultiSelected) select).expressions();
+            List<? extends ExpressionNode> columns = ((MultiSelected) select).expressions();
             if (requiredCountSubQuery(columns)) {
                 return true;
             }
@@ -145,8 +145,8 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return requiredCountSubQuery(structure.having());
     }
 
-    protected boolean requiredCountSubQuery(List<? extends ExpressionTree> expressions) {
-        for (ExpressionTree expression : expressions) {
+    protected boolean requiredCountSubQuery(List<? extends ExpressionNode> expressions) {
+        for (ExpressionNode expression : expressions) {
             if (requiredCountSubQuery(expression)) {
                 return true;
             }
@@ -154,15 +154,15 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
         return false;
     }
 
-    protected boolean requiredCountSubQuery(ExpressionTree expression) {
+    protected boolean requiredCountSubQuery(ExpressionNode expression) {
         if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
             if (operation.operator().isAgg()) {
                 return true;
             }
-            List<? extends ExpressionTree> args = operation.operands();
+            List<? extends ExpressionNode> args = operation.operands();
             if (args != null) {
-                for (ExpressionTree arg : args) {
+                for (ExpressionNode arg : args) {
                     if (requiredCountSubQuery(arg)) {
                         return true;
                     }
@@ -240,9 +240,9 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     }
 
     @Override
-    public Having<T, U> groupBy(List<? extends TypedExpression<T, ?>> expressions) {
+    public Having<T, U> groupBy(List<? extends Expression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = expressions.stream().map(TypedExpression::tree).collect(Collectors.toList());
+        structure.groupBy = expressions.stream().map(Expression::rootNode).collect(Collectors.toList());
         return update(structure);
     }
 
@@ -254,84 +254,84 @@ public class QueryConditionBuilder<T, U> implements Where0<T, U>, Having<T, U>, 
     @Override
     public Having<T, U> groupBy(Path<T, ?> path) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = Lists.of(Expressions.of(path));
+        structure.groupBy = Lists.of(ExpressionTrees.of(path));
         return update(structure);
     }
 
     @Override
     public Having<T, U> groupBy(Collection<Path<T, ?>> paths) {
-        return groupBy(Expressions.toExpressionList(paths));
+        return groupBy(ExpressionTrees.toExpressionList(paths));
     }
 
     @Override
-    public OrderBy<T, U> having(TypedExpression<T, Boolean> predicate) {
+    public OrderBy<T, U> having(Expression<T, Boolean> predicate) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.having = predicate.tree();
+        structure.having = predicate.rootNode();
         return update(structure);
     }
 
     @Override
     public <N extends Number> NumberOperator<T, N, Where0<T, U>> where(NumberPath<T, N> path) {
-        return ExpressionOperators.ofNumber(root().get(path), this::whereAnd);
+        return ExpressionBuilders.ofNumber(root().get(path), this::whereAnd);
     }
 
     @NotNull
-    private Where0<T, U> whereAnd(BasicExpression<?, ?> expression) {
+    private Where0<T, U> whereAnd(OperatableExpression<?, ?> expression) {
         if (expression == null) {
             return this;
         }
         QueryStructureImpl structure = queryStructure.copy();
-        whereAnd(structure, expression.tree());
+        whereAnd(structure, expression.rootNode());
         return update(structure);
     }
 
     @Override
     public StringOperator<T, Where0<T, U>> where(StringPath<T> path) {
-        return ExpressionOperators.ofString(root().get(path), this::whereAnd);
+        return ExpressionBuilders.ofString(root().get(path), this::whereAnd);
     }
 
-    public Root<T> root() {
+    public EntityRoot<T> root() {
         return Paths.root();
     }
 
     @Override
     public <N> PathOperator<T, N, Where0<T, U>> where(Path<T, N> path) {
-        return ExpressionOperators.ofPath(root().get(path), this::whereAnd);
+        return ExpressionBuilders.ofPath(root().get(path), this::whereAnd);
     }
 
 
     class SubQuery<X> implements SubQueryBuilder<X, U> {
 
         @Override
-        public TypedExpression<X, Long> count() {
+        public Expression<X, Long> count() {
             QueryStructure structure = buildCountData();
             structure = structurePostProcessor.preCountQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(structure);
+            return Expressions.of(structure);
         }
 
         @Override
-        public TypedExpression<X, List<U>> slice(int offset, int maxResult) {
+        public Expression<X, List<U>> slice(int offset, int maxResult) {
             QueryStructure structure = buildListData(offset, maxResult, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(structure);
+            return Expressions.of(structure);
         }
 
         @Override
-        public TypedExpression<X, U> getSingle(int offset) {
+        public Expression<X, U> getSingle(int offset) {
             QueryStructure structure = buildListData(offset, 2, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(structure);
+            return Expressions.of(structure);
         }
 
         @Override
-        public TypedExpression<X, U> getFirst(int offset) {
+        public Expression<X, U> getFirst(int offset) {
             QueryStructure structure = buildListData(offset, 1, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
-            return TypedExpressions.of(structure);
+            return Expressions.of(structure);
         }
 
         @Override
-        public ExpressionTree tree() {
+        public ExpressionNode rootNode() {
             QueryStructure structure = buildListData(-1, -1, null);
             structure = structurePostProcessor.preListQuery(QueryConditionBuilder.this, structure);
             return structure;

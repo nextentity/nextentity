@@ -1,7 +1,6 @@
 package io.github.nextentity.data.common;
 
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.api.Updater;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,11 +54,6 @@ public class TransactionalUpdate implements Update {
     @Transactional
     public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
         return target.updateNonNullColumn(entity, entityType);
-    }
-
-    @Override
-    public <T> Updater<T> getUpdater(@NotNull Class<T> type) {
-        throw new UnsupportedOperationException();
     }
 
 }

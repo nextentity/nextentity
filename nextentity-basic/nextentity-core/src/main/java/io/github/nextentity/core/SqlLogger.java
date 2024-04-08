@@ -3,7 +3,7 @@ package io.github.nextentity.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SQL {
+public class SqlLogger {
 
     public static final Logger log = LoggerFactory.getLogger("io.github.nextentity.sql");
 

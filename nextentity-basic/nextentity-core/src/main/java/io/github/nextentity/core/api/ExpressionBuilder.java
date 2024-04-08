@@ -8,33 +8,33 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.List;
 
-public interface ExpressionOperator<T, U, B> {
+public interface ExpressionBuilder<T, U, B> {
 
     B eq(U value);
 
     B eqIfNotNull(U value);
 
-    B eq(TypedExpression<T, U> expression);
+    B eq(Expression<T, U> expression);
 
     B ne(U value);
 
     B neIfNotNull(U value);
 
-    B ne(TypedExpression<T, U> expression);
+    B ne(Expression<T, U> expression);
 
     @SuppressWarnings({"unchecked"})
     B in(U... values);
 
-    B in(@NotNull List<? extends TypedExpression<T, U>> expressions);
+    B in(@NotNull List<? extends Expression<T, U>> expressions);
 
-    B in(@NotNull TypedExpression<T, List<U>> expressions);
+    B in(@NotNull Expression<T, List<U>> expressions);
 
     B in(@NotNull Collection<? extends U> values);
 
     @SuppressWarnings({"unchecked"})
     B notIn(U... values);
 
-    B notIn(@NotNull List<? extends TypedExpression<T, U>> expressions);
+    B notIn(@NotNull List<? extends Expression<T, U>> expressions);
 
     B notIn(@NotNull Collection<? extends U> values);
 
@@ -63,28 +63,28 @@ public interface ExpressionOperator<T, U, B> {
 
     B notBetween(U l, U r);
 
-    B ge(TypedExpression<T, U> expression);
+    B ge(Expression<T, U> expression);
 
-    B gt(TypedExpression<T, U> expression);
+    B gt(Expression<T, U> expression);
 
-    B le(TypedExpression<T, U> expression);
+    B le(Expression<T, U> expression);
 
-    B lt(TypedExpression<T, U> expression);
+    B lt(Expression<T, U> expression);
 
-    B between(TypedExpression<T, U> l, TypedExpression<T, U> r);
+    B between(Expression<T, U> l, Expression<T, U> r);
 
-    B between(TypedExpression<T, U> l, U r);
+    B between(Expression<T, U> l, U r);
 
-    B between(U l, TypedExpression<T, U> r);
+    B between(U l, Expression<T, U> r);
 
-    B notBetween(TypedExpression<T, U> l, TypedExpression<T, U> r);
+    B notBetween(Expression<T, U> l, Expression<T, U> r);
 
-    B notBetween(TypedExpression<T, U> l, U r);
+    B notBetween(Expression<T, U> l, U r);
 
-    B notBetween(U l, TypedExpression<T, U> r);
+    B notBetween(U l, Expression<T, U> r);
 
 
-    interface NumberOperator<T, U extends Number, B> extends ExpressionOperator<T, U, B> {
+    interface NumberOperator<T, U extends Number, B> extends ExpressionBuilder<T, U, B> {
         NumberOperator<T, U, B> add(U value);
 
         NumberOperator<T, U, B> subtract(U value);
@@ -115,19 +115,19 @@ public interface ExpressionOperator<T, U, B> {
             return value == null ? this : mod(value);
         }
 
-        NumberOperator<T, U, B> add(TypedExpression<T, U> expression);
+        NumberOperator<T, U, B> add(Expression<T, U> expression);
 
-        NumberOperator<T, U, B> subtract(TypedExpression<T, U> expression);
+        NumberOperator<T, U, B> subtract(Expression<T, U> expression);
 
-        NumberOperator<T, U, B> multiply(TypedExpression<T, U> expression);
+        NumberOperator<T, U, B> multiply(Expression<T, U> expression);
 
-        NumberOperator<T, U, B> divide(TypedExpression<T, U> expression);
+        NumberOperator<T, U, B> divide(Expression<T, U> expression);
 
-        NumberOperator<T, U, B> mod(TypedExpression<T, U> expression);
+        NumberOperator<T, U, B> mod(Expression<T, U> expression);
 
     }
 
-    interface PathOperator<T, U, B> extends ExpressionOperator<T, U, B> {
+    interface PathOperator<T, U, B> extends ExpressionBuilder<T, U, B> {
 
         <V> PathOperator<T, V, B> get(Path<U, V> path);
 
@@ -137,7 +137,7 @@ public interface ExpressionOperator<T, U, B> {
 
     }
 
-    interface StringOperator<T, B> extends ExpressionOperator<T, String, B> {
+    interface StringOperator<T, B> extends ExpressionBuilder<T, String, B> {
 
         B like(String value);
 
@@ -210,7 +210,7 @@ public interface ExpressionOperator<T, U, B> {
 
     }
 
-    interface AndOperator<T> extends TypedExpression<T, Boolean> {
+    interface AndOperator<T> extends Expression<T, Boolean> {
 
         <R> PathOperator<T, R, AndOperator<T>> and(Path<T, R> path);
 
@@ -218,15 +218,17 @@ public interface ExpressionOperator<T, U, B> {
 
         StringOperator<T, AndOperator<T>> and(StringPath<T> path);
 
-        AndOperator<T> and(TypedExpression<T, Boolean> expression);
+        AndOperator<T> and(Expression<T, Boolean> expression);
 
         AndOperator<T> andIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        AndOperator<T> and(Iterable<? extends TypedExpression<T, Boolean>> expressions);
+        AndOperator<T> and(Iterable<? extends Expression<T, Boolean>> expressions);
+
+        Predicate<T> toPredicate();
 
     }
 
-    interface OrOperator<T> extends TypedExpression<T, Boolean> {
+    interface OrOperator<T> extends Expression<T, Boolean> {
 
         <N> PathOperator<T, N, OrOperator<T>> or(Path<T, N> path);
 
@@ -234,14 +236,13 @@ public interface ExpressionOperator<T, U, B> {
 
         StringOperator<T, ? extends OrOperator<T>> or(StringPath<T> path);
 
-        OrOperator<T> or(TypedExpression<T, Boolean> predicate);
+        OrOperator<T> or(Expression<T, Boolean> predicate);
 
         OrOperator<T> orIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        OrOperator<T> or(Iterable<? extends TypedExpression<T, Boolean>> expressions);
+        OrOperator<T> or(Iterable<? extends Expression<T, Boolean>> expressions);
 
-    }
+        Predicate<T> toPredicate();
 
-    interface PredicateOperator<T> extends AndOperator<T>, OrOperator<T> {
     }
 }

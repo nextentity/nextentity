@@ -1,67 +1,67 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.TypedExpressions.AbstractTypeExpression;
-import io.github.nextentity.core.api.ExpressionOperator;
-import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
-import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
-import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
+import io.github.nextentity.core.Expressions.AbstractTypeExpression;
+import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.NumberExpression;
+import io.github.nextentity.core.api.Expression.OperatableExpression;
+import io.github.nextentity.core.api.Expression.StringExpression;
+import io.github.nextentity.core.api.ExpressionBuilder;
+import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.BasicExpression;
-import io.github.nextentity.core.api.TypedExpression.NumberExpression;
-import io.github.nextentity.core.api.TypedExpression.StringExpression;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
-public class ExpressionOperators {
+public class ExpressionBuilders {
 
-    public static <T, U, B> ExpressionOperator<T, U, B>
-    of(BasicExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> builder) {
+    public static <T, U, B> ExpressionBuilder<T, U, B>
+    of(OperatableExpression<T, U> expression, Function<? super OperatableExpression<?, ?>, B> builder) {
         return newOperator(expression, builder);
     }
 
-    public static <T, U, B> PathOperator<T, U, B> ofPath(BasicExpression<T, U> expression,
-                                                         Function<? super BasicExpression<?, ?>, B> builder) {
+    public static <T, U, B> PathOperator<T, U, B> ofPath(OperatableExpression<T, U> expression,
+                                                         Function<? super OperatableExpression<?, ?>, B> builder) {
         return newOperator(expression, builder);
     }
 
     public static <T, B> StringOperator<T, B> ofString(StringExpression<T> expression,
-                                                       Function<? super BasicExpression<?, ?>, B> builder) {
+                                                       Function<? super OperatableExpression<?, ?>, B> builder) {
         return newOperator(expression, builder);
     }
 
     public static <T, U extends Number, B> NumberOperator<T, U, B>
-    ofNumber(NumberExpression<T, U> expression, Function<? super BasicExpression<?, ?>, B> builder) {
+    ofNumber(NumberExpression<T, U> expression, Function<? super OperatableExpression<?, ?>, B> builder) {
         return newOperator(expression, builder);
     }
 
     @NotNull
-    private static <T extends ExpressionOperator<?, ?, ?>> T
-    newOperator(BasicExpression<?, ?> expression, Function<? super BasicExpression<?, ?>, ?> builder) {
-        return TypeCastUtil.unsafeCast(new RawTypeExpressionOperator(expression, builder));
+    private static <T extends ExpressionBuilder<?, ?, ?>> T
+    newOperator(OperatableExpression<?, ?> expression, Function<? super OperatableExpression<?, ?>, ?> builder) {
+        return TypeCastUtil.unsafeCast(new ExpressionOperator(expression, builder));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    static class RawTypeExpressionOperator implements PathOperator, StringOperator, NumberOperator {
+    static class ExpressionOperator implements PathOperator, StringOperator, NumberOperator {
         private final AbstractTypeExpression base;
-        private final Function<? super BasicExpression, ?> operatedCallback;
+        private final Function<? super OperatableExpression, ?> operatedCallback;
 
-        RawTypeExpressionOperator(BasicExpression<?, ?> base, Function<? super BasicExpression<?, ?>, ?> operatedCallback) {
-            this.base = TypedExpressions.toTypedExpression(base);
+        ExpressionOperator(OperatableExpression<?, ?> base, Function<? super OperatableExpression<?, ?>, ?> operatedCallback) {
+            this.base = Expressions.toTypedExpression(base);
             this.operatedCallback = TypeCastUtil.unsafeCast(operatedCallback);
         }
 
-        private RawTypeExpressionOperator newOperator(BasicExpression expression) {
-            return new RawTypeExpressionOperator(expression, operatedCallback);
+        private ExpressionOperator newOperator(OperatableExpression expression) {
+            return new ExpressionOperator(expression, operatedCallback);
         }
 
-        protected Object applyCallback(TypedExpression<?, ?> expression) {
-            return operatedCallback.apply(TypedExpressions.toTypedExpression(expression));
+        protected Object applyCallback(Expression<?, ?> expression) {
+            return operatedCallback.apply(Expressions.toTypedExpression(expression));
         }
 
         @Override
@@ -75,7 +75,7 @@ public class ExpressionOperators {
         }
 
         @Override
-        public Object eq(TypedExpression expression) {
+        public Object eq(Expression expression) {
             return applyCallback(base.eq(expression));
         }
 
@@ -90,7 +90,7 @@ public class ExpressionOperators {
         }
 
         @Override
-        public Object ne(TypedExpression expression) {
+        public Object ne(Expression expression) {
             return applyCallback(base.ne(expression));
         }
 
@@ -175,52 +175,52 @@ public class ExpressionOperators {
         }
 
         @Override
-        public Object ge(TypedExpression expression) {
+        public Object ge(Expression expression) {
             return applyCallback(base.ge(expression));
         }
 
         @Override
-        public Object gt(TypedExpression expression) {
+        public Object gt(Expression expression) {
             return applyCallback(base.gt(expression));
         }
 
         @Override
-        public Object le(TypedExpression expression) {
+        public Object le(Expression expression) {
             return applyCallback(base.le(expression));
         }
 
         @Override
-        public Object lt(TypedExpression expression) {
+        public Object lt(Expression expression) {
             return applyCallback(base.lt(expression));
         }
 
         @Override
-        public Object between(TypedExpression l, TypedExpression r) {
+        public Object between(Expression l, Expression r) {
             return applyCallback(base.between(l, r));
         }
 
         @Override
-        public Object between(TypedExpression l, Object r) {
+        public Object between(Expression l, Object r) {
             return applyCallback(base.between(l, r));
         }
 
         @Override
-        public Object between(Object l, TypedExpression r) {
+        public Object between(Object l, Expression r) {
             return applyCallback(base.between(l, r));
         }
 
         @Override
-        public Object notBetween(TypedExpression l, TypedExpression r) {
+        public Object notBetween(Expression l, Expression r) {
             return applyCallback(base.notBetween(l, r));
         }
 
         @Override
-        public Object notBetween(TypedExpression l, Object r) {
+        public Object notBetween(Expression l, Object r) {
             return applyCallback(base.notBetween(l, r));
         }
 
         @Override
-        public Object notBetween(Object l, TypedExpression r) {
+        public Object notBetween(Object l, Expression r) {
             return applyCallback(base.notBetween(l, r));
         }
 
@@ -230,7 +230,7 @@ public class ExpressionOperators {
         }
 
         @Override
-        public Object in(@NotNull TypedExpression expressions) {
+        public Object in(@NotNull Expression expressions) {
             return applyCallback(base.in(expressions));
         }
 
@@ -241,7 +241,7 @@ public class ExpressionOperators {
 
         @Override
         public NumberOperator add(Number value) {
-            BasicExpression expression = base.add(value);
+            OperatableExpression expression = base.add(value);
             return newOperator(expression);
         }
 
@@ -266,27 +266,27 @@ public class ExpressionOperators {
         }
 
         @Override
-        public NumberOperator add(TypedExpression expression) {
+        public NumberOperator add(Expression expression) {
             return newOperator(base.add(expression));
         }
 
         @Override
-        public NumberOperator subtract(TypedExpression expression) {
+        public NumberOperator subtract(Expression expression) {
             return newOperator(base.subtract(expression));
         }
 
         @Override
-        public NumberOperator multiply(TypedExpression expression) {
+        public NumberOperator multiply(Expression expression) {
             return newOperator(base.multiply(expression));
         }
 
         @Override
-        public NumberOperator divide(TypedExpression expression) {
+        public NumberOperator divide(Expression expression) {
             return newOperator(base.divide(expression));
         }
 
         @Override
-        public NumberOperator mod(TypedExpression expression) {
+        public NumberOperator mod(Expression expression) {
             return newOperator(base.mod(expression));
         }
 

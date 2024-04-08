@@ -1,9 +1,9 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.SQL;
-import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Expression.QueryStructure;
 import io.github.nextentity.core.QueryExecutor;
+import io.github.nextentity.core.SqlLogger;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Attribute;
@@ -60,9 +60,9 @@ public class JdbcQueryExecutor implements QueryExecutor {
     }
 
     private static void printSql(PreparedSql sql) {
-        SQL.debug("SQL: {}", sql.sql());
+        SqlLogger.debug("SQL: {}", sql.sql());
         if (!sql.args().isEmpty()) {
-            SQL.debug("ARGS: {}", sql.args());
+            SqlLogger.debug("ARGS: {}", sql.args());
         }
     }
 

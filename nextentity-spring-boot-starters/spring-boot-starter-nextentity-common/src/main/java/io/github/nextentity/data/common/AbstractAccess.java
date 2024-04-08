@@ -1,8 +1,8 @@
 package io.github.nextentity.data.common;
 
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.meta.Metamodel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;

@@ -1,6 +1,6 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.Updaters;
+import io.github.nextentity.core.util.Lists;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -26,11 +26,5 @@ public interface Update {
     }
 
     <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType);
-
-    /**
-     * @deprecated use {@link Updaters#create}
-     */
-    @Deprecated
-    <T> Updater<T> getUpdater(@NotNull Class<T> type);
 
 }

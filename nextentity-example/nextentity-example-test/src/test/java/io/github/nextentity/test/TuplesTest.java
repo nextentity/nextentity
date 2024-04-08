@@ -1,5 +1,6 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -10,7 +11,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import io.github.nextentity.core.Tuples;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

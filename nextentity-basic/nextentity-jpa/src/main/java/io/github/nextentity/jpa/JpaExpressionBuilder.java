@@ -1,11 +1,11 @@
 package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Expression.Column;
-import io.github.nextentity.core.api.Expression.Constant;
-import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Expression.Operation;
+import io.github.nextentity.core.api.ExpressionTree;
+import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
+import io.github.nextentity.core.api.ExpressionTree.Literal;
+import io.github.nextentity.core.api.ExpressionTree.Operation;
 import io.github.nextentity.core.api.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.FetchParent;
@@ -35,9 +35,9 @@ public class JpaExpressionBuilder {
         this.cb = cb;
     }
 
-    public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionTree expression) {
-        if (expression instanceof Constant) {
-            Constant cv = (Constant) expression;
+    public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionNode expression) {
+        if (expression instanceof Literal) {
+            Literal cv = (Literal) expression;
             return cb.literal(cv.value());
         }
         if (expression instanceof Column) {
@@ -48,8 +48,8 @@ public class JpaExpressionBuilder {
             Operation ov = (Operation) expression;
             Operator operator = ov.operator();
             jakarta.persistence.criteria.Expression<?> e0 = toExpression(ov.firstOperand());
-            ExpressionTree e1 = ov.secondOperand();
-            ExpressionTree e2 = ov.thirdOperand();
+            ExpressionNode e1 = ov.secondOperand();
+            ExpressionNode e2 = ov.thirdOperand();
             switch (operator) {
                 case NOT:
                     return toPredicate(e0).not();
@@ -87,13 +87,13 @@ public class JpaExpressionBuilder {
                 case IS_NOT_NULL:
                     return cb.isNotNull(e0);
                 case IN: {
-                    List<? extends ExpressionTree> operands = ov.operands();
+                    List<? extends ExpressionNode> operands = ov.operands();
                     if (operands.size() <= 1) {
                         return cb.literal(false);
                     } else {
                         CriteriaBuilder.In<Object> in = cb.in(e0);
                         for (int i = 1; i < operands.size(); i++) {
-                            ExpressionTree arg = operands.get(i);
+                            ExpressionNode arg = operands.get(i);
                             in = in.value(toExpression(arg));
                         }
                         return in;
@@ -107,7 +107,7 @@ public class JpaExpressionBuilder {
                 case UPPER:
                     return cb.upper(cast(e0));
                 case SUBSTRING: {
-                    List<? extends Expression> operands = ov.operands();
+                    List<? extends ExpressionTree> operands = ov.operands();
                     if (operands.size() == 2) {
                         return cb.substring(cast(e0), cast(toExpression(e1)));
                     } else if (operands.size() == 3) {
@@ -159,7 +159,7 @@ public class JpaExpressionBuilder {
         }
     }
 
-    public Predicate toPredicate(ExpressionTree expression) {
+    public Predicate toPredicate(ExpressionNode expression) {
         return toPredicate(toExpression(expression));
     }
 
@@ -171,7 +171,7 @@ public class JpaExpressionBuilder {
     }
 
     @NotNull
-    private Predicate[] toPredicateArray(List<? extends ExpressionTree> operands) {
+    private Predicate[] toPredicateArray(List<? extends ExpressionNode> operands) {
         return operands.stream()
                 .map(this::toPredicate)
                 .toArray(Predicate[]::new);

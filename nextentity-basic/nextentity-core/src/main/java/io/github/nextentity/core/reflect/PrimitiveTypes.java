@@ -1,6 +1,6 @@
 package io.github.nextentity.core.reflect;
 
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.util.Lists;
 
 import java.util.List;
 

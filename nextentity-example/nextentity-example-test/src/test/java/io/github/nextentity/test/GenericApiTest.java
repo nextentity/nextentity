@@ -2,19 +2,19 @@ package io.github.nextentity.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.api.ExpressionOperator.AndOperator;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.Predicate;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.SliceQueryStructure;
-import io.github.nextentity.core.api.Expression.QueryStructure;
-import io.github.nextentity.core.api.Root;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.Exceptions;
@@ -62,7 +62,11 @@ import static io.github.nextentity.core.util.Paths.get;
 import static io.github.nextentity.core.util.Predicates.and;
 import static io.github.nextentity.core.util.Predicates.not;
 import static io.github.nextentity.core.util.Predicates.or;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 public class GenericApiTest {
@@ -426,7 +430,7 @@ public class GenericApiTest {
     @ArgumentsSource(UserQueryProvider.class)
     public void testAggregateFunction(Select<User> userQuery) {
 
-        List<TypedExpression<User, ?>> selected = Arrays.asList(
+        List<Expression<User, ?>> selected = Arrays.asList(
                 get(User::getRandomNumber).min(),
                 get(User::getRandomNumber).max(),
                 get(User::getRandomNumber).count(),
@@ -560,7 +564,7 @@ public class GenericApiTest {
         checkOrder(list, comparator);
 
         list = userQuery
-                .orderBy((Root<User> root) -> Arrays.asList(
+                .orderBy((EntityRoot<User> root) -> Arrays.asList(
                         root.get(User::getUsername).asc(),
                         root.get(User::getRandomNumber).desc(),
                         root.get(User::getId).asc()
@@ -570,7 +574,7 @@ public class GenericApiTest {
 
         list = userQuery
                 .orderBy(User::getUsername)
-                .orderBy((Root<User> root) -> Arrays.asList(
+                .orderBy((EntityRoot<User> root) -> Arrays.asList(
                         root.get(User::getRandomNumber).desc(),
                         root.get(User::getId).asc()
                 ))
@@ -1190,7 +1194,7 @@ public class GenericApiTest {
 
         Date time = allUsers.get(20).getTime();
 
-        TypedExpression<User, Boolean> or = get(User::isValid).eq(true)
+        Expression<User, Boolean> or = get(User::isValid).eq(true)
                 .or(
                         Paths.get(User::getParentUser)
                                 .get(User::getUsername)
@@ -1786,7 +1790,7 @@ public class GenericApiTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     public void subQueryTest(Select<User> userQuery) {
-        TypedExpression<User, List<Integer>> ids = userQuery
+        Expression<User, List<Integer>> ids = userQuery
                 .select(User::getId).where(User::getId)
                 .in(1, 2, 3)
                 .asSubQuery();

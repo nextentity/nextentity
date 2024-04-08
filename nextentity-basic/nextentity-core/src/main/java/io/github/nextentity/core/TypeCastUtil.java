@@ -1,8 +1,8 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Root;
-import io.github.nextentity.core.api.TypedExpression;
+import io.github.nextentity.core.api.ExpressionTree;
+import io.github.nextentity.core.api.EntityRoot;
 
 import java.util.List;
 
@@ -16,11 +16,11 @@ public class TypeCastUtil {
         return unsafeCast(resolve);
     }
 
-    public static <T, U> TypedExpression<T, U> cast(Expression expression) {
+    public static <T, U> Expression<T, U> cast(ExpressionTree expression) {
         return unsafeCast(expression);
     }
 
-    public static <T> Root<T> cast(Root<?> builder) {
+    public static <T> EntityRoot<T> cast(EntityRoot<?> builder) {
         return unsafeCast(builder);
     }
 
