@@ -1,5 +1,6 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.core.util.Maps;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.SharedCacheMode;

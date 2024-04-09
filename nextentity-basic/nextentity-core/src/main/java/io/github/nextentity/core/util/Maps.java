@@ -1,8 +1,10 @@
-package io.github.nextentity.test;
+package io.github.nextentity.core.util;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class Maps {
@@ -25,6 +27,18 @@ public class Maps {
 
         public Builder<MAP, K, V> put(K key, V value) {
             map.put(key, value);
+            return this;
+        }
+
+        public Builder<MAP, K, V> put(Collection<K> keys, Collection<V> values) {
+            if (keys.size() != values.size()) {
+                throw new IllegalArgumentException();
+            }
+            Iterator<K> itk = keys.iterator();
+            Iterator<V> itv = values.iterator();
+            while (itk.hasNext()) {
+                put(itk.next(), itv.next());
+            }
             return this;
         }
 

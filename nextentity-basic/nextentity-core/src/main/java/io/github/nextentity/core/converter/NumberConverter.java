@@ -1,12 +1,12 @@
 package io.github.nextentity.core.converter;
 
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.Maps;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -16,19 +16,23 @@ import java.util.function.Function;
 @Slf4j
 public class NumberConverter implements TypeConverter {
 
-    private static final List<Class<? extends Number>> BASIC_NUMBER_TYPES = Lists.of(
-            int.class, long.class, float.class, double.class, byte.class, short.class,
-            Integer.class, Long.class, Float.class, Double.class, Byte.class, Short.class,
-            BigInteger.class, BigDecimal.class
-    );
-    private static final List<Function<Number, Number>> VALUE_FUNCTIONS = Lists.of(
-            Number::intValue, Number::longValue, Number::floatValue,
-            Number::doubleValue, Number::byteValue, Number::shortValue,
-            Number::intValue, Number::longValue, Number::floatValue,
-            Number::doubleValue, Number::byteValue, Number::shortValue,
-            n -> new BigDecimal(String.valueOf(n)).toBigInteger(),
-            n -> new BigDecimal(String.valueOf(n))
-    );
+    private static final Map<Class<? extends Number>, Function<Number, Number>> CONVERTERS =
+            Maps.<Class<? extends Number>, Function<Number, Number>>hashmap()
+                    .put(int.class, Number::intValue)
+                    .put(Integer.class, Number::intValue)
+                    .put(long.class, Number::longValue)
+                    .put(Long.class, Number::longValue)
+                    .put(float.class, Number::floatValue)
+                    .put(Float.class, Number::floatValue)
+                    .put(double.class, Number::doubleValue)
+                    .put(Double.class, Number::doubleValue)
+                    .put(short.class, Number::shortValue)
+                    .put(Short.class, Number::shortValue)
+                    .put(byte.class, Number::byteValue)
+                    .put(Byte.class, Number::byteValue)
+                    .put(BigInteger.class, n -> new BigDecimal(String.valueOf(n)).toBigInteger())
+                    .put(BigDecimal.class, n -> new BigDecimal(String.valueOf(n)))
+                    .build();
 
     private static final NumberConverter INSTANCE = new NumberConverter();
 
@@ -61,21 +65,32 @@ public class NumberConverter implements TypeConverter {
             }
         }
         Class<?> valueType = value.getClass();
-        int indexOfValueType = BASIC_NUMBER_TYPES.indexOf(valueType);
-        if (indexOfValueType < 0) {
+        Function<Number, Number> indexOfValueType = CONVERTERS.get(valueType);
+        if (indexOfValueType == null) {
             return value;
         }
-        int indexOfTargetType = BASIC_NUMBER_TYPES.indexOf(targetType);
-        if (indexOfTargetType < 0) {
+        Function<Number, Number> indexOfTargetType = CONVERTERS.get(targetType);
+        if (indexOfTargetType == null) {
             return value;
         }
 
-        Number result = VALUE_FUNCTIONS.get(indexOfTargetType).apply((Number) value);
-        Number n = VALUE_FUNCTIONS.get(indexOfValueType).apply(result);
-        if (equals(value, n)) {
-            return result;
+        Number number = (Number) value;
+        Number result = indexOfTargetType.apply(number);
+        if (isBasic(targetType) && isBasic(valueType)) {
+            if (result.longValue() == number.longValue() && result.doubleValue() == number.doubleValue()) {
+                return result;
+            }
+        } else {
+            Number n = indexOfValueType.apply(result);
+            if (equals(value, n)) {
+                return result;
+            }
         }
         return value;
+    }
+
+    private static boolean isBasic(Class<?> targetType) {
+        return targetType != BigDecimal.class && targetType != BigInteger.class;
     }
 
     private static boolean equals(Object a, Number b) {
