@@ -1,12 +1,12 @@
 package io.github.nextentity.core.converter;
 
+import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.util.Lists;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -72,10 +72,15 @@ public class NumberConverter implements TypeConverter {
 
         Number result = VALUE_FUNCTIONS.get(indexOfTargetType).apply((Number) value);
         Number n = VALUE_FUNCTIONS.get(indexOfValueType).apply(result);
-        if (Objects.equals(value, n)) {
+        if (equals(value, n)) {
             return result;
         }
         return value;
+    }
+
+    private static boolean equals(Object a, Number b) {
+        return a.getClass() == b.getClass() &&
+               (TypeCastUtil.<Comparable<Object>>unsafeCast(a)).compareTo(b) == 0;
     }
 
 
