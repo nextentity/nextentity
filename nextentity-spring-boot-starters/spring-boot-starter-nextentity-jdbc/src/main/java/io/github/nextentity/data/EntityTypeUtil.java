@@ -40,7 +40,7 @@ public class EntityTypeUtil {
 
 
     public static <ID extends Serializable> Class<ID> getIdType(DependencyDescriptor descriptor) {
-        Class<?> type = descriptor.getResolvableType().as(Entities.class).resolveGeneric(1);
+        Class<?> type = descriptor.getResolvableType().as(Entities.class).resolveGeneric(0);
         return TypeCastUtil.cast(type);
     }
 
