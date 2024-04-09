@@ -4,10 +4,9 @@ import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.QueryPostProcessor;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.api.Entities;
-import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.data.common.AccessTypeUtil;
-import io.github.nextentity.data.common.TransactionalUpdateExecutor;
+import io.github.nextentity.data.EntityTypeUtil;
+import io.github.nextentity.data.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jpa.JpaQueryExecutor;
 import io.github.nextentity.jpa.JpaUpdate;
@@ -26,15 +25,16 @@ import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import java.io.Serializable;
 
 @Configuration
-public class JpaAccessConfiguration {
+public class JpaEntitiesConfiguration {
+
     @Bean
     @Primary
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Entities<T, ID> jpaAccess(DependencyDescriptor descriptor,
-                                                                     @Qualifier("jpaEntitiesFactory")
-                                                                     EntitiesFactory factory) {
-        Class<T> entityType = AccessTypeUtil.getEntityType(descriptor);
-        AccessTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
+    protected <T, ID extends Serializable> Entities<T, ID> jpaEntities(DependencyDescriptor descriptor,
+                                                                       @Qualifier("jpaEntitiesFactory")
+                                                                       EntitiesFactory factory) {
+        Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
+        EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
         return factory.getEntities(entityType);
     }
 
@@ -58,7 +58,7 @@ public class JpaAccessConfiguration {
 
     @Bean("jpaUpdate")
     @Primary
-    protected UpdateExecutor jpaUpdate(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
+    protected UpdateExecutor jpaUpdateExecutor(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
         JpaUpdate jpaUpdate = new JpaUpdate(entityManager, jpaQueryExecutor);
         return new TransactionalUpdateExecutor(jpaUpdate);
     }
@@ -66,16 +66,6 @@ public class JpaAccessConfiguration {
     @Bean
     protected EntityManager entityManager(EntityManagerFactory entityManagerFactory) {
         return SharedEntityManagerCreator.createSharedEntityManager(entityManagerFactory);
-    }
-
-    @Bean
-    @Primary
-    protected Query jpaQuery(JpaQueryExecutor executor,
-                             @Autowired(required = false)
-                             QueryPostProcessor structurePostProcessor) {
-        return structurePostProcessor != null
-                ? executor.createQuery(structurePostProcessor)
-                : executor.createQuery();
     }
 
 }

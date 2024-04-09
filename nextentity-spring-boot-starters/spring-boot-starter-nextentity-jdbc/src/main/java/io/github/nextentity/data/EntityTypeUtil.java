@@ -1,4 +1,4 @@
-package io.github.nextentity.data.common;
+package io.github.nextentity.data;
 
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Entities;
@@ -15,7 +15,7 @@ import java.util.Objects;
  * @author huang
  * @since 2024-03-16
  */
-public class AccessTypeUtil {
+public class EntityTypeUtil {
 
     public static <T> Class<T> getEntityType(DependencyDescriptor descriptor) {
         Class<?> entityType = getEntityType(new Class<?>[]{Select.class, Update.class}, descriptor);
@@ -47,7 +47,7 @@ public class AccessTypeUtil {
     public static <T, ID extends Serializable> void checkIdType(DependencyDescriptor descriptor,
                                                                 Metamodel metamodel,
                                                                 Class<T> entityType) {
-        Class<ID> idType = AccessTypeUtil.getIdType(descriptor);
+        Class<ID> idType = EntityTypeUtil.getIdType(descriptor);
         Class<?> expected = metamodel.getEntity(entityType).id().javaType();
         if (expected != idType) {
             String msg = descriptor.getResolvableType() + " " + descriptor
@@ -57,6 +57,6 @@ public class AccessTypeUtil {
     }
 
 
-    private AccessTypeUtil() {
+    private EntityTypeUtil() {
     }
 }

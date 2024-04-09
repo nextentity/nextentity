@@ -4,11 +4,10 @@ import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.QueryPostProcessor;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.api.Entities;
-import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.data.common.AccessTypeUtil;
-import io.github.nextentity.data.common.TransactionalUpdateExecutor;
+import io.github.nextentity.data.EntityTypeUtil;
+import io.github.nextentity.data.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.ConnectionProvider;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
@@ -33,15 +32,15 @@ import java.io.Serializable;
 import java.util.List;
 
 @Configuration
-public class JdbcAccessConfiguration {
+public class JdbcEntitiesConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Entities<T, ID> jdbcAccess(DependencyDescriptor descriptor,
-                                                                      @Qualifier("jdbcEntitiesFactory")
-                                                                      EntitiesFactory factory) {
-        Class<T> entityType = AccessTypeUtil.getEntityType(descriptor);
-        AccessTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
+    protected <T, ID extends Serializable> Entities<T, ID> jdbcEntities(DependencyDescriptor descriptor,
+                                                                        @Qualifier("jdbcEntitiesFactory")
+                                                                        EntitiesFactory factory) {
+        Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
+        EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
         return factory.getEntities(entityType);
     }
 
@@ -64,12 +63,7 @@ public class JdbcAccessConfiguration {
 
     @Bean
     protected ConnectionProvider connectionProvider(JdbcTemplate jdbcTemplate) {
-        return new ConnectionProvider() {
-            @Override
-            public <T> T execute(ConnectionCallback<T> action) {
-                return jdbcTemplate.execute(action::doInConnection);
-            }
-        };
+        return new JdbcConnectionProvider(jdbcTemplate);
     }
 
     @Bean
@@ -93,15 +87,6 @@ public class JdbcAccessConfiguration {
     @Bean
     protected JdbcUpdateSqlBuilder jdbcUpdateSqlBuilder() {
         return new MysqlUpdateSqlBuilder();
-    }
-
-    @Bean
-    protected Query jdbcQuery(JdbcQueryExecutor executor,
-                              @Autowired(required = false)
-                              QueryPostProcessor structurePostProcessor) {
-        return structurePostProcessor != null
-                ? executor.createQuery(structurePostProcessor)
-                : executor.createQuery();
     }
 
     @Bean

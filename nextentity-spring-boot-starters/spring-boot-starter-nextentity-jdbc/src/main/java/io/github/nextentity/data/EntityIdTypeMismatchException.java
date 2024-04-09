@@ -1,4 +1,4 @@
-package io.github.nextentity.data.common;
+package io.github.nextentity.data;
 
 /**
  * @author huang

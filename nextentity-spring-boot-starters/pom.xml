@@ -15,7 +15,6 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>spring-boot-starter-nextentity-common</module>
     <module>spring-boot-starter-nextentity-jdbc</module>
     <module>spring-boot-starter-nextentity-jpa</module>
   </modules>
