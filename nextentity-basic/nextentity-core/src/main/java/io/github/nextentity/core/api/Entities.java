@@ -9,7 +9,7 @@ import java.util.Map;
  * @author HuangChengwei
  * @since 2024-04-08 11:47
  */
-public interface Entities<T, ID> extends Select<T>, Update<T>, EntityRoot<T> {
+public interface Entities<ID, T> extends Select<T>, Update<T>, EntityRoot<T> {
 
     T get(ID id);
 

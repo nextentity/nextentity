@@ -31,11 +31,11 @@ public class EntitiesFactory implements Query {
         this.metamodel = metamodel;
     }
 
-    public <T, ID> Entities<T, ID> getEntities(Class<T> entityType) {
+    public <T, ID> Entities<ID, T> getEntities(Class<T> entityType) {
         return new EntitiesImpl<>(this, entityType);
     }
 
-    public <T, ID> Entities<T, ID> getEntities(Class<T> entityType, Path<T, ID> idPath) {
+    public <T, ID> Entities<ID, T> getEntities(Class<T> entityType, Path<T, ID> idPath) {
         return new EntitiesImpl<>(this, entityType, idPath);
     }
 

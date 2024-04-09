@@ -17,7 +17,7 @@ class CompanyRepositoryTest {
     @Autowired
     CompanyRepository companyRepository;
     @Autowired
-    Entities<Company, Integer> companyEntities;
+    Entities<Integer, Company> companyEntities;
 
     @Test
     void test() {

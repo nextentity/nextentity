@@ -36,7 +36,7 @@ public class JdbcEntitiesConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Entities<T, ID> jdbcEntities(DependencyDescriptor descriptor,
+    protected <T, ID extends Serializable> Entities<ID, T> jdbcEntities(DependencyDescriptor descriptor,
                                                                         @Qualifier("jdbcEntitiesFactory")
                                                                         EntitiesFactory factory) {
         Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);

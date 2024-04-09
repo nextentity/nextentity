@@ -30,7 +30,7 @@ public class JpaEntitiesConfiguration {
     @Bean
     @Primary
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Entities<T, ID> jpaEntities(DependencyDescriptor descriptor,
+    protected <T, ID extends Serializable> Entities<ID, T> jpaEntities(DependencyDescriptor descriptor,
                                                                        @Qualifier("jpaEntitiesFactory")
                                                                        EntitiesFactory factory) {
         Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final Entities<User, Long> userAccess;
+    private final Entities<Long, User> userAccess;
 
     public Page<User> getUsers(UserQuery query) {
         return userAccess.where(query.predicate()).getPage(query.pageable());

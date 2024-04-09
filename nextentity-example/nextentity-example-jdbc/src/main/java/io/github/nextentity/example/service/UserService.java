@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final Entities<User, Long> userEntities;
+    private final Entities<Long, User> userEntities;
 
     public void updateUser(User user) {
         userEntities.update(user);

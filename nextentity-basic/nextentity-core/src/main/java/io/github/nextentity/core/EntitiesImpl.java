@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author HuangChengwei
  * @since 2024-04-08 15:08
  */
-public class EntitiesImpl<T, ID> extends SelectImpl<T> implements Entities<T, ID> {
+public class EntitiesImpl<T, ID> extends SelectImpl<T> implements Entities<ID, T> {
 
     @Delegate
     protected final EntityRoot<T> entityRoot = Paths.root();

@@ -7,7 +7,7 @@ import io.github.nextentity.core.api.Entities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;
 
-public abstract class AbstractRepository<T, ID> extends EntitiesImpl<T, ID> implements Entities<T, ID> {
+public abstract class AbstractRepository<T, ID> extends EntitiesImpl<T, ID> implements Entities<ID, T> {
 
     public AbstractRepository() {
         super();

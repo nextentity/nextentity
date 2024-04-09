@@ -24,7 +24,7 @@ class UserServiceTest {
     @Autowired
     UserService userService;
     @Autowired
-    Entities<User, Long> userEntities;
+    Entities<Long, User> userEntities;
 
     @Test
     void getByUsername() {
