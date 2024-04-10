@@ -13,7 +13,7 @@ import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.ResultCollector;
 import io.github.nextentity.jdbc.JdbcResultCollector;
-import io.github.nextentity.jdbc.JdbcUpdate;
+import io.github.nextentity.jdbc.JdbcUpdateExecutor;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
 import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
 import io.github.nextentity.jdbc.MysqlUpdateSqlBuilder;
@@ -80,7 +80,7 @@ public class JdbcEntitiesConfiguration {
     protected UpdateExecutor jdbcUpdate(JdbcUpdateSqlBuilder sqlBuilder,
                                         ConnectionProvider connectionProvider,
                                         Metamodel metamodel) {
-        JdbcUpdate jdbcUpdate = new JdbcUpdate(sqlBuilder, connectionProvider, metamodel);
+        JdbcUpdateExecutor jdbcUpdate = new JdbcUpdateExecutor(sqlBuilder, connectionProvider, metamodel);
         return new TransactionalUpdateExecutor(jdbcUpdate);
     }
 

@@ -341,11 +341,6 @@ public class ExpressionBuilders {
         }
 
         @Override
-        public StringOperator substring(int offset) {
-            return newOperator(base.substring(offset));
-        }
-
-        @Override
         public StringOperator trim() {
             return newOperator(base.trim());
         }

@@ -27,15 +27,15 @@ import java.util.List;
 
 @SuppressWarnings("PatternVariableCanBeUsed")
 @Slf4j
-public class JdbcUpdate implements UpdateExecutor {
+public class JdbcUpdateExecutor implements UpdateExecutor {
 
     private final JdbcUpdateSqlBuilder sqlBuilder;
     private final ConnectionProvider connectionProvider;
     private final Metamodel metamodel;
 
-    public JdbcUpdate(JdbcUpdateSqlBuilder sqlBuilder,
-                      ConnectionProvider connectionProvider,
-                      Metamodel metamodel) {
+    public JdbcUpdateExecutor(JdbcUpdateSqlBuilder sqlBuilder,
+                              ConnectionProvider connectionProvider,
+                              Metamodel metamodel) {
         this.sqlBuilder = sqlBuilder;
         this.connectionProvider = connectionProvider;
         this.metamodel = metamodel;
@@ -199,6 +199,8 @@ public class JdbcUpdate implements UpdateExecutor {
                     Object key = JdbcUtil.getValue(keys, 1, idField.javaType());
                     idField.set(entity, key);
                 }
+            } catch (Exception e) {
+                log.warn("", e);
             }
         }
         return entities;

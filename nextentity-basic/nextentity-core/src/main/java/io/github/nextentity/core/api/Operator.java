@@ -32,7 +32,7 @@ public enum Operator {
     SUBTRACT("-", 4),
     MULTIPLY("*", 3, true),
     DIVIDE("/", 3),
-    MOD("mod", 3),
+    MOD("%", 3),
     NULLIF("nullif", 0),
     IF_NULL("ifnull", 0),
 

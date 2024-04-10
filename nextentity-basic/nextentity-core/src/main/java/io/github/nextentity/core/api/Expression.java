@@ -297,9 +297,11 @@ public interface Expression<T, U> extends ExpressionTree {
 
         Expression.StringExpression<T> upper();
 
-        Expression.StringExpression<T> substring(int a, int b);
+        Expression.StringExpression<T> substring(int offset, int length);
 
-        Expression.StringExpression<T> substring(int a);
+        default Expression.StringExpression<T> substring(int offset) {
+            return substring(offset, Integer.MAX_VALUE);
+        }
 
         Expression.StringExpression<T> trim();
 

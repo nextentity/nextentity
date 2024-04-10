@@ -151,9 +151,18 @@ public class JpaMetamodel extends AbstractMetamodel {
         }
     }
 
+    private final static String[][] AROUND_SYMBOL = {
+            {"[", "]"},
+            {"`", "`"},
+            {"\"", "\""}
+    };
+
     protected String unwrapSymbol(String symbol) {
-        while (symbol.startsWith("`") && symbol.endsWith("`")) {
-            symbol = symbol.substring(1, symbol.length() - 1);
+        for (String[] strings : AROUND_SYMBOL) {
+            if (symbol.startsWith(strings[0]) && symbol.endsWith(strings[1])) {
+                symbol = symbol.substring(1, symbol.length() - 1);
+                break;
+            }
         }
         return symbol;
     }

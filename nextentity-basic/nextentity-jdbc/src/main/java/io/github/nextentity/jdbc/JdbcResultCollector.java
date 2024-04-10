@@ -71,8 +71,13 @@ public class JdbcResultCollector implements ResultCollector {
             }
             // noinspection PatternVariableCanBeUsed
             SingleSelected sc = (SingleSelected) select;
+            Class<?> resultType = select.resultType();
+            if (resultType == Object.class) {
+                ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
+                resultType = typeResolver.getExpressionType(sc.expression(), structure.from().type());
+            }
             while (resultSet.next()) {
-                T row = getSingleObj(resultSet, sc);
+                T row = getSingleObj(resultSet, resultType);
                 result.add(row);
             }
         } else {
@@ -102,9 +107,9 @@ public class JdbcResultCollector implements ResultCollector {
     }
 
     @Nullable
-    private <R> R getSingleObj(@NotNull ResultSet resultSet, SingleSelected selectClause) throws SQLException {
-        Object r = getValue(resultSet, 1, selectClause.resultType());
-        return TypeCastUtil.unsafeCast(r);
+    private <R> R getSingleObj(@NotNull ResultSet resultSet, Class<?> resultType) throws SQLException {
+        Object r = getValue(resultSet, 1, resultType);
+        return TypeCastUtil.unsafeCast(convertValue(r, resultType));
     }
 
     private Object[] getObjects(@NotNull ResultSet resultSet, int columnsCount, List<Class<?>> types) throws SQLException {
@@ -118,6 +123,10 @@ public class JdbcResultCollector implements ResultCollector {
 
     protected Object getValue(ResultSet resultSet, int column, Class<?> targetType) throws SQLException {
         Object value = JdbcUtil.getValue(resultSet, column, targetType);
+        return convertValue(value, targetType);
+    }
+
+    private Object convertValue(Object value, Class<?> targetType) {
         if (typeConverter != null) {
             value = typeConverter.convert(value, targetType);
         }

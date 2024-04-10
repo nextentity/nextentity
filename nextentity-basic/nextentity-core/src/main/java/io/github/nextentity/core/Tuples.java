@@ -117,5 +117,9 @@ public class Tuples {
             return Iterators.iterate(data);
         }
 
+        @Override
+        public String toString() {
+            return toList().toString();
+        }
     }
 }

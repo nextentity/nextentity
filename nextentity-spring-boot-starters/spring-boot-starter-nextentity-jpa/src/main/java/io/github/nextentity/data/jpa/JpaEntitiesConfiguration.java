@@ -9,7 +9,7 @@ import io.github.nextentity.data.EntityTypeUtil;
 import io.github.nextentity.data.TransactionalUpdateExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jpa.JpaQueryExecutor;
-import io.github.nextentity.jpa.JpaUpdate;
+import io.github.nextentity.jpa.JpaUpdateExecutor;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +59,7 @@ public class JpaEntitiesConfiguration {
     @Bean("jpaUpdate")
     @Primary
     protected UpdateExecutor jpaUpdateExecutor(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
-        JpaUpdate jpaUpdate = new JpaUpdate(entityManager, jpaQueryExecutor);
+        JpaUpdateExecutor jpaUpdate = new JpaUpdateExecutor(entityManager, jpaQueryExecutor);
         return new TransactionalUpdateExecutor(jpaUpdate);
     }
 

@@ -1,9 +1,8 @@
 package io.github.nextentity.test;
 
 import io.github.nextentity.core.api.Query.Select;
-import io.github.nextentity.core.api.Update;
+import io.github.nextentity.test.db.UserEntities;
 import io.github.nextentity.test.entity.User;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -18,19 +17,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UpdateTest {
 
-    Select<User> query(Update<User> updater) {
-        return updater == UserUpdaterProvider.jdbc
-                ? UserQueryProvider.jdbc
-                : UserQueryProvider.jpa;
+    Select<User> query(UserEntities updater) {
+        return updater;
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void insert(Update<User> userUpdater) {
-        Transaction.doInTransaction(() -> doInsert(userUpdater));
+    void insert(UserEntities userUpdater) {
+        userUpdater.doInTransaction(() -> doInsert(userUpdater));
     }
 
-    private void doInsert(Update<User> userUpdater) {
+    private void doInsert(UserEntities userUpdater) {
         List<User> existUsers = query(userUpdater).where(User::getId).in(10000000, 10000001, 10000002)
                 .getList();
         if (!existUsers.isEmpty()) {
@@ -60,11 +57,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void update(Update<User> userUpdater) {
-        Transaction.doInTransaction(() -> testUpdate(userUpdater));
+    void update(UserEntities userUpdater) {
+        userUpdater.doInTransaction(() -> testUpdate(userUpdater));
     }
 
-    private void testUpdate(Update<User> userUpdater) {
+    private void testUpdate(UserEntities userUpdater) {
         List<User> users = query(userUpdater).where(User::getId).in(1, 2, 3).getList();
         for (User user : users) {
             user.setRandomNumber(user.getRandomNumber() + 1);
@@ -81,11 +78,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void updateNonNullColumn(Update<User> userUpdater) {
-        Transaction.doInTransaction(() -> testUpdateNonNullColumn(userUpdater));
+    void updateNonNullColumn(UserEntities userUpdater) {
+        userUpdater.doInTransaction(() -> testUpdateNonNullColumn(userUpdater));
     }
 
-    private void testUpdateNonNullColumn(Update<User> userUpdater) {
+    private void testUpdateNonNullColumn(UserEntities userUpdater) {
         List<User> users = query(userUpdater).where(User::getId).in(1, 2, 3).getList();
         List<User> users2 = new ArrayList<>(users.size());
         for (User user : users) {
@@ -104,43 +101,43 @@ public class UpdateTest {
 
     }
 
-    @Test
-    public void test() {
-        Transaction.doInTransaction(() -> {
-            Update<User> updater = UserUpdaterProvider.jdbc;
-            Select<User> select = UserQueryProvider.jdbc;
-            User user = select.where(User::getId).eq(10000006).getSingle();
+    @ParameterizedTest
+    @ArgumentsSource(UserUpdaterProvider.class)
+    public void test(UserEntities userUpdater) {
+        userUpdater.doInTransaction(() -> {
+            UserEntities jdbc = userUpdater.getConfig().getJdbc();
+            User user = ((Select<User>) jdbc).where(User::getId).eq(10000006).getSingle();
             if (user != null) {
-                updater.delete(user);
+                jdbc.delete(user);
             }
             User entity = newUser(10000006);
-            updater.insert(entity);
-            user = select.where(User::getId).eq(10000006).getSingle();
+            jdbc.insert(entity);
+            user = ((Select<User>) jdbc).where(User::getId).eq(10000006).getSingle();
             assertEquals(entity, user);
             System.out.println(entity.getInstant());
             System.out.println(user.getInstant());
         });
 
-        Transaction.doInTransaction(() -> {
-            Update<User> updater = UserUpdaterProvider.jpa;
-            Select<User> select = UserQueryProvider.jpa;
-            User user = select.where(User::getId).eq(10000007).getSingle();
+        userUpdater.doInTransaction(() -> {
+            UserEntities jpa = userUpdater.getConfig().getJpa();
+            User user = ((Select<User>) jpa).where(User::getId).eq(10000007).getSingle();
             if (user != null) {
-                updater.delete(user);
+                jpa.delete(user);
             }
             User entity = newUser(10000007);
-            updater.insert(entity);
-            user = select.where(User::getId).eq(10000007).getSingle();
+            jpa.insert(entity);
+            user = ((Select<User>) jpa).where(User::getId).eq(10000007).getSingle();
             assertEquals(entity, user);
             System.out.println(entity.getInstant());
             System.out.println(user.getInstant());
         });
     }
 
-    @Test
-    public void test2() {
-        User a = UserQueryProvider.jdbc.where(User::getId).eq(1).getSingle();
-        User b = UserQueryProvider.jpa.where(User::getId).eq(1).getSingle();
+    @ParameterizedTest
+    @ArgumentsSource(UserUpdaterProvider.class)
+    public void test2(UserEntities userUpdater) {
+        User a = userUpdater.getConfig().getJdbc().where(User::getId).eq(1).getSingle();
+        User b = userUpdater.getConfig().getJpa().where(User::getId).eq(1).getSingle();
         System.out.println(a);
         System.out.println(b);
     }

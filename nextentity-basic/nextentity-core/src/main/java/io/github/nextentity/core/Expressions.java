@@ -361,13 +361,8 @@ public class Expressions {
         }
 
         @Override
-        default StringExpression substring(int a, int b) {
-            return operate0(SUBSTRING, Lists.of(ExpressionTrees.of(a), ExpressionTrees.of(b)));
-        }
-
-        @Override
-        default StringExpression substring(int a) {
-            return operate(SUBSTRING, ExpressionTrees.of(a));
+        default StringExpression substring(int offset, int length) {
+            return operate0(SUBSTRING, Lists.of(ExpressionTrees.of(offset), ExpressionTrees.of(length)));
         }
 
         @Override

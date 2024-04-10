@@ -23,13 +23,13 @@ import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
-public class JpaUpdate implements UpdateExecutor {
+public class JpaUpdateExecutor implements UpdateExecutor {
 
     private final EntityManager entityManager;
     private final Query query;
     private final PersistenceUnitUtil util;
 
-    public JpaUpdate(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
+    public JpaUpdateExecutor(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
         this.entityManager = entityManager;
         this.query = jpaQueryExecutor.createQuery();
         this.util = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();

@@ -335,11 +335,11 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
         return select(false, paths);
     }
 
-    public <R> Where0<T, R> select(boolean distinct, Expression<T, R> paths) {
+    public <R> Where0<T, R> select(boolean distinct, Expression<T, R> expression) {
         QueryStructureImpl structure = queryStructure.copy();
-        ExpressionNode expression = paths.rootNode();
+        ExpressionNode node = expression.rootNode();
         Class<?> type = Object.class;
-        structure.select = new SingleSelectedImpl(type, expression, distinct);
+        structure.select = new SingleSelectedImpl(type, node, distinct);
         return update(structure);
     }
 

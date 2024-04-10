@@ -202,7 +202,9 @@ public interface ExpressionBuilder<T, U, B> {
 
         StringOperator<T, B> substring(int offset, int length);
 
-        StringOperator<T, B> substring(int offset);
+        default StringOperator<T, B> substring(int offset) {
+            return substring(offset, Integer.MAX_VALUE);
+        }
 
         StringOperator<T, B> trim();
 
