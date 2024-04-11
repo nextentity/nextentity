@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost;encrypt=false;database=nextentity;integratedSecurity=false;
+    username: sa
+    password: root
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+logging:
+  level:
+    io.github.nextentity.sql: debug
