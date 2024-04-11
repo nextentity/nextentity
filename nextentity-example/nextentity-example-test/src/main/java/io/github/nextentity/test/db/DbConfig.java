@@ -19,6 +19,8 @@ import java.util.List;
 @Data
 public class DbConfig {
 
+    private final EntitiesFactory jdbcFactory;
+    private final EntitiesFactory jpaFactory;
     private QuerySqlBuilder querySqlBuilder;
     private JdbcUpdateSqlBuilder updateSqlBuilder;
     private DataSource getDataSource;
@@ -49,8 +51,10 @@ public class DbConfig {
         this.singleConnectionProvider = singleConnectionProvider;
         this.metamodel = metamodel;
         this.setPidNullSql = setPidNullSql;
-        this.jdbc = new UserEntities(jdbc.getEntities(User.class), this);
-        this.jpa = new UserEntities(jpa.getEntities(User.class), this);
+        this.jdbcFactory = jdbc;
+        this.jpaFactory = jpa;
+        this.jdbc = new UserEntities(jdbcFactory.getEntities(User.class), this);
+        this.jpa = new UserEntities(jpaFactory.getEntities(User.class), this);
 
         this.users = new DbInitializer(this).initialize();
     }

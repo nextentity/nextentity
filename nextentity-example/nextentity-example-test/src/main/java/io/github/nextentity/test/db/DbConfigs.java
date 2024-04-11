@@ -10,6 +10,8 @@ import java.util.List;
  */
 public interface DbConfigs {
 
-    List<DbConfig> configs = Lists.of(new Mysql().getConfig(), new SqlServer().getConfig());
+    DbConfig MYSQL = new Mysql().getConfig();
+    DbConfig SQLSERVER = new SqlServer().getConfig();
+    List<DbConfig> CONFIGS = Lists.of(MYSQL, SQLSERVER);
 
 }

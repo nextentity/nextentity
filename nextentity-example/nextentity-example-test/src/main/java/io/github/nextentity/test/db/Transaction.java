@@ -31,7 +31,9 @@ public class Transaction {
             action.accept(connection);
             return null;
         });
-        log.trace("{}", o);
+        if (o != null) {
+            log.trace("{}", o);
+        }
     }
 
 
