@@ -176,7 +176,7 @@ public abstract class AbstractMetamodel implements Metamodel {
 
     protected RootEntity createEntityType(Class<?> entityType, RootEntity result, Type owner) {
         result.javaType(entityType);
-        Map<String, Attribute> map = new HashMap<>();
+        Map<String, Attribute> map = new LinkedHashMap<>();
         result.attributes(Collections.unmodifiableMap(map));
         result.tableName(getTableName(entityType));
         List<Attribute> attributes = getBeanAttributes(entityType, owner);
