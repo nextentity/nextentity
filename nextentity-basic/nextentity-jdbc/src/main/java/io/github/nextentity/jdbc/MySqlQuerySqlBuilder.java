@@ -51,8 +51,8 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         @Override
-        protected void appendPredicate(List<Object> args, ExpressionNode node) {
-            appendExpression(args, node);
+        protected void appendPredicate(ExpressionNode node) {
+            appendExpression(node);
         }
 
         @Override

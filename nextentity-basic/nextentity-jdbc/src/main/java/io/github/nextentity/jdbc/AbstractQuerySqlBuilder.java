@@ -60,8 +60,6 @@ abstract class AbstractQuerySqlBuilder {
     protected static final String DESC = "desc";
     protected static final String ASC = "asc";
     protected static final String ON = " on ";
-    // protected static final char L_QUOTED_IDENTIFIERS = '[';
-    // protected static final char R_L_QUOTED_IDENTIFIERS = ']';
 
     protected final StringBuilder sql;
     protected final List<Object> args;
@@ -295,14 +293,10 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendPredicate(ExpressionNode node) {
-        appendPredicate(args, node);
-    }
-
-    protected void appendPredicate(List<Object> args, ExpressionNode node) {
         if (node instanceof Column || node instanceof Literal) {
             node = ExpressionTrees.operate(node, Operator.EQ, ExpressionTrees.TRUE);
         }
-        appendExpression(args, node);
+        appendExpression(node);
     }
 
 
@@ -315,20 +309,16 @@ abstract class AbstractQuerySqlBuilder {
         appendPredicate(having);
     }
 
-    protected void appendExpression(ExpressionNode expr) {
-        appendExpression(args, expr);
-    }
-
-    protected void appendExpression(List<Object> args, ExpressionNode expression) {
+    protected void appendExpression(ExpressionNode expression) {
         if (expression instanceof Literal) {
             Literal constant = (Literal) expression;
-            appendConstant(args, constant);
+            appendConstant(constant);
         } else if (expression instanceof Column) {
             Column column = (Column) expression;
             appendPaths(column);
         } else if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
-            appendOperation(args, operation);
+            appendOperation(operation);
         } else if (expression instanceof QueryStructure) {
             appendSubQuery(((QueryStructure) expression));
         } else {
@@ -336,27 +326,27 @@ abstract class AbstractQuerySqlBuilder {
         }
     }
 
-    protected void appendConstant(List<Object> args, Literal constant) {
+    protected void appendConstant(Literal constant) {
         Object value = constant.value();
         if (value instanceof Boolean) {
             Boolean b = (Boolean) value;
             appendBlank().append(b ? 1 : 0);
         } else {
             appendBlank().append('?');
-            args.add(value);
+            this.args.add(value);
         }
     }
 
-    protected void appendOperation(List<Object> args, Operation operation) {
+    protected void appendOperation(Operation operation) {
         Operator operator = operation.operator();
         switch (operator) {
             case NOT: {
-                appendNotOperation(args, operation);
+                appendNotOperation(operation);
                 break;
             }
             case AND:
             case OR: {
-                appendLogicalOperation(args, operation);
+                appendLogicalOperation(operation);
                 break;
             }
             case LIKE:
@@ -371,7 +361,7 @@ abstract class AbstractQuerySqlBuilder {
             case SUBTRACT:
             case MULTIPLY:
             case DIVIDE: {
-                appendBinaryOperation(args, operation);
+                appendBinaryOperation(operation);
                 break;
             }
             case LENGTH:
@@ -386,20 +376,20 @@ abstract class AbstractQuerySqlBuilder {
             case COUNT:
             case AVG:
             case SUM: {
-                appendFunctionOperation(args, operation);
+                appendFunctionOperation(operation);
                 break;
             }
             case IN: {
-                appendIn(args, operation);
+                appendIn(operation);
                 break;
             }
             case BETWEEN: {
-                appendBetween(args, operation);
+                appendBetween(operation);
                 break;
             }
             case IS_NULL:
             case IS_NOT_NULL: {
-                appendNullAssertion(args, operation);
+                appendNullAssertion(operation);
                 break;
             }
             default:
@@ -407,24 +397,27 @@ abstract class AbstractQuerySqlBuilder {
         }
     }
 
-    protected void appendNullAssertion(List<Object> args, Operation operation) {
+    protected void appendNullAssertion(Operation operation) {
+        appendFirstOperation(operation);
+        appendBlank();
+        appendOperator(operation.operator());
+    }
+
+    protected void appendFirstOperation(Operation operation) {
         ExpressionNode leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         Operator operator0 = getOperator(leftOperand);
         appendBlank();
-        if (operator0 != null && operator0.priority()
-                                 > operator.priority()) {
+        if (operator0 != null && operator0.priority() > operator.priority()) {
             sql.append('(');
-            appendExpression(args, leftOperand);
+            appendExpression(leftOperand);
             sql.append(')');
         } else {
-            appendExpression(args, leftOperand);
+            appendExpression(leftOperand);
         }
-        appendBlank();
-        appendOperator(operator);
     }
 
-    protected void appendIn(List<Object> args, Operation operation) {
+    protected void appendIn(Operation operation) {
         ExpressionNode leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         if (operation.operands().size() <= 1) {
@@ -439,7 +432,7 @@ abstract class AbstractQuerySqlBuilder {
             for (int i = 1; i < operands.size(); i++) {
                 ExpressionNode expression = operands.get(i);
                 sql.append(join);
-                appendExpression(args, expression);
+                appendExpression(expression);
                 join = ',';
             }
             if (notSingleSubQuery) {
@@ -448,7 +441,7 @@ abstract class AbstractQuerySqlBuilder {
         }
     }
 
-    protected void appendFunctionOperation(List<Object> args, Operation operation) {
+    protected void appendFunctionOperation(Operation operation) {
         ExpressionNode leftOperand = operation.firstOperand();
         appendOperator(operation.operator());
         List<? extends ExpressionNode> operands = operation.operands();
@@ -456,18 +449,18 @@ abstract class AbstractQuerySqlBuilder {
         if (notSingleSubQuery) {
             sql.append('(');
         }
-        appendExpression(args, leftOperand);
+        appendExpression(leftOperand);
         for (int i = 1; i < operands.size(); i++) {
             ExpressionNode expression = operands.get(i);
             sql.append(',');
-            appendExpression(args, expression);
+            appendExpression(expression);
         }
         if (notSingleSubQuery) {
             sql.append(")");
         }
     }
 
-    protected void appendNotOperation(List<Object> args, Operation operation) {
+    protected void appendNotOperation(Operation operation) {
         ExpressionNode leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         Operator operator0 = getOperator(leftOperand);
@@ -475,25 +468,16 @@ abstract class AbstractQuerySqlBuilder {
         sql.append(' ');
         if (operator0 != null && operator0.priority() > operator.priority()) {
             sql.append('(');
-            appendExpression(args, leftOperand);
+            appendExpression(leftOperand);
             sql.append(')');
         } else {
-            appendExpression(args, leftOperand);
+            appendExpression(leftOperand);
         }
     }
 
-    protected void appendBinaryOperation(List<Object> args, Operation operation) {
-        ExpressionNode leftOperand = operation.firstOperand();
+    protected void appendBinaryOperation(Operation operation) {
+        appendFirstOperation(operation);
         Operator operator = operation.operator();
-        Operator operator0 = getOperator(leftOperand);
-        appendBlank();
-        if (operator0 != null && operator0.priority() > operator.priority()) {
-            sql.append('(');
-            appendExpression(args, leftOperand);
-            sql.append(')');
-        } else {
-            appendExpression(args, leftOperand);
-        }
         List<? extends ExpressionNode> operands = operation.operands();
         for (int i = 1; i < operands.size(); i++) {
             ExpressionNode value = operands.get(i);
@@ -501,19 +485,19 @@ abstract class AbstractQuerySqlBuilder {
             Operator operator1 = getOperator(value);
             if (operator1 != null && operator1.priority() >= operator.priority()) {
                 sql.append('(');
-                appendExpression(args, value);
+                appendExpression(value);
                 sql.append(')');
             } else {
-                appendExpression(args, value);
+                appendExpression(value);
             }
         }
     }
 
-    protected void appendBetween(List<Object> args, Operation operation) {
+    protected void appendBetween(Operation operation) {
         ExpressionNode leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         appendBlank();
-        appendExpression(args, leftOperand);
+        appendExpression(leftOperand);
         appendOperator(operator);
         appendBlank();
         appendExpression(operation.secondOperand());
@@ -522,17 +506,17 @@ abstract class AbstractQuerySqlBuilder {
         appendExpression(operation.thirdOperand());
     }
 
-    protected void appendLogicalOperation(List<Object> args, Operation operation) {
+    protected void appendLogicalOperation(Operation operation) {
         ExpressionNode leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         Operator operator0 = getOperator(leftOperand);
         appendBlank();
         if (operator0 != null && operator0.priority() > operator.priority()) {
             sql.append('(');
-            appendPredicate(args, leftOperand);
+            appendPredicate(leftOperand);
             sql.append(')');
         } else {
-            appendPredicate(args, leftOperand);
+            appendPredicate(leftOperand);
         }
         List<? extends ExpressionNode> operands = operation.operands();
         for (int i = 1; i < operands.size(); i++) {
@@ -541,10 +525,10 @@ abstract class AbstractQuerySqlBuilder {
             Operator operator1 = getOperator(value);
             if (operator1 != null && operator1.priority() >= operator.priority()) {
                 sql.append('(');
-                appendPredicate(args, value);
+                appendPredicate(value);
                 sql.append(')');
             } else {
-                appendPredicate(args, value);
+                appendPredicate(value);
             }
         }
     }
