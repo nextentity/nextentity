@@ -50,7 +50,11 @@ class QueryBuilderTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     void select2(UserEntities userQuery) {
-        Long single = userQuery.select(get(User::getId).count()).getSingle();
+        List<Tuple2<Integer, Integer>> list = userQuery.selectDistinct(
+                        User::getId, User::getRandomNumber)
+                // .orderBy(User::getId)
+                .getList(10, 20);
+        System.out.println(list);
     }
 
     @ParameterizedTest
@@ -780,7 +784,7 @@ class QueryBuilderTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     void fetch(UserEntities userQuery) {
-        List<User> users = userQuery.fetch(User::getParentUser).getList();
+        List<User> users = userQuery.fetch(User::getParentUser).orderBy(User::getId).getList();
 
         assertEquals(users, userQuery.users());
         for (int i = 0; i < userQuery.users().size(); i++) {
@@ -794,6 +798,7 @@ class QueryBuilderTest {
         }
 
         users = userQuery.fetch(Paths.get(User::getParentUser).get(User::getParentUser))
+                .orderBy(User::getId)
                 .getList();
 
         assertEquals(users, userQuery.users());

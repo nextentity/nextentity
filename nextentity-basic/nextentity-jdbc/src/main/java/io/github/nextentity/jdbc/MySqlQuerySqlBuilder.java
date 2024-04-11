@@ -2,11 +2,9 @@ package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
-import lombok.experimental.Accessors;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -79,11 +77,4 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
     }
 
-    @lombok.Data
-    @Accessors(fluent = true)
-    public static final class PreparedSqlImpl implements PreparedSql {
-        private final String sql;
-        private final List<?> args;
-        private final List<Attribute> selected;
-    }
 }

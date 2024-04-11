@@ -1502,14 +1502,18 @@ public class GenericApiTest {
         assertTrue(userQuery.exist(userQuery.users().size() - 1));
         assertFalse(userQuery.exist(userQuery.users().size()));
 
-        List<UserModel> userModels = userQuery.select(UserModel.class).getList();
+        List<UserModel> userModels = userQuery.select(UserModel.class)
+                .orderBy(User::getId)
+                .getList();
 
         List<Map<String, Object>> l0 = userQuery.users().stream()
                 .map(UserModel::new)
                 .map(UserInterface::asMap)
                 .collect(Collectors.toList());
 
-        List<Map<String, Object>> l1 = userQuery.select(UserInterface.class).getList()
+        List<Map<String, Object>> l1 = userQuery.select(UserInterface.class)
+                .orderBy(User::getId)
+                .getList()
                 .stream()
                 .map(UserInterface::asMap)
                 .collect(Collectors.toList());

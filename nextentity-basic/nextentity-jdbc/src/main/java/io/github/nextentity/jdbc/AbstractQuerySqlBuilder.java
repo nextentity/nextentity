@@ -547,7 +547,6 @@ abstract class AbstractQuerySqlBuilder {
 
     protected void appendPaths(Column column) {
         appendBlank();
-        StringBuilder sb = sql;
         int iMax = column.size() - 1;
         if (iMax == -1)
             return;
@@ -564,11 +563,11 @@ abstract class AbstractQuerySqlBuilder {
             Attribute attribute = info.getAttribute(path);
             if (i++ == iMax) {
                 if (attribute instanceof AnyToOneAttribute) {
-                    AnyToOneAttribute joinColumnMapper = (AnyToOneAttribute) attribute;
-                    sb.append(leftQuotedIdentifier()).append(joinColumnMapper.joinColumnName()).append(rightQuotedIdentifier());
+                    AnyToOneAttribute ja = (AnyToOneAttribute) attribute;
+                    sql.append(leftQuotedIdentifier()).append(ja.joinColumnName()).append(rightQuotedIdentifier());
                 } else if (attribute instanceof BasicAttribute) {
-                    BasicAttribute basicColumnMapper = (BasicAttribute) attribute;
-                    sb.append(leftQuotedIdentifier()).append(basicColumnMapper.columnName()).append(rightQuotedIdentifier());
+                    BasicAttribute ba = (BasicAttribute) attribute;
+                    sql.append(leftQuotedIdentifier()).append(ba.columnName()).append(rightQuotedIdentifier());
                 } else {
                     throw new IllegalStateException();
                 }
@@ -577,7 +576,7 @@ abstract class AbstractQuerySqlBuilder {
                 joins.putIfAbsent(join, joins.size());
                 if (i == iMax) {
                     Integer index = joins.get(join);
-                    appendTableAttribute(sb, attribute, index).append('.');
+                    appendTableAttribute(sql, attribute, index).append('.');
                 }
             }
             type = attribute.javaType();
@@ -674,14 +673,16 @@ abstract class AbstractQuerySqlBuilder {
         List<? extends Order<?>> orders = queryStructure.orderBy();
         if (orders != null && !orders.isEmpty()) {
             sql.append(ORDER_BY);
-            boolean first = true;
+            String delimiter = "";
             for (Order<?> order : orders) {
-                if (first) {
-                    first = false;
+                sql.append(delimiter);
+                delimiter = ",";
+                int selectIndex = selectedExpressions.indexOf(order.expression());
+                if (selectIndex > 0) {
+                    sql.append(selectIndex + 1);
                 } else {
-                    sql.append(",");
+                    appendExpression(order.expression());
                 }
-                appendExpression(order.expression());
                 sql.append(" ").append(order.order() == SortOrder.DESC ? DESC : ASC);
             }
 

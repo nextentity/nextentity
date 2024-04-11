@@ -12,6 +12,7 @@ public class UserUpdaterProvider implements ArgumentsProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
         return DbConfigs.configs.stream()
+                .peek(dbConfig -> dbConfig.getEntityManager().clear())
                 .flatMap(dbConfig -> Stream.of(dbConfig.getJdbc(), dbConfig.getJpa()))
                 .map(Arguments::of);
     }

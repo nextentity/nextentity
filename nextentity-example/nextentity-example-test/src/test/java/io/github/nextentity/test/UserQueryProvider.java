@@ -18,6 +18,7 @@ public class UserQueryProvider implements ArgumentsProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
         return DbConfigs.configs.stream()
+                .peek(dbConfig -> dbConfig.getEntityManager().clear())
                 .flatMap(UserQueryProvider::getArguments)
                 .map(Arguments::of);
     }
