@@ -318,6 +318,10 @@ public interface Query {
             return getList(offset, maxResult, null);
         }
 
+        default List<T> getList(int offset) {
+            return getList(offset, -1, null);
+        }
+
         boolean exist(int offset);
 
         default Optional<T> first() {
