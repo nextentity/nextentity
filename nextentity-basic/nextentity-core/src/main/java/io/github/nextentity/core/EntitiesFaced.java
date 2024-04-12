@@ -698,4 +698,29 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     public T updateNonNullColumn(@NotNull T entity) {
         return target.updateNonNullColumn(entity);
     }
+
+    @Override
+    public <U> PathExpression<T, U> path(String fieldName) {
+        return target.path(fieldName);
+    }
+
+    @Override
+    public <U> EntityPathExpression<T, U> entityPath(String fieldName) {
+        return target.entityPath(fieldName);
+    }
+
+    @Override
+    public StringPathExpression<T> stringPath(String fieldName) {
+        return target.stringPath(fieldName);
+    }
+
+    @Override
+    public <U extends Number> NumberPathExpression<T, U> numberPath(String fieldName) {
+        return target.numberPath(fieldName);
+    }
+
+    @Override
+    public BooleanPathExpression<T> booleanPath(String fieldName) {
+        return target.booleanPath(fieldName);
+    }
 }
