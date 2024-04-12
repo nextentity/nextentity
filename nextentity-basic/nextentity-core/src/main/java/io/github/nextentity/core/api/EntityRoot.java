@@ -30,4 +30,18 @@ public interface EntityRoot<T> {
     <U extends Number> NumberPathExpression<T, U> number(Path<T, U> path);
 
     BooleanPathExpression<T> bool(Path<T, Boolean> path);
+
+
+    // type-unsafe
+
+    <U> PathExpression<T, U> path(String fieldName);
+
+    <U> EntityPathExpression<T, U> entityPath(String fieldName);
+
+    StringPathExpression<T> stringPath(String fieldName);
+
+    <U extends Number> NumberPathExpression<T, U> numberPath(String fieldName);
+
+    BooleanPathExpression<T> booleanPath(String fieldName);
+
 }

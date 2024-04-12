@@ -3,6 +3,7 @@ package io.github.nextentity.core.util;
 import io.github.nextentity.core.ExpressionTrees;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.TypeCastUtil;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.BooleanPathExpression;
 import io.github.nextentity.core.api.Expression.EntityPathExpression;
@@ -13,7 +14,6 @@ import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
-import io.github.nextentity.core.api.EntityRoot;
 
 public interface Paths {
 
@@ -55,6 +55,28 @@ public interface Paths {
 
     static <T> BooleanPathExpression<T> bool(Path<T, Boolean> path) {
         return Paths.<T>root().bool(path);
+    }
+
+    // type-unsafe
+
+    static <T, U> PathExpression<T, U> path(String fieldName) {
+        return Paths.<T>root().path(fieldName);
+    }
+
+    static <T, U> EntityPathExpression<T, U> entityPath(String fieldName) {
+        return Paths.<T>root().entityPath(fieldName);
+    }
+
+    static <T> StringPathExpression<T> stringPath(String fieldName) {
+        return Paths.<T>root().stringPath(fieldName);
+    }
+
+    static <T, U extends Number> NumberPathExpression<T, U> number(String fieldName) {
+        return Paths.<T>root().numberPath(fieldName);
+    }
+
+    static <T> BooleanPathExpression<T> booleanPath(String fieldName) {
+        return Paths.<T>root().booleanPath(fieldName);
     }
 
     class RootImpl<T> implements EntityRoot<T> {
@@ -118,6 +140,30 @@ public interface Paths {
             return Expressions.ofBoolean(ExpressionTrees.of(path));
         }
 
+        @Override
+        public <U> PathExpression<T, U> path(String fieldName) {
+            return Expressions.ofPath(ExpressionTrees.column(fieldName));
+        }
+
+        @Override
+        public <U> EntityPathExpression<T, U> entityPath(String fieldName) {
+            return Expressions.ofEntity(ExpressionTrees.column(fieldName));
+        }
+
+        @Override
+        public StringPathExpression<T> stringPath(String fieldName) {
+            return Expressions.ofString(ExpressionTrees.column(fieldName));
+        }
+
+        @Override
+        public <U extends Number> NumberPathExpression<T, U> numberPath(String fieldName) {
+            return Expressions.ofNumber(ExpressionTrees.column(fieldName));
+        }
+
+        @Override
+        public BooleanPathExpression<T> booleanPath(String fieldName) {
+            return Expressions.ofBoolean(ExpressionTrees.column(fieldName));
+        }
 
     }
 }
