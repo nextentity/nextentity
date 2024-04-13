@@ -49,9 +49,12 @@ public class SqlServerQuerySqlBuilder implements QuerySqlBuilder {
                         sql.append(" order by (select 0)");
                     }
                 }
-                sql.append(" offset ? rows fetch first ? rows only");
+                sql.append(" offset ? rows");
                 args.add(Math.max(offset, 0));
-                args.add(limit < 0 ? Long.MAX_VALUE : limit);
+                if (limit >= 0) {
+                    sql.append(" fetch first ? rows only");
+                    args.add(limit);
+                }
             }
         }
 
