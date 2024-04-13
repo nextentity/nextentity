@@ -1652,7 +1652,7 @@ class QueryBuilderTest {
                 assertEquals(user, userQuery.users().get(0));
 
                 List<User> users = userQuery.where(User::getId).eq(0)
-                        .getList(0, lockModeType);
+                        .getList(lockModeType);
                 assertEquals(users.get(0), userQuery.users().get(0));
                 users = userQuery.where(User::getId).eq(0)
                         .getList(lockModeType);

@@ -525,6 +525,16 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     }
 
     @Override
+    public List<T> offset(int offset) {
+        return Entities.super.offset(offset);
+    }
+
+    @Override
+    public List<T> limit(int limit) {
+        return Entities.super.limit(limit);
+    }
+
+    @Override
     public boolean exist(int offset) {
         return target.exist(offset);
     }
@@ -630,8 +640,13 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     }
 
     @Override
-    public List<T> getList(int offset, LockModeType lockModeType) {
-        return target.getList(offset, lockModeType);
+    public List<T> offset(int offset, LockModeType lockModeType) {
+        return target.offset(offset, lockModeType);
+    }
+
+    @Override
+    public List<T> limit(int limit, LockModeType lockModeType) {
+        return Entities.super.limit(limit, lockModeType);
     }
 
     @Override

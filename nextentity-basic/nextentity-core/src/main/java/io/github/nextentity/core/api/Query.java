@@ -1,11 +1,11 @@
 package io.github.nextentity.core.api;
 
 import io.github.nextentity.core.api.Expression.PathExpression;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.util.Lists;
@@ -318,8 +318,12 @@ public interface Query {
             return getList(offset, maxResult, null);
         }
 
-        default List<T> getList(int offset) {
+        default List<T> offset(int offset) {
             return getList(offset, -1, null);
+        }
+
+        default List<T> limit(int limit) {
+            return getList(0, limit, null);
         }
 
         boolean exist(int offset);
@@ -414,8 +418,12 @@ public interface Query {
             return list.isEmpty() ? null : list.get(0);
         }
 
-        default List<T> getList(int offset, LockModeType lockModeType) {
+        default List<T> offset(int offset, LockModeType lockModeType) {
             return getList(offset, -1, lockModeType);
+        }
+
+        default List<T> limit(int limit, LockModeType lockModeType) {
+            return getList(0, limit, lockModeType);
         }
 
         default List<T> getList(LockModeType lockModeType) {
