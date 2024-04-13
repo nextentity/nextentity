@@ -8,7 +8,7 @@ import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
 import io.github.nextentity.jdbc.MysqlUpdateSqlBuilder;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
-import org.hibernate.dialect.MySQLDialect;
+import org.hibernate.engine.jdbc.dialect.internal.StandardDialectResolver;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.tool.schema.Action;
 
@@ -54,7 +54,7 @@ public class Mysql implements DbConfigProvider {
                 .put(JAKARTA_JDBC_URL, url)
                 .put(USER, user)
                 .put(PASS, password)
-                .put(DIALECT, MySQLDialect.class)
+                .put(DIALECT_RESOLVERS, StandardDialectResolver.class.getName())
                 .put(HBM2DDL_AUTO, Action.UPDATE)
                 .put(SHOW_SQL, false)
                 .put(FORMAT_SQL, false)

@@ -9,6 +9,7 @@ import io.github.nextentity.jdbc.SqlServerUpdateSqlBuilder;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
 import org.hibernate.dialect.SQLServerDialect;
+import org.hibernate.engine.jdbc.dialect.internal.StandardDialectResolver;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.tool.schema.Action;
 
@@ -37,7 +38,7 @@ public class SqlServer implements DbConfigProvider {
                 .put(JAKARTA_JDBC_URL, url)
                 .put(USER, username)
                 .put(PASS, password)
-                .put(DIALECT, SQLServerDialect.class)
+                .put(DIALECT_RESOLVERS, StandardDialectResolver.class.getName())
                 .put(GLOBALLY_QUOTED_IDENTIFIERS, true)
                 .put(HBM2DDL_AUTO, Action.UPDATE)
                 .put(SHOW_SQL, false)
