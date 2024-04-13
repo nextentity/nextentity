@@ -71,7 +71,7 @@ public interface Paths {
         return Paths.<T>root().stringPath(fieldName);
     }
 
-    static <T, U extends Number> NumberPathExpression<T, U> number(String fieldName) {
+    static <T, U extends Number> NumberPathExpression<T, U> numberPath(String fieldName) {
         return Paths.<T>root().numberPath(fieldName);
     }
 
