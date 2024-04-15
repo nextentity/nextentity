@@ -4,6 +4,7 @@ import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.example.eneity.Company;
 import io.github.nextentity.example.eneity.Employee;
+import io.github.nextentity.example.eneity.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ class CompanyRepositoryTest {
     Repository<Integer, Employee> employeeRepository2;
     @Autowired(required = false)
     Entities<Integer, Employee> employeeEntities;
+    @Autowired(required = false)
+    Repository<Long, User> userRepository;
 
     @Test
     void testAutowired() {
@@ -33,6 +36,7 @@ class CompanyRepositoryTest {
         Assertions.assertNotNull(companyEntities);
         Assertions.assertNotNull(employeeRepository);
         Assertions.assertNotNull(employeeRepository2);
+        Assertions.assertNotNull(userRepository);
     }
 
 }

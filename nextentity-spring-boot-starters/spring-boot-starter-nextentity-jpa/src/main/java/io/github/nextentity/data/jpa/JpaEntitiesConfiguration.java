@@ -43,6 +43,7 @@ public class JpaEntitiesConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    @Primary
     protected <T extends Persistable<ID>, ID extends Serializable>
     Repository<ID, T> jpaRepository(DependencyDescriptor descriptor,
                                     @Qualifier("jpaRepositoryFactory")
