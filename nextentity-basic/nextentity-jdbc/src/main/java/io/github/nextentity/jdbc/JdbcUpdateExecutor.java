@@ -1,7 +1,6 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.SqlLogger;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
@@ -10,7 +9,9 @@ import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.jdbc.ConnectionProvider.ConnectionCallback;
+import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder.InsertSql;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder.PreparedSql;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,7 +50,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             return list;
         }
         EntityType entity = metamodel.getEntity(entityType);
-        PreparedSql sql = sqlBuilder.buildInsert(entity);
+        InsertSql sql = sqlBuilder.buildInsert(entities, entity);
         return execute(connection -> doInsert(list, entity, connection, sql));
     }
 
@@ -183,27 +185,43 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     private <T> List<T> doInsert(List<T> entities,
                                  EntityType entityType,
                                  Connection connection,
-                                 PreparedSql preparedSql)
+                                 InsertSql insertSql)
             throws SQLException {
-        String sql = preparedSql.sql();
-        SqlLogger.debug(sql);
-        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            List<BasicAttribute> columns = preparedSql.columns();
-            setArgs(entities, columns, statement);
-            statement.executeBatch();
-            try (ResultSet keys = statement.getGeneratedKeys()) {
-                Iterator<T> iterator = entities.iterator();
-                while (keys.next()) {
-                    T entity = iterator.next();
-                    Attribute idField = entityType.id();
-                    Object key = JdbcUtil.getValue(keys, 1, idField.javaType());
-                    idField.set(entity, key);
-                }
-            } catch (Exception e) {
-                log.warn("", e);
+        if (insertSql.hasId() || insertSql.enableBatch()) {
+            doInsertBatch(entities, entityType, connection, insertSql);
+        } else {
+            for (T entity : entities) {
+                doInsertBatch(Collections.singletonList(entity), entityType, connection, insertSql);
             }
         }
         return entities;
+    }
+
+    private static <T> void doInsertBatch(List<T> entities, EntityType entityType, Connection connection, InsertSql insertSql) throws SQLException {
+        String sql = insertSql.sql();
+        SqlLogger.debug(sql);
+        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            List<BasicAttribute> columns = insertSql.columns();
+            setArgs(entities, columns, statement);
+            if (entities.size() > 1) {
+                statement.executeBatch();
+            } else {
+                statement.executeUpdate();
+            }
+            if (!insertSql.hasId()) {
+                try (ResultSet keys = statement.getGeneratedKeys()) {
+                    Iterator<T> iterator = entities.iterator();
+                    while (keys.next()) {
+                        T entity = iterator.next();
+                        Attribute idField = entityType.id();
+                        Object key = JdbcUtil.getValue(keys, 1, idField.javaType());
+                        idField.set(entity, key);
+                    }
+                } catch (Exception e) {
+                    log.warn("", e);
+                }
+            }
+        }
     }
 
     private static <T> void setArgs(Iterable<T> entities,

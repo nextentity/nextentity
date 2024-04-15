@@ -7,14 +7,47 @@ import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
 
     @Override
-    public PreparedSql buildInsert(@NotNull EntityType entityType) {
+    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntityType entityType) {
+        Collection<? extends Attribute> attributes = entityType.attributes();
+        Attribute id = entityType.id();
+        HashSet<Attribute> nullNullAttr = new HashSet<>();
+        HashSet<Attribute> checkAttr = new HashSet<>(attributes);
+        for (Object entity : entities) {
+            Iterator<? extends Attribute> iterator = checkAttr.iterator();
+            while (iterator.hasNext()) {
+                Attribute next = iterator.next();
+                if (next.get(entity) != null) {
+                    nullNullAttr.add(next);
+                    iterator.remove();
+                }
+            }
+            if (checkAttr.isEmpty()) {
+                break;
+            }
+        }
+        List<? extends Attribute> list = attributes.stream()
+                .filter(nullNullAttr::contains)
+                .collect(Collectors.toList());
+        return buildInsert(entityType, list, generatedKeysBatchSupport(), nullNullAttr.contains(id));
+    }
+
+    protected boolean generatedKeysBatchSupport() {
+        return true;
+    }
+
+    protected @NotNull InsertSql buildInsert(@NotNull EntityType entityType,
+                                             Collection<? extends Attribute> attributes,
+                                             boolean batch, boolean hasId) {
         String tableName = entityType.tableName();
         List<BasicAttribute> columns = new ArrayList<>();
         StringBuilder sql = new StringBuilder("insert into ")
@@ -23,16 +56,14 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
                 .append(rightTicks())
                 .append(" (");
         String delimiter = "";
-        for (Attribute attribute : entityType.attributes()) {
-            if (!(attribute instanceof BasicAttribute)) {
+        for (Attribute attribute : attributes) {
+            if (!(attribute instanceof BasicAttribute column)) {
                 continue;
             }
-            BasicAttribute column = (BasicAttribute) attribute;
             sql.append(delimiter).append(leftTicks()).append(column.columnName()).append(rightTicks());
             columns.add(column);
             delimiter = ",";
         }
-
         sql.append(") values (");
         delimiter = "";
         int size = columns.size();
@@ -41,7 +72,7 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
             delimiter = ",";
         }
         sql.append(")");
-        return new PreparedSqlImpl(sql.toString(), columns, null);
+        return new InsertSqlImpl(sql.toString(), columns, null, batch, hasId);
     }
 
     @NotNull
@@ -125,5 +156,28 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
         public List<BasicAttribute> versionColumns() {
             return versionColumns;
         }
+    }
+
+    protected static class InsertSqlImpl extends PreparedSqlImpl implements InsertSql {
+        protected boolean enableBatch;
+        protected boolean hasId;
+
+
+        public InsertSqlImpl(String sql, List<BasicAttribute> columns, List<BasicAttribute> versionColumns, boolean enableBatch, boolean hasId) {
+            super(sql, columns, versionColumns);
+            this.enableBatch = enableBatch;
+            this.hasId = hasId;
+        }
+
+        @Override
+        public boolean enableBatch() {
+            return enableBatch;
+        }
+
+        @Override
+        public boolean hasId() {
+            return hasId;
+        }
+
     }
 }

@@ -55,8 +55,8 @@ public class SqlDialectSelector implements QuerySqlBuilder, JdbcUpdateSqlBuilder
     }
 
     @Override
-    public PreparedSql buildInsert(@NotNull EntityType entityType) {
-        return updateSqlBuilder.buildInsert(entityType);
+    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntityType entityType) {
+        return updateSqlBuilder.buildInsert(entities, entityType);
     }
 
     @Override

@@ -1,7 +1,12 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.core.EntitiesFactory;
+import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.Query.Select;
+import io.github.nextentity.test.db.DbConfig;
+import io.github.nextentity.test.db.Transaction;
 import io.github.nextentity.test.db.UserEntities;
+import io.github.nextentity.test.entity.AutoGenId;
 import io.github.nextentity.test.entity.User;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -9,9 +14,11 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -95,7 +102,7 @@ public class UpdateTest {
             user.setUsername(null);
             user.setTime(null);
             user.setPid(null);
-            user = userUpdater.updateNonNullColumn(user);
+            userUpdater.updateNonNullColumn(user);
         }
         assertEquals(users2, query(userUpdater).where(User::getId).in(1, 2, 3).getList());
 
@@ -141,4 +148,36 @@ public class UpdateTest {
         System.out.println(a);
         System.out.println(b);
     }
+
+    @ParameterizedTest
+    @ArgumentsSource(DbProvider.class)
+    void testIdGenerator(DbConfig config) {
+        EntitiesFactory factory = config.getJdbcFactory();
+        Entities<Long, AutoGenId> entities = factory.getEntities(AutoGenId.class);
+        Transaction transaction = new Transaction(config);
+        transaction.doInTransaction(() -> {
+            List<AutoGenId> list = Arrays.asList(new AutoGenId("a"), new AutoGenId("b"));
+            entities.insert(list);
+            checkId(list, entities);
+        });
+
+        transaction.doInTransaction(() -> {
+            List<AutoGenId> list = Arrays.asList(new AutoGenId(), new AutoGenId());
+            entities.insert(list);
+            checkId(list, entities);
+        });
+    }
+
+    private static void checkId(List<AutoGenId> list, Entities<Long, AutoGenId> entities) {
+        for (AutoGenId autoGenId : list) {
+            assertNotNull(autoGenId.getId());
+        }
+        List<Long> ids = list.stream().map(AutoGenId::getId).toList();
+        Map<Long, AutoGenId> map = entities.getMap(ids);
+        for (AutoGenId autoGenId : list) {
+            AutoGenId a = map.get(autoGenId.getId());
+            assertEquals(autoGenId, a);
+        }
+    }
+
 }

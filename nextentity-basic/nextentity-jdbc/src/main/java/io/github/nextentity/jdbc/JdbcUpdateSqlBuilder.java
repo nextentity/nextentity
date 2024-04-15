@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public interface JdbcUpdateSqlBuilder {
 
-    PreparedSql buildInsert(@NotNull EntityType entityType);
+    InsertSql buildInsert(Iterable<?> entities, @NotNull EntityType entityType);
 
     default PreparedSql buildUpdate(@NotNull EntityType entityType) {
         Attribute id = entityType.id();
@@ -32,6 +32,12 @@ public interface JdbcUpdateSqlBuilder {
 
         List<BasicAttribute> versionColumns();
 
+    }
+
+    interface InsertSql extends PreparedSql {
+        boolean enableBatch();
+
+        boolean hasId();
     }
 
 }
