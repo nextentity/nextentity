@@ -53,6 +53,11 @@
       <version>${spring.version}</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+    </dependency>
   </dependencies>
 
 </project>

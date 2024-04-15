@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -172,7 +173,7 @@ public class UpdateTest {
         for (AutoGenId autoGenId : list) {
             assertNotNull(autoGenId.getId());
         }
-        List<Long> ids = list.stream().map(AutoGenId::getId).toList();
+        List<Long> ids = list.stream().map(AutoGenId::getId).collect(Collectors.toList());
         Map<Long, AutoGenId> map = entities.getMap(ids);
         for (AutoGenId autoGenId : list) {
             AutoGenId a = map.get(autoGenId.getId());

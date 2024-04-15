@@ -57,9 +57,10 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
                 .append(" (");
         String delimiter = "";
         for (Attribute attribute : attributes) {
-            if (!(attribute instanceof BasicAttribute column)) {
+            if (!(attribute instanceof BasicAttribute)) {
                 continue;
             }
+            BasicAttribute column = (BasicAttribute) attribute;
             sql.append(delimiter).append(leftTicks()).append(column.columnName()).append(rightTicks());
             columns.add(column);
             delimiter = ",";

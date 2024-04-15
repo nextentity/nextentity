@@ -1,5 +1,7 @@
 package io.github.nextentity.data;
 
+import io.github.nextentity.core.EntitiesImpl;
+import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.Query.Select;
@@ -39,8 +41,13 @@ public class EntityTypeUtil {
     }
 
 
-    public static <ID extends Serializable> Class<ID> getIdType(DependencyDescriptor descriptor) {
-        Class<?> type = descriptor.getResolvableType().as(Entities.class).resolveGeneric(0);
+    public static <ID> Class<ID> getIdType(DependencyDescriptor descriptor) {
+        Class<?> type = null;
+        if (Entities.class.isAssignableFrom(descriptor.getDependencyType())) {
+            type = descriptor.getResolvableType().as(Entities.class).resolveGeneric(0);
+        } else if (Repository.class.isAssignableFrom(descriptor.getDependencyType())) {
+            type = descriptor.getResolvableType().as(Repository.class).resolveGeneric(0);
+        }
         return TypeCastUtil.cast(type);
     }
 
@@ -51,7 +58,7 @@ public class EntityTypeUtil {
         Class<?> expected = metamodel.getEntity(entityType).id().javaType();
         if (expected != idType) {
             String msg = descriptor.getResolvableType() + " " + descriptor
-                         + " id type mismatch, expected: " + expected + ", actual: " + idType;
+                    + " id type mismatch, expected: " + expected + ", actual: " + idType;
             throw new EntityIdTypeMismatchException(msg);
         }
     }
