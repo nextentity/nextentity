@@ -1,7 +1,10 @@
 package io.github.nextentity.data.jpa;
 
 import io.github.nextentity.core.EntitiesFactory;
+import io.github.nextentity.core.Persistable;
 import io.github.nextentity.core.QueryPostProcessor;
+import io.github.nextentity.core.Repository;
+import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.meta.Metamodel;
@@ -31,21 +34,32 @@ public class JpaEntitiesConfiguration {
     @Primary
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     protected <T, ID extends Serializable> Entities<ID, T> jpaEntities(DependencyDescriptor descriptor,
-                                                                       @Qualifier("jpaEntitiesFactory")
+                                                                       @Qualifier("jpaRepositoryFactory")
                                                                        EntitiesFactory factory) {
         Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
         EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
         return factory.getEntities(entityType);
     }
 
-    @Bean(name = "jpaEntitiesFactory")
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    protected <T extends Persistable<ID>, ID extends Serializable>
+    Repository<ID, T> jpaRepository(DependencyDescriptor descriptor,
+                                    @Qualifier("jpaRepositoryFactory")
+                                    RepositoryFactory factory) {
+        Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
+        EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
+        return factory.getRepository(entityType);
+    }
+
+    @Bean(name = "jpaRepositoryFactory")
     @Primary
-    protected EntitiesFactory jpaEntitiesFactory(JpaQueryExecutor queryExecutor,
+    protected RepositoryFactory jpaEntitiesFactory(JpaQueryExecutor queryExecutor,
                                                  UpdateExecutor updateExecutor,
                                                  @Autowired(required = false)
                                                  QueryPostProcessor queryPostProcessor,
                                                  Metamodel metamodel) {
-        return new EntitiesFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
+        return new RepositoryFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
     }
 
     @Bean
