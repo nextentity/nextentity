@@ -1,7 +1,10 @@
 package io.github.nextentity.data.jdbc;
 
 import io.github.nextentity.core.EntitiesFactory;
+import io.github.nextentity.core.Persistable;
 import io.github.nextentity.core.QueryPostProcessor;
+import io.github.nextentity.core.Repository;
+import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.converter.TypeConverter;
@@ -37,21 +40,34 @@ public class JdbcEntitiesConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Entities<ID, T> jdbcEntities(DependencyDescriptor descriptor,
-                                                                        @Qualifier("jdbcEntitiesFactory")
-                                                                        EntitiesFactory factory) {
+    protected <T, ID extends Serializable>
+    Entities<ID, T> jdbcEntities(DependencyDescriptor descriptor,
+                                 @Qualifier("jdbcRepositoryFactory")
+                                 EntitiesFactory factory) {
         Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
         EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
         return factory.getEntities(entityType);
     }
 
-    @Bean(name = "jdbcEntitiesFactory")
-    protected EntitiesFactory jdbcEntitiesFactory(JdbcQueryExecutor queryExecutor,
-                                                  UpdateExecutor updateExecutor,
-                                                  @Autowired(required = false)
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    protected <T extends Persistable<ID>, ID extends Serializable>
+    Repository<ID, T> jdbcRepository(DependencyDescriptor descriptor,
+                                     @Qualifier("jdbcRepositoryFactory")
+                                     RepositoryFactory factory) {
+        Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
+        EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
+        return factory.getRepository(entityType);
+    }
+
+    @Bean(name = "jdbcRepositoryFactory")
+    protected RepositoryFactory jdbcEntitiesFactory(JdbcQueryExecutor queryExecutor,
+                                                    UpdateExecutor updateExecutor,
+                                                    @Autowired(required = false)
                                                   QueryPostProcessor queryPostProcessor,
-                                                  Metamodel metamodel) {
-        return new EntitiesFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
+                                                    Metamodel metamodel) {
+        return new RepositoryFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
     }
 
     @Bean

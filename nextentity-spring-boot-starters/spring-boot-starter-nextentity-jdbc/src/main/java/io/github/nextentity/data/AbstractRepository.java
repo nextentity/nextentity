@@ -1,31 +1,12 @@
 package io.github.nextentity.data;
 
-import io.github.nextentity.core.EntitiesFactory;
-import io.github.nextentity.core.EntitiesImpl;
-import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Entities;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ResolvableType;
+import io.github.nextentity.core.Persistable;
+import io.github.nextentity.core.Repository;
 
-public abstract class AbstractRepository<T, ID> extends EntitiesImpl<T, ID> implements Entities<ID, T> {
+import java.io.Serializable;
 
-    public AbstractRepository() {
-        super();
-    }
-
-    @Autowired
-    protected void init(EntitiesFactory entitiesFactory) {
-        ResolvableType type = ResolvableType.forClass(getClass())
-                .as(AbstractRepository.class);
-        Class<T> entityType = TypeCastUtil.cast(type.resolveGeneric(0));
-        Class<?> idType = type.resolveGeneric(1);
-        Class<?> expected = entitiesFactory.getMetamodel().getEntity(entityType).id().javaType();
-        if (expected != idType) {
-            String msg = "id class defined in " + getClass() + " does not match," +
-                         " expected id " + expected + ", actual id " + idType;
-            throw new EntityIdTypeMismatchException(msg);
-        }
-        init(entitiesFactory, entityType);
-    }
+public abstract class AbstractRepository<ID extends Serializable, T extends Persistable<ID>>
+        extends AbstractEntities<T, ID>
+        implements Repository<ID, T> {
 
 }

@@ -1,5 +1,6 @@
 package io.github.nextentity.example.eneity;
 
+import io.github.nextentity.core.Persistable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -9,7 +10,7 @@ import lombok.Data;
 
 @Data
 @Entity
-public class Employee {
+public class Employee implements Persistable<Integer> {
     @Id
     private Integer id;
     private String name;
