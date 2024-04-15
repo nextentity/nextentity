@@ -16,14 +16,14 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final Entities<Long, User> userAccess;
+    private final Entities<Long, User> userEntities;
 
     public Page<User> getUsers(UserQuery query) {
-        return userAccess.where(query.predicate()).getPage(query.pageable());
+        return userEntities.where(query.predicate()).getPage(query.pageable());
     }
 
     public Page<User> joinExample(UserQuery2 query) {
-        return userAccess
+        return userEntities
                 .fetch(User::getParentUser, User::getRandomUser)
                 .where(query.predicate())
                 .getPage(query.pageable());

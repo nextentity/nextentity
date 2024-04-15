@@ -1,5 +1,6 @@
 package io.github.nextentity.example.eneity;
 
+import io.github.nextentity.core.Persistable;
 import io.github.nextentity.core.api.Expression.EntityPathExpression;
 import io.github.nextentity.core.api.Expression.NumberPathExpression;
 import io.github.nextentity.core.api.Expression.PathExpression;
@@ -27,7 +28,7 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 @ToString
 @Getter
 @Setter
-public class User {
+public class User implements Persistable<Long> {
 
     public static StringPathExpression<User> Username = get(User::getUsername);
     public static EntityPathExpression<User, User> ParentUser = get(User::getParentUser);
