@@ -2,13 +2,13 @@ package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.ExpressionTrees;
 import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.api.ExpressionTree;
 import io.github.nextentity.core.api.ExpressionTree.Column;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.reflect.ReflectUtil;
+import io.github.nextentity.core.util.Lists;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceUnitUtil;
 import jakarta.persistence.metamodel.EntityType;

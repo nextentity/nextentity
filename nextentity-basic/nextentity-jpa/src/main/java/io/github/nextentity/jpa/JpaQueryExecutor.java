@@ -17,7 +17,6 @@ import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.Ent
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
@@ -26,6 +25,7 @@ import io.github.nextentity.core.meta.ProjectionAttribute;
 import io.github.nextentity.core.meta.SubSelectType;
 import io.github.nextentity.core.reflect.InstanceConstructor;
 import io.github.nextentity.core.reflect.ReflectUtil;
+import io.github.nextentity.core.util.Lists;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;

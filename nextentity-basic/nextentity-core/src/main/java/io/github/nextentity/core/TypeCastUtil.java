@@ -1,8 +1,8 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.EntityRoot;
 
 import java.util.List;
 

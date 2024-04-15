@@ -2,12 +2,10 @@ package io.github.nextentity.test.entity;
 
 
 import jakarta.persistence.Entity;
-import lombok.Data;
-
-
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Data;
 
 @Entity
 @Data

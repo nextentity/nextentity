@@ -56,10 +56,10 @@ public class JpaEntitiesConfiguration {
     @Bean(name = "jpaRepositoryFactory")
     @Primary
     protected RepositoryFactory jpaEntitiesFactory(JpaQueryExecutor queryExecutor,
-                                                 UpdateExecutor updateExecutor,
-                                                 @Autowired(required = false)
-                                                 QueryPostProcessor queryPostProcessor,
-                                                 Metamodel metamodel) {
+                                                   UpdateExecutor updateExecutor,
+                                                   @Autowired(required = false)
+                                                   QueryPostProcessor queryPostProcessor,
+                                                   Metamodel metamodel) {
         return new RepositoryFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
     }
 

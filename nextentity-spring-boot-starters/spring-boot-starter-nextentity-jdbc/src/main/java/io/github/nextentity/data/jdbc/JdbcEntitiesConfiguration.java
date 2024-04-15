@@ -65,7 +65,7 @@ public class JdbcEntitiesConfiguration {
     protected RepositoryFactory jdbcEntitiesFactory(JdbcQueryExecutor queryExecutor,
                                                     UpdateExecutor updateExecutor,
                                                     @Autowired(required = false)
-                                                  QueryPostProcessor queryPostProcessor,
+                                                    QueryPostProcessor queryPostProcessor,
                                                     Metamodel metamodel) {
         return new RepositoryFactory(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
     }

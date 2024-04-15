@@ -14,7 +14,6 @@ import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.Ent
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
@@ -22,6 +21,7 @@ import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Exceptions;
 import io.github.nextentity.core.util.Iterators;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;

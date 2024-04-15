@@ -8,7 +8,6 @@ import io.github.nextentity.jdbc.SqlServerQuerySqlBuilder;
 import io.github.nextentity.jdbc.SqlServerUpdateSqlBuilder;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
-import org.hibernate.dialect.SQLServerDialect;
 import org.hibernate.engine.jdbc.dialect.internal.StandardDialectResolver;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.tool.schema.Action;

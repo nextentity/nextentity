@@ -123,7 +123,8 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         return queryExecutor.<Number>getList(structure).get(0).longValue();
     }
 
-    @NotNull ExpressionTrees.QueryStructureImpl buildCountData() {
+    @NotNull
+    ExpressionTrees.QueryStructureImpl buildCountData() {
         QueryStructureImpl structure = queryStructure.copy();
         structure.lockType = LockModeType.NONE;
         structure.orderBy = Lists.of();
@@ -195,7 +196,8 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         return queryExecutor.getList(structure);
     }
 
-    @NotNull ExpressionTrees.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
+    @NotNull
+    ExpressionTrees.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.offset = offset;
         structure.limit = maxResult;
@@ -210,7 +212,8 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         return !queryList(structure).isEmpty();
     }
 
-    @NotNull ExpressionTrees.QueryStructureImpl buildExistData(int offset) {
+    @NotNull
+    ExpressionTrees.QueryStructureImpl buildExistData(int offset) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.select = SELECT_ANY;
         structure.offset = offset;

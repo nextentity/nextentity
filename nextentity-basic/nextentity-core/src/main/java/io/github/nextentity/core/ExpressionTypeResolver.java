@@ -5,12 +5,12 @@ import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.ExpressionTree.Literal;
 import io.github.nextentity.core.api.ExpressionTree.Operation;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.Type;
 import io.github.nextentity.core.reflect.PrimitiveTypes;
+import io.github.nextentity.core.util.Lists;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -1,5 +1,6 @@
 package io.github.nextentity.core;
 
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Page;
@@ -10,7 +11,6 @@ import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
 import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
-import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.SortOrder;

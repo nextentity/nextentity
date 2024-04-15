@@ -3,8 +3,8 @@ package io.github.nextentity.test;
 import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.test.db.DbConfigs;
-import io.github.nextentity.test.entity.UserSummarySqlServer;
 import io.github.nextentity.test.entity.UserSummaryMysql;
+import io.github.nextentity.test.entity.UserSummarySqlServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

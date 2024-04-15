@@ -1,7 +1,7 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.WhereImpl;
 import io.github.nextentity.core.QueryPostProcessor;
+import io.github.nextentity.core.WhereImpl;
 import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Query.QueryStructureBuilder;
