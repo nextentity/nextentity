@@ -17,7 +17,7 @@ public interface Repository<ID extends Serializable, T extends Persistable<ID>>
 
     T get(ID id);
 
-    List<T> getALl(Iterable<? extends ID> ids);
+    List<T> getAll(Iterable<? extends ID> ids);
 
     Map<ID, T> getMap(Iterable<? extends ID> ids);
 

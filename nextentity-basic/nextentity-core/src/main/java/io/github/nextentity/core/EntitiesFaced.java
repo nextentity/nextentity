@@ -90,8 +90,8 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     }
 
     @Override
-    public List<T> getALl(Iterable<? extends ID> ids) {
-        return target.getALl(ids);
+    public List<T> getAll(Iterable<? extends ID> ids) {
+        return target.getAll(ids);
     }
 
     @Override

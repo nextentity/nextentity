@@ -60,12 +60,12 @@ public class EntitiesImpl<T, ID> extends SelectImpl<T> implements Entities<ID, T
         return where(this.idExpression.eq(id)).getSingle();
     }
 
-    public List<T> getALl(Iterable<? extends ID> ids) {
+    public List<T> getAll(Iterable<? extends ID> ids) {
         return where(this.idExpression.in(Iterators.toList(ids))).getList();
     }
 
     public Map<ID, T> getMap(Iterable<? extends ID> ids) {
-        return getALl(ids).stream().collect(Collectors.toMap(getId, Function.identity()));
+        return getAll(ids).stream().collect(Collectors.toMap(getId, Function.identity()));
     }
 
 }

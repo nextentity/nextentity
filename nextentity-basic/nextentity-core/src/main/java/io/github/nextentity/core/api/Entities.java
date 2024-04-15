@@ -13,7 +13,7 @@ public interface Entities<ID, T> extends Select<T>, Update<T>, EntityRoot<T> {
 
     T get(ID id);
 
-    List<T> getALl(Iterable<? extends ID> ids);
+    List<T> getAll(Iterable<? extends ID> ids);
 
     Map<ID, T> getMap(Iterable<? extends ID> ids);
 
