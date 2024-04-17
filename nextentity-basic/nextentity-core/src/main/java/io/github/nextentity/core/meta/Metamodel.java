@@ -1,8 +1,11 @@
 package io.github.nextentity.core.meta;
 
-public interface Metamodel {
-    EntityType getEntity(Class<?> type);
+import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.graph.ProjectionSchema;
 
-    Projection getProjection(Class<?> baseType, Class<?> projectionType);
+public interface Metamodel {
+    EntitySchema getEntity(Class<?> type);
+
+    ProjectionSchema getProjection(Class<?> baseType, Class<?> projectionType);
 
 }

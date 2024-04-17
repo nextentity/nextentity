@@ -1,5 +1,6 @@
 package io.github.nextentity.core.expression;
 
+import io.github.nextentity.core.api.ExpressionTree;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 
 import java.io.Serializable;
@@ -23,10 +24,10 @@ interface Selected extends Serializable {
     default List<? extends ExpressionNode> expressions() {
         return elements().stream()
                 .flatMap(selectElement -> {
-                    if (selectElement instanceof ExpressionNode) {
-                        return Stream.of((ExpressionNode) selectElement);
+                    if (selectElement instanceof ExpressionTree) {
+                        return Stream.of(((ExpressionTree) selectElement).rootNode());
                     } else if (selectElement instanceof SelectEntity) {
-                        return ((SelectEntity) selectElement).attributes().stream();
+                        return ((SelectEntity) selectElement).columns().stream();
                     } else {
                         throw new UnsupportedOperationException(selectElement.getClass().getName());
                     }

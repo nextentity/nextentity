@@ -2,12 +2,12 @@ package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.SqlLogger;
-import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
-import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +28,10 @@ public class JdbcQueryExecutor implements QueryExecutor {
     @NotNull
     private final ResultCollector collector;
 
-    public JdbcQueryExecutor(@NotNull Metamodel metamodel, @NotNull QuerySqlBuilder sqlBuilder, @NotNull ConnectionProvider connectionProvider, @NotNull ResultCollector collector) {
+    public JdbcQueryExecutor(@NotNull Metamodel metamodel,
+                             @NotNull QuerySqlBuilder sqlBuilder,
+                             @NotNull ConnectionProvider connectionProvider,
+                             @NotNull ResultCollector collector) {
         this.metamodel = metamodel;
         this.sqlBuilder = sqlBuilder;
         this.connectionProvider = connectionProvider;
@@ -59,6 +62,11 @@ public class JdbcQueryExecutor implements QueryExecutor {
         }
     }
 
+    @Override
+    public Metamodel metamodel() {
+        return metamodel;
+    }
+
     private static void printSql(PreparedSql sql) {
         SqlLogger.debug("SQL: {}", sql.sql());
         if (!sql.args().isEmpty()) {
@@ -77,7 +85,7 @@ public class JdbcQueryExecutor implements QueryExecutor {
 
         List<?> args();
 
-        List<Attribute> selected();
+        List<EntityProperty> selected();
 
     }
 
@@ -85,7 +93,7 @@ public class JdbcQueryExecutor implements QueryExecutor {
         <T> List<T> resolve(
                 ResultSet resultSet,
                 Metamodel metamodel,
-                List<? extends Attribute> selected,
+                List<? extends EntityProperty> selected,
                 QueryStructure structure) throws SQLException;
     }
 }

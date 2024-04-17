@@ -1,4 +1,4 @@
-package io.github.nextentity.core.meta;
+package io.github.nextentity.core.annotaion;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

@@ -1,8 +1,8 @@
 package io.github.nextentity.core.reflect;
 
-import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 
 public interface Property extends InstanceConstructor {
-    Attribute attribute();
+    EntityProperty attribute();
 
 }

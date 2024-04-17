@@ -10,7 +10,7 @@ public interface IUser {
 
     U getParentUser();
 
-    record U(int id, int randomNumber, String username) {
+    record U(int id, int randomNumber, String username, U parentUser) {
     }
 
 }

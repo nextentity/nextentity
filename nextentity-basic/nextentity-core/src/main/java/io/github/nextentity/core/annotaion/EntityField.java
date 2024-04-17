@@ -1,4 +1,4 @@
-package io.github.nextentity.core.meta;
+package io.github.nextentity.core.annotaion;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -9,7 +9,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Target({METHOD, FIELD})
 @Retention(RUNTIME)
-public @interface EntityAttribute {
+public @interface EntityField {
 
     String value() default "";
 

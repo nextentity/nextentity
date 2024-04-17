@@ -1,8 +1,7 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.BasicAttribute;
-import io.github.nextentity.core.meta.EntityType;
+import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.graph.EntitySchema;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -10,27 +9,27 @@ import java.util.stream.Collectors;
 
 public interface JdbcUpdateSqlBuilder {
 
-    InsertSql buildInsert(Iterable<?> entities, @NotNull EntityType entityType);
+    InsertSql buildInsert(Iterable<?> entities, @NotNull EntitySchema entityType);
 
-    default PreparedSql buildUpdate(@NotNull EntityType entityType) {
-        Attribute id = entityType.id();
-        List<BasicAttribute> basicAttributes = entityType.attributes().stream()
-                .filter(it -> it instanceof BasicAttribute && it != id)
-                .map(it -> (BasicAttribute) it)
+    default PreparedSql buildUpdate(@NotNull EntitySchema entityType) {
+        EntityProperty id = entityType.id();
+        List<EntityProperty> basicAttributes = entityType.properties().stream()
+                .filter(it -> it.isBasic() && it != id)
+                .map(it -> (EntityProperty) it)
                 .collect(Collectors.toList());
         return buildUpdate(entityType, basicAttributes);
     }
 
-    PreparedSql buildUpdate(@NotNull EntityType entityType, @NotNull List<BasicAttribute> columns);
+    PreparedSql buildUpdate(@NotNull EntitySchema entityType, @NotNull List<EntityProperty> columns);
 
-    PreparedSql buildDelete(EntityType entity);
+    PreparedSql buildDelete(EntitySchema entity);
 
     interface PreparedSql {
         String sql();
 
-        List<BasicAttribute> columns();
+        List<EntityProperty> columns();
 
-        List<BasicAttribute> versionColumns();
+        List<EntityProperty> versionColumns();
 
     }
 

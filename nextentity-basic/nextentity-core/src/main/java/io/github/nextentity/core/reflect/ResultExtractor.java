@@ -2,16 +2,17 @@ package io.github.nextentity.core.reflect;
 
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.converter.TypeConverter;
+import io.github.nextentity.core.expression.MultiSelected;
 import io.github.nextentity.core.expression.SelectElement;
 import io.github.nextentity.core.expression.SelectEntity;
 import io.github.nextentity.core.expression.SelectExpression;
 import io.github.nextentity.core.expression.Selected;
-import io.github.nextentity.core.expression.MultiSelected;
 import io.github.nextentity.core.expression.SingleSelected;
-import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.meta.Metamodel;
 import lombok.SneakyThrows;
 
+import java.util.Collection;
 import java.util.List;
 
 public abstract class ResultExtractor implements Arguments {
@@ -34,9 +35,9 @@ public abstract class ResultExtractor implements Arguments {
     @Override
     public Object get(int index) {
         index += offset;
-        Class<?> type = types[index];
+        Class<?> type = types == null ? Object.class : types[index];
         Object value = getValue(index, type);
-        return typeConverter.convert(value, type);
+        return typeConverter == null ? value : typeConverter.convert(value, type);
     }
 
     protected abstract Object getValue(int index, Class<?> type);
@@ -76,11 +77,10 @@ public abstract class ResultExtractor implements Arguments {
         if (element instanceof SelectExpression) {
             return next();
         } else if (element instanceof SelectEntity) {
+            //noinspection PatternVariableCanBeUsed
             SelectEntity selectEntity = (SelectEntity) element;
-            Class<?> resultType = selectEntity.javaType();
-            List<? extends Attribute> attributes = selectEntity.attributes();
-            InstanceConstructor extractor = ReflectUtil.getRowInstanceConstructor(attributes, resultType);
-            Object result = extractor.newInstance(this);
+            Collection<? extends EntityProperty> attributes = selectEntity.columns();
+            Object result = selectEntity.newInstance(this);
             addOffset(attributes.size());
             return result;
         } else {

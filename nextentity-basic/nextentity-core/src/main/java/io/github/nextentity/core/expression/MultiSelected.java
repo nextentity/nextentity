@@ -12,15 +12,13 @@ import java.util.List;
  */
 @Data
 @Accessors(fluent = true)
-public
-class MultiSelected implements Selected {
-    private final boolean distinct;
+public class MultiSelected implements Selected {
     private final List<? extends SelectElement> elements;
+    private final boolean distinct;
 
     @Override
     public Class<?> resultType() {
         return Tuple.class;
     }
-
 
 }

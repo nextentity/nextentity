@@ -5,7 +5,7 @@ import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Delegate;
@@ -51,7 +51,7 @@ public class EntitiesImpl<T, ID> extends SelectImpl<T> implements Entities<ID, T
     protected void init(EntitiesFactory entitiesFactory, Class<T> entityType) {
         super.init(entityType, entitiesFactory.getQueryExecutor(), entitiesFactory.getQueryPostProcessor());
         update = Updaters.create(entitiesFactory.getUpdateExecutor(), entityType);
-        Attribute idAttribute = entitiesFactory.getMetamodel().getEntity(entityType).id();
+        EntityProperty idAttribute = entitiesFactory.getMetamodel().getEntity(entityType).id();
         getId = entity -> TypeCastUtil.unsafeCast(idAttribute.get(entity));
         idExpression = Expressions.of(ExpressionTrees.column(idAttribute.name()));
     }

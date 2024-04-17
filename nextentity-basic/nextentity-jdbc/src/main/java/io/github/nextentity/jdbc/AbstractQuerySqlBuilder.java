@@ -6,28 +6,20 @@ import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.SortOrder;
+import io.github.nextentity.core.expression.Attribute;
 import io.github.nextentity.core.expression.From;
 import io.github.nextentity.core.expression.From.Entity;
 import io.github.nextentity.core.expression.From.FromSubQuery;
 import io.github.nextentity.core.expression.Literal;
 import io.github.nextentity.core.expression.Operation;
-import io.github.nextentity.core.expression.PathChain;
 import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.expression.Selection;
-import io.github.nextentity.core.expression.Selection.EntitySelected;
-import io.github.nextentity.core.expression.Selection.MultiSelected;
-import io.github.nextentity.core.expression.Selection.ProjectionSelected;
-import io.github.nextentity.core.expression.Selection.SingleSelected;
-import io.github.nextentity.core.meta.AnyToOneAttribute;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.BasicAttribute;
-import io.github.nextentity.core.meta.EntityType;
+import io.github.nextentity.core.expression.Selected;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.meta.Projection;
-import io.github.nextentity.core.meta.ProjectionAttribute;
 import io.github.nextentity.core.meta.SubSelectType;
-import io.github.nextentity.core.meta.Type;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.graph.EntityReferenced;
+import io.github.nextentity.core.meta.graph.Graph;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +28,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -63,13 +54,13 @@ abstract class AbstractQuerySqlBuilder {
 
     protected final StringBuilder sql;
     protected final List<Object> args;
-    protected final Map<PathChain, Integer> joins = new LinkedHashMap<>();
+    protected final Map<Attribute, Integer> joins = new LinkedHashMap<>();
     protected final QueryStructure queryStructure;
 
-    protected final EntityType entity;
+    protected final EntitySchema entity;
     protected final Metamodel mappers;
     protected final List<ExpressionNode> selectedExpressions = new ArrayList<>();
-    protected final List<Attribute> selectedAttributes = new ArrayList<>();
+    protected final List<EntityProperty> selectedAttributes = new ArrayList<>();
 
     protected final String fromAlias;
     protected final int subIndex;
@@ -128,46 +119,12 @@ abstract class AbstractQuerySqlBuilder {
 
     protected void initializeSelectedExpressions() {
         appendSelectedExpressions();
-        appendFetchExpressions();
+        // appendFetchExpressions();
     }
 
     protected void appendSelectedExpressions() {
-        Selection selected = queryStructure.select();
-        if (selected instanceof SingleSelected) {
-            SingleSelected singleSelected = (SingleSelected) selected;
-            selectedExpressions.add(singleSelected.expression());
-        } else if (selected instanceof MultiSelected) {
-            MultiSelected multiSelected = (MultiSelected) selected;
-            selectedExpressions.addAll(multiSelected.expressions());
-        } else if (selected instanceof EntitySelected) {
-            EntityType table = mappers
-                    .getEntity(queryStructure.from().type());
-            for (Attribute attribute : table.attributes()) {
-                if (!(attribute instanceof BasicAttribute)) {
-                    continue;
-                }
-                BasicAttribute column = (BasicAttribute) attribute;
-                PathChain columns = ExpressionTrees.column(column.name());
-                selectedExpressions.add(columns);
-                selectedAttributes.add(attribute);
-            }
-        } else if (selected instanceof ProjectionSelected) {
-            Projection projection = mappers
-                    .getProjection(
-                            queryStructure.from().type(),
-                            queryStructure.select().resultType()
-                    );
-            for (ProjectionAttribute attr : projection.attributes()) {
-                if (attr.entityAttribute() instanceof EntityType) {
-                    continue;
-                }
-                PathChain columns = attr.entityAttribute();
-                selectedExpressions.add(columns);
-                selectedAttributes.add(attr);
-            }
-        } else {
-            throw new IllegalStateException();
-        }
+        Selected selected = queryStructure.select();
+        selectedExpressions.addAll(selected.expressions());
     }
 
     protected void appendSelect() {
@@ -186,35 +143,10 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendSelectAlias(ExpressionNode expression) {
-        if (selectIndex.get() != 0 || !(expression instanceof PathChain) || ((PathChain) expression).deep() != 1) {
+        if (selectIndex.get() != 0 || !(expression instanceof Attribute) || ((Attribute) expression).deep() != 1) {
             int index = selectIndex.getAndIncrement();
             String alias = Integer.toString(index, Character.MAX_RADIX);
             sql.append(" as _").append(alias);
-        }
-    }
-
-    protected void appendFetchExpressions() {
-        List<? extends PathChain> fetchClause = queryStructure.fetch();
-        if (fetchClause != null && !fetchClause.isEmpty()) {
-            PathChain[] array = fetchClause.stream()
-                    .flatMap(it -> Lists.iterate(it, Objects::nonNull, PathChain::parent))
-                    .distinct()
-                    .toArray(PathChain[]::new);
-            for (PathChain fetch : array) {
-                Attribute attribute = getAttribute(fetch);
-                if (!(attribute instanceof AnyToOneAttribute)) {
-                    continue;
-                }
-                AnyToOneAttribute am = (AnyToOneAttribute) attribute;
-                for (Attribute attr : am.attributes()) {
-                    if (!(attr instanceof BasicAttribute)) {
-                        continue;
-                    }
-                    PathChain column = fetch.get(attr.name());
-                    selectedExpressions.add(column);
-                    selectedAttributes.add(attr);
-                }
-            }
         }
     }
 
@@ -293,7 +225,7 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendPredicate(ExpressionNode node) {
-        if (node instanceof PathChain || node instanceof Literal) {
+        if (node instanceof Attribute || node instanceof Literal) {
             node = ExpressionTrees.operate(node, Operator.EQ, ExpressionTrees.TRUE);
         }
         appendExpression(node);
@@ -313,8 +245,8 @@ abstract class AbstractQuerySqlBuilder {
         if (expression instanceof Literal) {
             Literal constant = (Literal) expression;
             appendConstant(constant);
-        } else if (expression instanceof PathChain) {
-            PathChain column = (PathChain) expression;
+        } else if (expression instanceof Attribute) {
+            Attribute column = (Attribute) expression;
             appendPaths(column);
         } else if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
@@ -545,7 +477,7 @@ abstract class AbstractQuerySqlBuilder {
         sql.append(sign);
     }
 
-    protected void appendPaths(PathChain column) {
+    protected void appendPaths(Attribute column) {
         appendBlank();
         int iMax = column.deep() - 1;
         if (iMax == -1)
@@ -555,22 +487,19 @@ abstract class AbstractQuerySqlBuilder {
             appendFromAlias().append(".");
         }
         Class<?> type = queryStructure.from().type();
-        Attribute tail = column.toAttribute(mappers.getEntity(type));
-        List<? extends Attribute> chain = tail.referencedAttributes();
-        Attribute join = chain.get(0);
+        EntityProperty tail = column.toAttribute(mappers.getEntity(type));
+        List<? extends EntityProperty> chain = tail.referencedAttributes();
+        EntityProperty join = chain.get(0);
 
         for (String path : column) {
-            EntityType info = mappers.getEntity(type);
-            Attribute attribute = info.getAttribute(path);
+            EntitySchema info = mappers.getEntity(type);
+            EntityProperty attribute = info.getProperty(path);
             if (i++ == iMax) {
-                if (attribute instanceof AnyToOneAttribute) {
-                    AnyToOneAttribute ja = (AnyToOneAttribute) attribute;
+                if (attribute.isSchema()) {
+                    EntityReferenced ja = (EntityReferenced) attribute;
                     sql.append(leftQuotedIdentifier()).append(ja.joinColumnName()).append(rightQuotedIdentifier());
-                } else if (attribute instanceof BasicAttribute) {
-                    BasicAttribute ba = (BasicAttribute) attribute;
-                    sql.append(leftQuotedIdentifier()).append(ba.columnName()).append(rightQuotedIdentifier());
                 } else {
-                    throw new IllegalStateException();
+                    sql.append(leftQuotedIdentifier()).append(attribute.columnName()).append(rightQuotedIdentifier());
                 }
                 return;
             } else {
@@ -589,28 +518,28 @@ abstract class AbstractQuerySqlBuilder {
         StringBuilder sql = new StringBuilder();
 
         joins.forEach((k, v) -> {
-            Attribute attribute = getAttribute(k);
-            EntityType entityTypeInfo = mappers.getEntity(attribute.javaType());
+            EntityProperty attribute = getAttribute(k);
+            EntitySchema entityTypeInfo = mappers.getEntity(attribute.javaType());
             StringBuilder append = sql.append(" left join ");
             appendTable(append, entityTypeInfo);
 
             appendTableAttribute(sql, attribute, v);
             sql.append(ON);
-            PathChain parent = k.parent();
+            Attribute parent = k.parent();
             if (parent == null) {
                 appendFromAlias(sql);
             } else {
                 Integer parentIndex = joins.get(parent);
-                Attribute parentAttribute = getAttribute(parent);
+                EntityProperty parentAttribute = getAttribute(parent);
                 appendTableAttribute(sql, parentAttribute, parentIndex);
             }
-            if (attribute instanceof AnyToOneAttribute) {
-                AnyToOneAttribute join = (AnyToOneAttribute) attribute;
+            if (attribute.isSchema()) {
+                EntityReferenced join = (EntityReferenced) attribute;
                 sql.append(".").append(join.joinColumnName()).append("=");
                 appendTableAttribute(sql, attribute, v);
                 String referenced = join.referencedColumnName();
                 if (referenced.isEmpty()) {
-                    referenced = ((BasicAttribute) entityTypeInfo.id()).columnName();
+                    referenced = ((EntityProperty) entityTypeInfo.id()).columnName();
                 }
                 sql.append(".").append(referenced);
             } else {
@@ -621,7 +550,7 @@ abstract class AbstractQuerySqlBuilder {
 
     }
 
-    protected void appendTable(StringBuilder append, EntityType entityTypeInfo) {
+    protected void appendTable(StringBuilder append, EntitySchema entityTypeInfo) {
         if (entityTypeInfo instanceof SubSelectType) {
             append.append('(').append(((SubSelectType) entityTypeInfo).subSelectSql()).append(')');
         } else {
@@ -633,23 +562,23 @@ abstract class AbstractQuerySqlBuilder {
         return expression instanceof Operation ? ((Operation) expression).operator() : null;
     }
 
-    protected StringBuilder appendTableAttribute(StringBuilder sb, Attribute attribute, Integer index) {
-        EntityType information = mappers.getEntity(attribute.javaType());
+    protected StringBuilder appendTableAttribute(StringBuilder sb, EntityProperty attribute, Integer index) {
+        EntitySchema information = mappers.getEntity(attribute.javaType());
         String tableName = information.javaType().getSimpleName();
         return appendTableAlias(tableName, index, sb);
     }
 
-    protected Attribute getAttribute(PathChain path) {
-        Type schema = entity;
+    protected EntityProperty getAttribute(Attribute path) {
+        Graph schema = entity;
         for (String s : path) {
-            if (schema instanceof EntityType) {
-                EntityType ts = (EntityType) schema;
-                schema = ts.getAttribute(s);
+            if (schema instanceof EntitySchema) {
+                EntitySchema ts = (EntitySchema) schema;
+                schema = ts.getProperty(s);
             } else {
                 throw new IllegalStateException();
             }
         }
-        return (Attribute) schema;
+        return (EntityProperty) schema;
     }
 
     protected abstract void appendOffsetAndLimit();
@@ -695,7 +624,7 @@ abstract class AbstractQuerySqlBuilder {
     public static final class PreparedSqlImpl implements PreparedSql {
         private final String sql;
         private final List<?> args;
-        private final List<Attribute> selected;
+        private final List<EntityProperty> selected;
     }
 
 }

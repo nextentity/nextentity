@@ -59,11 +59,25 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
+    void select3(UserEntities userQuery) {
+        IUser first1 = userQuery.select(IUser.class).getFirst(90);
+        System.out.println(first1);
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void select4(UserEntities userQuery) {
+        List<User> list = userQuery.selectDistinct(User::getParentUser).getList();
+        System.out.println(list);
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
     void select(UserEntities userQuery) {
 
         int offset = 90;
-        User f2 = userQuery.fetch(User::getParentUser).getFirst(offset);
-        IUser first1 = userQuery.select(IUser.class).getFirst(offset);
+        User f2 = userQuery.fetch(User::getParentUser).orderBy(User::getId).getFirst(offset);
+        IUser first1 = userQuery.select(IUser.class).orderBy(User::getId).getFirst(offset);
         Assertions.assertEquals(first1.getUsername(), f2.getUsername());
         Assertions.assertEquals(first1.getId(), f2.getId());
         Assertions.assertEquals(first1.getRandomNumber(), f2.getRandomNumber());

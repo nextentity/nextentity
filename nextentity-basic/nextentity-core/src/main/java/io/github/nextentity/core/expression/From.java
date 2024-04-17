@@ -1,6 +1,7 @@
 package io.github.nextentity.core.expression;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author HuangChengwei
@@ -20,6 +21,7 @@ interface From extends Serializable {
         default Class<?> type() {
             return select().resultType();
         }
+
     }
 
 }

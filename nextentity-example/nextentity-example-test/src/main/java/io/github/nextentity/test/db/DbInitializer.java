@@ -1,6 +1,5 @@
 package io.github.nextentity.test.db;
 
-import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.test.Users;
 import io.github.nextentity.test.entity.User;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +27,10 @@ public class DbInitializer extends Transaction {
         doInTransaction(connection -> {
             try {
                 UserEntities query = config.getJdbc();
-                resetData(connection, query);
+                // resetData(connection, query);
                 allUsers = queryAllUsers(query);
             } catch (Exception e) {
-                throw new UncheckedSQLException(e);
+                throw new RuntimeException(e);
             }
         });
         return allUsers;

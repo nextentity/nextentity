@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Accessors(fluent = true)
 public final class InstanceInvocationHandler implements InvocationHandler {
-    private final Property[] properties;
     private final Class<?> resultType;
     private final Map<Method, Object> data;
 

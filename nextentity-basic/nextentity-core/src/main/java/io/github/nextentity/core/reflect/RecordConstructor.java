@@ -1,7 +1,7 @@
 package io.github.nextentity.core.reflect;
 
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.Type;
+import io.github.nextentity.core.meta.graph.Graph;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.RecordComponent;
@@ -11,7 +11,7 @@ import java.util.Map;
 public class RecordConstructor extends ObjectConstructor {
     public Class<?>[] parameterTypes;
 
-    public RecordConstructor(Type type) {
+    public RecordConstructor(Graph type) {
         super(type);
     }
 

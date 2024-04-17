@@ -5,10 +5,9 @@ import io.github.nextentity.core.Updaters.UpdateExecutor;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.BasicAttribute;
-import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.jdbc.ConnectionProvider.ConnectionCallback;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder.InsertSql;
@@ -49,7 +48,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         if (list.isEmpty()) {
             return list;
         }
-        EntityType entity = metamodel.getEntity(entityType);
+        EntitySchema entity = metamodel.getEntity(entityType);
         InsertSql sql = sqlBuilder.buildInsert(entities, entity);
         return execute(connection -> doInsert(list, entity, connection, sql));
     }
@@ -67,7 +66,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(list, preparedSql.columns(), statement);
                 int[] updateRowCounts = statement.executeBatch();
-                List<BasicAttribute> bindAttributes = preparedSql.versionColumns();
+                List<EntityProperty> bindAttributes = preparedSql.versionColumns();
                 boolean hasVersion = isNotEmpty(bindAttributes);
                 for (int rowCount : updateRowCounts) {
                     if (rowCount != 1) {
@@ -115,16 +114,16 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
 
     @Override
     public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
-        EntityType meta = metamodel.getEntity(entityType);
+        EntitySchema meta = metamodel.getEntity(entityType);
 
-        List<BasicAttribute> nonNullColumn;
+        List<EntityProperty> nonNullColumn;
         nonNullColumn = getNonNullColumn(entity, meta);
         if (nonNullColumn.isEmpty()) {
             log.warn("no field to update");
             return entity;
         }
         PreparedSql preparedSql = sqlBuilder.buildUpdate(meta, nonNullColumn);
-        Attribute version = meta.version();
+        EntityProperty version = meta.version();
         Object versionValue = version.get(entity);
         if (versionValue == null) {
             throw new IllegalArgumentException("version field must not be null");
@@ -135,7 +134,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(Lists.of(entity), preparedSql.columns(), statement);
                 int i = statement.executeUpdate();
-                List<BasicAttribute> versions = preparedSql.versionColumns();
+                List<EntityProperty> versions = preparedSql.versionColumns();
                 boolean hasVersion = isNotEmpty(versions);
                 if (i == 0) {
                     if (hasVersion) {
@@ -154,8 +153,8 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         });
     }
 
-    private static void setNewVersion(Object entity, List<BasicAttribute> versions) {
-        for (BasicAttribute column : versions) {
+    private static void setNewVersion(Object entity, List<EntityProperty> versions) {
+        for (EntityProperty column : versions) {
             Object version = column.get(entity);
             if (version instanceof Integer) {
                 version = (Integer) version + 1;
@@ -168,14 +167,13 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         }
     }
 
-    private static <T> List<BasicAttribute> getNonNullColumn(T entity, EntityType entityType) {
-        List<BasicAttribute> columns = new ArrayList<>();
-        for (Attribute attribute : entityType.attributes()) {
-            if (attribute instanceof BasicAttribute) {
-                BasicAttribute column = (BasicAttribute) attribute;
-                Object invoke = column.get(entity);
+    private static <T> List<EntityProperty> getNonNullColumn(T entity, EntitySchema entityType) {
+        List<EntityProperty> columns = new ArrayList<>();
+        for (EntityProperty attribute : entityType.properties()) {
+            if (attribute.isBasic()) {
+                Object invoke = attribute.get(entity);
                 if (invoke != null) {
-                    columns.add(column);
+                    columns.add(attribute);
                 }
             }
         }
@@ -183,7 +181,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     }
 
     private <T> List<T> doInsert(List<T> entities,
-                                 EntityType entityType,
+                                 EntitySchema entityType,
                                  Connection connection,
                                  InsertSql insertSql)
             throws SQLException {
@@ -197,11 +195,11 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         return entities;
     }
 
-    private static <T> void doInsertBatch(List<T> entities, EntityType entityType, Connection connection, InsertSql insertSql) throws SQLException {
+    private static <T> void doInsertBatch(List<T> entities, EntitySchema entityType, Connection connection, InsertSql insertSql) throws SQLException {
         String sql = insertSql.sql();
         SqlLogger.debug(sql);
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            List<BasicAttribute> columns = insertSql.columns();
+            List<EntityProperty> columns = insertSql.columns();
             setArgs(entities, columns, statement);
             if (entities.size() > 1) {
                 statement.executeBatch();
@@ -213,7 +211,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
                     Iterator<T> iterator = entities.iterator();
                     while (keys.next()) {
                         T entity = iterator.next();
-                        Attribute idField = entityType.id();
+                        EntityProperty idField = entityType.id();
                         Object key = JdbcUtil.getValue(keys, 1, idField.javaType());
                         idField.set(entity, key);
                     }
@@ -225,12 +223,12 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     }
 
     private static <T> void setArgs(Iterable<T> entities,
-                                    List<BasicAttribute> columns,
+                                    List<EntityProperty> columns,
                                     PreparedStatement statement)
             throws SQLException {
         for (T entity : entities) {
             int i = 0;
-            for (BasicAttribute column : columns) {
+            for (EntityProperty column : columns) {
                 Object v = column.get(entity);
                 if (v instanceof Enum<?>) {
                     v = ((Enum<?>) v).ordinal();

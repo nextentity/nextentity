@@ -6,25 +6,23 @@ import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Slice;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple2;
 import io.github.nextentity.core.util.tuple.Tuple3;
-import io.github.nextentity.jdbc.JdbcQueryExecutor;
-import io.github.nextentity.jdbc.SqlServerQuerySqlBuilder;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
+import io.github.nextentity.test.db.DbConfigs;
 import io.github.nextentity.test.db.UserEntities;
 import io.github.nextentity.test.entity.User;
 import io.github.nextentity.test.projection.UserInterface;
 import io.github.nextentity.test.projection.UserModel;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -211,6 +209,28 @@ public class GenericApiTest {
                 .collect(Collectors.toList());
         assertEquals(qgt80, fgt80);
 
+    }
+
+    @Test
+    void te() {
+        UserEntities userQuery = DbConfigs.MYSQL.getJdbc();
+        List<User> users = userQuery.fetch(
+                        User::getParentUser,
+                        User::getRandomUser)
+                .where(User::getId).eq(0)
+                .orderBy(User::getId)
+                .getList();
+
+        for (int i = 0; i < users.size(); i++) {
+            User u0 = users.get(i);
+            User u1 = userQuery.users().get(i);
+            if (!Objects.equals(u0.getParentUser(), u1.getParentUser())) {
+                System.out.println(u0);
+                System.out.println(u1);
+            }
+            assertEquals(u0.getParentUser(), u1.getParentUser());
+            assertEquals(u0.getRandomUser(), u1.getRandomUser());
+        }
     }
 
     @ParameterizedTest
@@ -1238,6 +1258,11 @@ public class GenericApiTest {
                                 .and(User::getTime).ge(time)
                         ))
                 .count();
+    }
+
+    public static void main(String[] args) {
+        EntityProperty attribute = JpaMetamodel.of().getEntity(User.class).getProperty("parentUser");
+        System.out.println(attribute);
     }
 
     @ParameterizedTest

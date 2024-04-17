@@ -9,7 +9,7 @@ import java.util.List;
  * @author HuangChengwei
  * @since 2024/4/17 下午1:27
  */
-public interface Operation extends ExpressionNode, SelectExpression {
+public interface Operation extends ExpressionNode {
     List<? extends ExpressionNode> operands();
 
     Operator operator();

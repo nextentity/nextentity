@@ -1,9 +1,9 @@
 package io.github.nextentity.core.reflect;
 
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.ObjectType;
-import io.github.nextentity.core.meta.Type;
+import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.graph.Schema;
+import io.github.nextentity.core.meta.graph.Graph;
 import io.github.nextentity.core.util.Exceptions;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class ReflectUtil {
     private static final Map<Class<?>, Object> SINGLE_ENUM_MAP = new ConcurrentHashMap<>();
 
-    static final Map<Collection<? extends Attribute>, ObjectConstructor> CONSTRUCTORS = new ConcurrentHashMap<>();
+    static final Map<Collection<? extends EntityProperty>, ObjectConstructor> CONSTRUCTORS = new ConcurrentHashMap<>();
 
     @Nullable
     public static Field getDeclaredField(@NotNull Class<?> clazz, String name) {
@@ -65,7 +65,7 @@ public class ReflectUtil {
         }
     }
 
-    public static InstanceConstructor getRowInstanceConstructor(Collection<? extends Attribute> attributes, Class<?> resultType) {
+    public static InstanceConstructor getRowInstanceConstructor(Collection<? extends EntityProperty> attributes, Class<?> resultType) {
         ObjectConstructor schema = CONSTRUCTORS.computeIfAbsent(attributes, ReflectUtil::doGetConstructor);
         if (schema.type.javaType() != resultType) {
             throw new IllegalArgumentException();
@@ -73,14 +73,14 @@ public class ReflectUtil {
         return schema;
     }
 
-    private static ObjectConstructor doGetConstructor(Collection<? extends Attribute> attributes) {
-        Map<Type, Property> map = new HashMap<>();
+    private static ObjectConstructor doGetConstructor(Collection<? extends EntityProperty> attributes) {
+        Map<Graph, Property> map = new HashMap<>();
         ObjectConstructor result = null;
-        for (Attribute attribute : attributes) {
-            Type cur = attribute;
+        for (EntityProperty attribute : attributes) {
+            Graph cur = attribute;
             while (true) {
                 Property property = map.computeIfAbsent(cur, ReflectUtil::newProperty);
-                cur = Attribute.getDeclaringType(cur);
+                cur = EntityProperty.getDeclaringType(cur);
                 if (cur == null) {
                     if (result == null) {
                         result = (ObjectConstructor) property;
@@ -95,16 +95,17 @@ public class ReflectUtil {
             throw new IllegalArgumentException();
         }
         int i = 0;
-        for (Attribute attribute : attributes) {
-            PropertyImpl property = (PropertyImpl) map.get(attribute);
+        for (EntityProperty attribute : attributes) {
+            Property p = map.get(attribute);
+            PropertyImpl property = (PropertyImpl) p;
             property.setIndex(i++);
         }
-        Map<Type, List<Entry<Type, Property>>> attrs = map.entrySet().stream()
-                .filter(it -> Attribute.getDeclaringType(it.getKey()) != null)
-                .collect(Collectors.groupingBy(e -> Attribute.getDeclaringType(e.getKey())));
-        for (Entry<Type, List<Entry<Type, Property>>> entry : attrs.entrySet()) {
+        Map<Graph, List<Entry<Graph, Property>>> attrs = map.entrySet().stream()
+                .filter(it -> EntityProperty.getDeclaringType(it.getKey()) != null)
+                .collect(Collectors.groupingBy(e -> EntityProperty.getDeclaringType(e.getKey())));
+        for (Entry<Graph, List<Entry<Graph, Property>>> entry : attrs.entrySet()) {
             Property property = map.get(entry.getKey());
-            List<Entry<Type, Property>> v = entry.getValue();
+            List<Entry<Graph, Property>> v = entry.getValue();
             if (v != null && !v.isEmpty()) {
                 ((ObjectConstructor) property).setProperties(v.stream()
                         .map(Entry::getValue)
@@ -115,8 +116,8 @@ public class ReflectUtil {
         return result;
     }
 
-    private static Property newProperty(Type type) {
-        if (type instanceof ObjectType) {
+    private static Property newProperty(Graph type) {
+        if (type instanceof Schema) {
             Class<?> javaType = type.javaType();
             if (javaType.isInterface()) {
                 return new InterfaceConstructor(type);
@@ -126,7 +127,7 @@ public class ReflectUtil {
                 return new BeanConstructor(type);
             }
         } else {
-            return new PropertyImpl((Attribute) type);
+            return new PropertyImpl((EntityProperty) type);
         }
     }
 
@@ -164,10 +165,10 @@ public class ReflectUtil {
     }
 
     @NotNull
-    public static Object newProxyInstance(Property[] fields, @NotNull Class<?> resultType, Map<Method, Object> map) {
+    public static Object newProxyInstance(@NotNull Class<?> resultType, Map<Method, Object> map) {
         ClassLoader classLoader = resultType.getClassLoader();
         Class<?>[] interfaces = {resultType};
-        return Proxy.newProxyInstance(classLoader, interfaces, new InstanceInvocationHandler(fields, resultType, map));
+        return Proxy.newProxyInstance(classLoader, interfaces, new InstanceInvocationHandler(resultType, map));
     }
 
     public static void typeCheck(Object value, Class<?> type) {

@@ -7,11 +7,11 @@ import lombok.SneakyThrows;
 
 import java.sql.ResultSet;
 
-public class JdbcArguments extends ResultExtractor {
+public class JdbcResultExtractor extends ResultExtractor {
 
     private final ResultSet resultSet;
 
-    public JdbcArguments(ResultSet resultSet, Metamodel metamodel, Class<?>[] types, TypeConverter typeConverter, Class<?> entityType) {
+    public JdbcResultExtractor(ResultSet resultSet, Metamodel metamodel, Class<?>[] types, TypeConverter typeConverter, Class<?> entityType) {
         super(types, typeConverter, metamodel, entityType);
         this.resultSet = resultSet;
     }

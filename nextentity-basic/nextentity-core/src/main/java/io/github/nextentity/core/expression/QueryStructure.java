@@ -1,8 +1,8 @@
 package io.github.nextentity.core.expression;
 
+import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface QueryStructure extends ExpressionNode {
 
-    Selection select();
+    Selected select();
 
     From from();
 
@@ -29,7 +29,5 @@ public interface QueryStructure extends ExpressionNode {
     Integer limit();
 
     LockModeType lockType();
-
-    List<? extends PathChain> fetch();
 
 }

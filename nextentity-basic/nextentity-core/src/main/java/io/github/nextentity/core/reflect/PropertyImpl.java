@@ -1,17 +1,17 @@
 package io.github.nextentity.core.reflect;
 
-import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 
 public class PropertyImpl implements Property {
     private int index;
-    private final Attribute attribute;
+    private final EntityProperty attribute;
 
-    public PropertyImpl(Attribute attribute) {
+    public PropertyImpl(EntityProperty attribute) {
         this.attribute = attribute;
     }
 
     @Override
-    public Attribute attribute() {
+    public EntityProperty attribute() {
         return attribute;
     }
 

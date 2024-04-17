@@ -1,13 +1,13 @@
 package io.github.nextentity.core.reflect;
 
-import io.github.nextentity.core.meta.Type;
+import io.github.nextentity.core.meta.graph.Graph;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 public class InterfaceConstructor extends ObjectConstructor {
-    public InterfaceConstructor(Type type) {
+    public InterfaceConstructor(Graph type) {
         super(type);
     }
 
@@ -21,7 +21,7 @@ public class InterfaceConstructor extends ObjectConstructor {
             map.put(property.attribute().getter(), extract);
         }
         if (root || hasNonnullProperty) {
-            return ReflectUtil.newProxyInstance(properties, type.javaType(), map);
+            return ReflectUtil.newProxyInstance(type.javaType(), map);
         } else {
             return null;
         }

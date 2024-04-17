@@ -2,7 +2,7 @@ package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.expression.PathChain;
+import io.github.nextentity.core.expression.Attribute;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.expression.Literal;
 import io.github.nextentity.core.expression.Operation;
@@ -28,7 +28,7 @@ public class JpaExpressionBuilder {
 
     protected final CriteriaBuilder cb;
 
-    protected final Map<PathChain, FetchParent<?, ?>> fetched = new HashMap<>();
+    protected final Map<Attribute, FetchParent<?, ?>> fetched = new HashMap<>();
 
     public JpaExpressionBuilder(Root<?> root, CriteriaBuilder cb) {
         this.root = root;
@@ -40,8 +40,8 @@ public class JpaExpressionBuilder {
             Literal cv = (Literal) expression;
             return cb.literal(cv.value());
         }
-        if (expression instanceof PathChain) {
-            PathChain pv = (PathChain) expression;
+        if (expression instanceof Attribute) {
+            Attribute pv = (Attribute) expression;
             return getPath(pv);
         }
         if (expression instanceof Operation) {
@@ -185,13 +185,13 @@ public class JpaExpressionBuilder {
         return TypeCastUtil.unsafeCast(o);
     }
 
-    protected Path<?> getPath(PathChain column) {
+    protected Path<?> getPath(Attribute column) {
         From<?, ?> r = root;
         int size = column.deep();
         for (int i = 0; i < size; i++) {
             String s = column.get(i);
             if (i != size - 1) {
-                PathChain offset = column.subLength(i + 1);
+                Attribute offset = column.subLength(i + 1);
                 r = join(offset);
             } else {
                 return r.get(s);
@@ -201,7 +201,7 @@ public class JpaExpressionBuilder {
         return r;
     }
 
-    private Join<?, ?> join(PathChain column) {
+    private Join<?, ?> join(Attribute column) {
         return (Join<?, ?>) fetched.compute(column, (k, v) -> {
             if (v instanceof Join<?, ?>) {
                 return v;

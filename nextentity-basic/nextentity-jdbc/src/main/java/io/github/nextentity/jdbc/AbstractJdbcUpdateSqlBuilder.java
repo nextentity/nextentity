@@ -1,8 +1,7 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.BasicAttribute;
-import io.github.nextentity.core.meta.EntityType;
+import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.graph.EntityProperty;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,15 +16,15 @@ import java.util.stream.Collectors;
 public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
 
     @Override
-    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntityType entityType) {
-        Collection<? extends Attribute> attributes = entityType.attributes();
-        Attribute id = entityType.id();
-        HashSet<Attribute> nullNullAttr = new HashSet<>();
-        HashSet<Attribute> checkAttr = new HashSet<>(attributes);
+    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntitySchema entityType) {
+        Collection<? extends EntityProperty> attributes = entityType.properties();
+        EntityProperty id = entityType.id();
+        HashSet<EntityProperty> nullNullAttr = new HashSet<>();
+        HashSet<EntityProperty> checkAttr = new HashSet<>(attributes);
         for (Object entity : entities) {
-            Iterator<? extends Attribute> iterator = checkAttr.iterator();
+            Iterator<? extends EntityProperty> iterator = checkAttr.iterator();
             while (iterator.hasNext()) {
-                Attribute next = iterator.next();
+                EntityProperty next = iterator.next();
                 if (next.get(entity) != null) {
                     nullNullAttr.add(next);
                     iterator.remove();
@@ -35,7 +34,7 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
                 break;
             }
         }
-        List<? extends Attribute> list = attributes.stream()
+        List<? extends EntityProperty> list = attributes.stream()
                 .filter(nullNullAttr::contains)
                 .collect(Collectors.toList());
         return buildInsert(entityType, list, generatedKeysBatchSupport(), nullNullAttr.contains(id));
@@ -45,24 +44,23 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
         return true;
     }
 
-    protected @NotNull InsertSql buildInsert(@NotNull EntityType entityType,
-                                             Collection<? extends Attribute> attributes,
+    protected @NotNull InsertSql buildInsert(@NotNull EntitySchema entityType,
+                                             Collection<? extends EntityProperty> attributes,
                                              boolean batch, boolean hasId) {
         String tableName = entityType.tableName();
-        List<BasicAttribute> columns = new ArrayList<>();
+        List<EntityProperty> columns = new ArrayList<>();
         StringBuilder sql = new StringBuilder("insert into ")
                 .append(leftTicks())
                 .append(tableName)
                 .append(rightTicks())
                 .append(" (");
         String delimiter = "";
-        for (Attribute attribute : attributes) {
-            if (!(attribute instanceof BasicAttribute)) {
+        for (EntityProperty attribute : attributes) {
+            if (!(attribute.isBasic())) {
                 continue;
             }
-            BasicAttribute column = (BasicAttribute) attribute;
-            sql.append(delimiter).append(leftTicks()).append(column.columnName()).append(rightTicks());
-            columns.add(column);
+            sql.append(delimiter).append(leftTicks()).append(attribute.columnName()).append(rightTicks());
+            columns.add(attribute);
             delimiter = ",";
         }
         sql.append(") values (");
@@ -83,19 +81,19 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
     protected abstract String leftTicks();
 
     @Override
-    public PreparedSql buildUpdate(@NotNull EntityType entityType, @NotNull List<BasicAttribute> columns) {
+    public PreparedSql buildUpdate(@NotNull EntitySchema entityType, @NotNull List<EntityProperty> columns) {
         StringBuilder sql = new StringBuilder("update ")
                 .append(leftTicks())
                 .append(entityType.tableName())
                 .append(rightTicks())
                 .append(" set ");
-        BasicAttribute id = (BasicAttribute) entityType.id();
+        EntityProperty id = (EntityProperty) entityType.id();
         String delimiter = "";
-        List<BasicAttribute> cms = new ArrayList<>(columns.size() + 1);
-        List<BasicAttribute> versions = null;
-        for (BasicAttribute column : columns) {
+        List<EntityProperty> cms = new ArrayList<>(columns.size() + 1);
+        List<EntityProperty> versions = null;
+        for (EntityProperty column : columns) {
             sql.append(delimiter).append(leftTicks()).append(column.columnName());
-            if (column.hasVersion()) {
+            if (column.isVersion()) {
                 sql.append(rightTicks())
                         .append("=")
                         .append(leftTicks())
@@ -113,7 +111,7 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
         sql.append(" where ").append(leftTicks()).append(id.columnName()).append(rightTicks()).append("=?");
         cms.add(id);
         if (versions != null) {
-            for (BasicAttribute version : versions) {
+            for (EntityProperty version : versions) {
                 sql.append(" and ")
                         .append(leftTicks())
                         .append(version.columnName())
@@ -126,8 +124,8 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
     }
 
     @Override
-    public PreparedSql buildDelete(EntityType entity) {
-        BasicAttribute id = (BasicAttribute) entity.id();
+    public PreparedSql buildDelete(EntitySchema entity) {
+        EntityProperty id = (EntityProperty) entity.id();
         String sql = "delete from " + leftTicks() + entity.tableName() + rightTicks()
                      + " where " + leftTicks() + id.columnName() + rightTicks() + "=?";
         return new PreparedSqlImpl(
@@ -140,8 +138,8 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
     @AllArgsConstructor
     private static class PreparedSqlImpl implements PreparedSql {
         private String sql;
-        private List<BasicAttribute> columns;
-        private List<BasicAttribute> versionColumns;
+        private List<EntityProperty> columns;
+        private List<EntityProperty> versionColumns;
 
         @Override
         public String sql() {
@@ -149,12 +147,12 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
         }
 
         @Override
-        public List<BasicAttribute> columns() {
+        public List<EntityProperty> columns() {
             return this.columns;
         }
 
         @Override
-        public List<BasicAttribute> versionColumns() {
+        public List<EntityProperty> versionColumns() {
             return versionColumns;
         }
     }
@@ -164,7 +162,7 @@ public abstract class AbstractJdbcUpdateSqlBuilder implements JdbcUpdateSqlBuild
         protected boolean hasId;
 
 
-        public InsertSqlImpl(String sql, List<BasicAttribute> columns, List<BasicAttribute> versionColumns, boolean enableBatch, boolean hasId) {
+        public InsertSqlImpl(String sql, List<EntityProperty> columns, List<EntityProperty> versionColumns, boolean enableBatch, boolean hasId) {
             super(sql, columns, versionColumns);
             this.enableBatch = enableBatch;
             this.hasId = hasId;

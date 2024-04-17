@@ -1,9 +1,9 @@
 package io.github.nextentity.data;
 
 import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.meta.BasicAttribute;
-import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.graph.EntitySchema;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
@@ -55,22 +55,22 @@ public class SqlDialectSelector implements QuerySqlBuilder, JdbcUpdateSqlBuilder
     }
 
     @Override
-    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntityType entityType) {
+    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntitySchema entityType) {
         return updateSqlBuilder.buildInsert(entities, entityType);
     }
 
     @Override
-    public PreparedSql buildUpdate(@NotNull EntityType entityType) {
+    public PreparedSql buildUpdate(@NotNull EntitySchema entityType) {
         return updateSqlBuilder.buildUpdate(entityType);
     }
 
     @Override
-    public PreparedSql buildUpdate(@NotNull EntityType entityType, @NotNull List<BasicAttribute> columns) {
+    public PreparedSql buildUpdate(@NotNull EntitySchema entityType, @NotNull List<EntityProperty> columns) {
         return updateSqlBuilder.buildUpdate(entityType, columns);
     }
 
     @Override
-    public PreparedSql buildDelete(EntityType entity) {
+    public PreparedSql buildDelete(EntitySchema entity) {
         return updateSqlBuilder.buildDelete(entity);
     }
 }

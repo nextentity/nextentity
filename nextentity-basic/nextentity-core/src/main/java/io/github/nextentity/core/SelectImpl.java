@@ -1,20 +1,25 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.MultiSelectedImpl;
-import io.github.nextentity.core.ExpressionTrees.ProjectionSelectedImpl;
 import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
-import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.PathExpression;
-import io.github.nextentity.core.expression.PathChain;
+import io.github.nextentity.core.api.ExpressionTree;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.Fetch;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where0;
+import io.github.nextentity.core.expression.Attribute;
+import io.github.nextentity.core.expression.MultiSelected;
+import io.github.nextentity.core.expression.SelectElement;
+import io.github.nextentity.core.expression.SelectEntity;
+import io.github.nextentity.core.expression.SelectExpression;
+import io.github.nextentity.core.expression.SingleSelected;
+import io.github.nextentity.core.meta.graph.EntityReferenced;
+import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.graph.ProjectionSchema;
 import io.github.nextentity.core.util.Lists;
-import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
 import io.github.nextentity.core.util.tuple.Tuple2;
@@ -25,11 +30,13 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -45,21 +52,26 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public Where0<T, T> fetch(List<PathExpression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<PathChain> list = new ArrayList<>(expressions.size());
+        EntitySchema entity = queryExecutor.metamodel().getEntity(queryStructure.from.type());
+        Set<EntityReferenced> fetchAttributes = new HashSet<>(expressions.size() << 1);
         for (PathExpression<T, ?> expression : expressions) {
             ExpressionNode expr = expression.rootNode();
-            if (expr instanceof PathChain) {
-                PathChain column = (PathChain) expr;
-                list.add(column);
+            if (expr instanceof Attribute) {
+                Attribute column = (Attribute) expr;
+                EntityReferenced attribute = (EntityReferenced) column.toAttribute(entity);
+                fetchAttributes.add(attribute);
             }
         }
-        structure.fetch = list;
+        SingleSelected select = (SingleSelected) structure.select;
+        SelectEntity element = (SelectEntity) select.element();
+        element = element.fetch(fetchAttributes);
+        structure.select = new SingleSelected(element, structure.select.distinct());
         return update(structure);
     }
 
     @Override
     public Where0<T, Tuple> select(ExpressionsBuilder<T> selectBuilder) {
-        return select(selectBuilder.apply(Paths.root()));
+        return select(selectBuilder.apply(io.github.nextentity.core.util.Paths.root()));
     }
 
     @Override
@@ -73,11 +85,14 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     }
 
     public <R> Where0<T, R> select(boolean distinct, Class<R> projectionType) {
-        if (projectionType == queryStructure.from.type()) {
+        Class<?> fromType = queryStructure.from.type();
+        if (projectionType == fromType) {
             return update(queryStructure);
         }
         QueryStructureImpl structure = queryStructure.copy();
-        structure.select = new ProjectionSelectedImpl(projectionType, distinct);
+        ProjectionSchema projection = queryExecutor.metamodel().getProjection(fromType, projectionType);
+        SelectEntity select = SelectEntity.of(projection);
+        structure.select = new SingleSelected(select, distinct);
         return update(structure);
     }
 
@@ -91,10 +106,14 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public <R> Where0<T, R> select(boolean distinct, Path<T, ? extends R> path) {
         QueryStructureImpl structure = queryStructure.copy();
-        ExpressionNode paths = ExpressionTrees.of(path);
-        Class<?> type = getType(path);
-        structure.select = new SingleSelectedImpl(type, paths, distinct);
+        SelectElement element = toSelectElement(path);
+        structure.select = new SingleSelected(element, distinct);
         return update(structure);
+    }
+
+    private <R> @NotNull SelectElement toSelectElement(Path<T, ? extends R> path) {
+        Attribute paths = ExpressionTrees.of(path);
+        return selectElement(paths);
     }
 
     public Where0<T, Tuple> selectDistinct(Collection<Path<T, ?>> paths) {
@@ -156,7 +175,7 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     @Override
     public Where0<T, Tuple> selectDistinct(ExpressionsBuilder<T> selectBuilder) {
-        return selectDistinct(selectBuilder.apply(Paths.root()));
+        return selectDistinct(selectBuilder.apply(io.github.nextentity.core.util.Paths.root()));
     }
 
     @Override
@@ -210,20 +229,31 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public Where0<T, Tuple> select(boolean distinct, List<? extends Expression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<ExpressionNode> selectExpressions = expressions.stream()
-                .map(Expression::rootNode)
+        List<SelectElement> selectExpressions = expressions.stream()
+                .map(this::selectElement)
                 .collect(Collectors.toList());
-        structure.select = new MultiSelectedImpl(selectExpressions, distinct);
+        structure.select = new MultiSelected(selectExpressions, distinct);
         return update(structure);
     }
 
     public <R extends Tuple> Where0<T, R> selectTuple(boolean distinct, List<? extends Path<T, ?>> paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<ExpressionNode> selectExpressions = paths.stream()
-                .map(ExpressionTrees::of)
+        List<SelectElement> selectExpressions = paths.stream()
+                .map(this::toSelectElement)
                 .collect(Collectors.toList());
-        structure.select = new MultiSelectedImpl(selectExpressions, distinct);
+        structure.select = new MultiSelected(selectExpressions, distinct);
         return update(structure);
+    }
+
+
+    private SelectElement selectElement(ExpressionTree expression) {
+        if (expression.rootNode() instanceof Attribute) {
+            expression = ((Attribute) expression.rootNode()).toAttribute(queryExecutor.metamodel().getEntity(queryStructure.from().type()));
+        }
+        if (expression instanceof EntityReferenced) {
+            return SelectEntity.of((EntityReferenced) expression);
+        }
+        return SelectExpression.of(expression);
     }
 
     @Override
@@ -318,12 +348,12 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
 
     @SafeVarargs
-    public final <R extends Tuple> Where0<T, R> selectTupleByExpr(boolean distinct, Expression<T, ?>... paths) {
+    public final <R extends Tuple> Where0<T, R> selectTupleByExpr(boolean distinct, Expression<T, ?>... expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<ExpressionNode> selectExpressions = Arrays.stream(paths)
-                .map(Expression::rootNode)
+        List<SelectElement> selectExpressions = Arrays.stream(expressions)
+                .map(this::selectElement)
                 .collect(Collectors.toList());
-        structure.select = new MultiSelectedImpl(selectExpressions, distinct);
+        structure.select = new MultiSelected(selectExpressions, distinct);
         return update(structure);
     }
 
@@ -337,9 +367,8 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public <R> Where0<T, R> select(boolean distinct, Expression<T, R> expression) {
         QueryStructureImpl structure = queryStructure.copy();
-        ExpressionNode node = expression.rootNode();
-        Class<?> type = Object.class;
-        structure.select = new SingleSelectedImpl(type, node, distinct);
+        SelectElement node = selectElement(expression);
+        structure.select = new SingleSelected(node, distinct);
         return update(structure);
     }
 

@@ -15,19 +15,15 @@ import io.github.nextentity.core.expression.From.Entity;
 import io.github.nextentity.core.expression.From.FromSubQuery;
 import io.github.nextentity.core.expression.Literal;
 import io.github.nextentity.core.expression.Operation;
-import io.github.nextentity.core.expression.PathChain;
-import io.github.nextentity.core.expression.Selection;
-import io.github.nextentity.core.expression.Selection.EntitySelected;
-import io.github.nextentity.core.expression.Selection.MultiSelected;
-import io.github.nextentity.core.expression.Selection.ProjectionSelected;
-import io.github.nextentity.core.expression.Selection.SingleSelected;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.EntityType;
-import io.github.nextentity.core.meta.Type;
+import io.github.nextentity.core.expression.Attribute;
+import io.github.nextentity.core.expression.SelectEntity;
+import io.github.nextentity.core.expression.Selected;
+import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.graph.Graph;
 import io.github.nextentity.core.util.Exceptions;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Lists;
-import io.github.nextentity.core.util.Paths;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +69,7 @@ public class ExpressionTrees {
         return ExpressionTrees.literal(value);
     }
 
-    public static PathChain of(Path<?, ?> path) {
+    public static Attribute of(Path<?, ?> path) {
         String property = columnName(path);
         return column(property);
     }
@@ -82,13 +78,13 @@ public class ExpressionTrees {
         return PathReference.of(path).getPropertyName();
     }
 
-    public static PathChain column(String path) {
+    public static Attribute column(String path) {
         List<String> paths = new ArrayList<>(1);
         paths.add(path);
         return column(paths);
     }
 
-    public static PathChain column(List<String> paths) {
+    public static Attribute column(List<String> paths) {
         Objects.requireNonNull(paths);
         if (paths.getClass() != ArrayList.class) {
             paths = new ArrayList<>(paths);
@@ -140,7 +136,7 @@ public class ExpressionTrees {
 
     public static <T> List<PathExpression<T, ?>> toExpressionList(Collection<Path<T, ?>> paths) {
         return paths.stream()
-                .<PathExpression<T, ?>>map(Paths::get)
+                .<PathExpression<T, ?>>map(io.github.nextentity.core.util.Paths::get)
                 .collect(Collectors.toList());
     }
 
@@ -148,7 +144,7 @@ public class ExpressionTrees {
         return new LiteralImpl(value);
     }
 
-    public static PathChain newColumn(String[] path) {
+    public static Attribute newColumn(String[] path) {
         return new ColumnImpl(path);
     }
 
@@ -159,7 +155,7 @@ public class ExpressionTrees {
     @EqualsAndHashCode
     static class QueryStructureImpl implements FromSubQuery, Cloneable {
 
-        Selection select;
+        Selected select;
 
         From from;
 
@@ -171,22 +167,21 @@ public class ExpressionTrees {
 
         ExpressionNode having = ExpressionTrees.TRUE;
 
-        List<? extends PathChain> fetch = Lists.of();
-
         Integer offset;
 
         Integer limit;
 
         LockModeType lockType = LockModeType.NONE;
 
-        public QueryStructureImpl(Selection select, From from) {
+        public QueryStructureImpl(Selected select, From from) {
             this.select = select;
             this.from = from;
         }
 
-        public QueryStructureImpl(Class<?> from) {
-            this.from = new FromEntity(from);
-            this.select = new EntitySelectedImpl(from, false);
+        public QueryStructureImpl(EntitySchema entityType) {
+            this.from = new FromEntity(entityType.javaType());
+            SelectEntity selectEntity = SelectEntity.of(entityType);
+            this.select = new io.github.nextentity.core.expression.SingleSelected(selectEntity, false);
         }
 
         protected QueryStructureImpl copy() {
@@ -198,7 +193,7 @@ public class ExpressionTrees {
         }
 
         @Override
-        public Selection select() {
+        public Selected select() {
             return select;
         }
 
@@ -242,11 +237,6 @@ public class ExpressionTrees {
             return lockType;
         }
 
-        @Override
-        public List<? extends PathChain> fetch() {
-            return fetch;
-        }
-
     }
 
     @lombok.Data
@@ -260,35 +250,6 @@ public class ExpressionTrees {
     static final class OrderImpl<T> implements Order<T> {
         private final ExpressionNode expression;
         private final SortOrder order;
-    }
-
-    @lombok.Data
-    @Accessors(fluent = true)
-    static final class EntitySelectedImpl implements EntitySelected {
-        private final Class<?> resultType;
-        private final boolean distinct;
-    }
-
-    @lombok.Data
-    @Accessors(fluent = true)
-    static final class ProjectionSelectedImpl implements ProjectionSelected {
-        private final Class<?> resultType;
-        private final boolean distinct;
-    }
-
-    @lombok.Data
-    @Accessors(fluent = true)
-    static final class MultiSelectedImpl implements MultiSelected {
-        private final List<? extends ExpressionNode> expressions;
-        private final boolean distinct;
-    }
-
-    @lombok.Data
-    @Accessors(fluent = true)
-    static final class SingleSelectedImpl implements SingleSelected {
-        private final Class<?> resultType;
-        private final ExpressionNode expression;
-        private final boolean distinct;
     }
 
     @lombok.Data
@@ -315,7 +276,7 @@ public class ExpressionTrees {
 
     @lombok.Data
     @Accessors(fluent = true)
-    private static final class ColumnImpl implements PathChain, AbstractTypeExpression {
+    private static final class ColumnImpl implements Attribute, AbstractTypeExpression {
         private final String[] paths;
 
         @Override
@@ -329,7 +290,7 @@ public class ExpressionTrees {
         }
 
         @Override
-        public PathChain get(String path) {
+        public Attribute get(String path) {
             String[] strings = new String[deep() + 1];
             System.arraycopy(paths, 0, strings, 0, paths.length);
             strings[deep()] = path;
@@ -337,12 +298,12 @@ public class ExpressionTrees {
         }
 
         @Override
-        public PathChain parent() {
+        public Attribute parent() {
             return sub(deep() - 1);
         }
 
         @Override
-        public PathChain subLength(int len) {
+        public Attribute subLength(int len) {
             if (len == deep()) {
                 return this;
             }
@@ -353,16 +314,16 @@ public class ExpressionTrees {
         }
 
         @Override
-        public Attribute toAttribute(EntityType entityType) {
-            Type type = entityType;
+        public EntityProperty toAttribute(EntitySchema entityType) {
+            Graph type = entityType;
             for (String s : this) {
-                type = ((EntityType) type).getAttribute(s);
+                type = ((EntitySchema) type).getProperty(s);
             }
-            return (Attribute) type;
+            return (EntityProperty) type;
         }
 
         @Nullable
-        private PathChain sub(int len) {
+        private Attribute sub(int len) {
             if (len <= 0) {
                 return null;
             }
@@ -378,7 +339,7 @@ public class ExpressionTrees {
         }
 
         @Override
-        public PathChain get(PathChain column) {
+        public Attribute get(Attribute column) {
             String[] paths = new String[deep() + column.deep()];
             int i = 0;
             for (String s : this) {

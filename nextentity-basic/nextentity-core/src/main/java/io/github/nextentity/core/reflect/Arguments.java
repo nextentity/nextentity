@@ -4,8 +4,4 @@ public interface Arguments {
 
     Object get(int index);
 
-    static Arguments of(Object[] args) {
-        return i -> args[i];
-    }
-
 }

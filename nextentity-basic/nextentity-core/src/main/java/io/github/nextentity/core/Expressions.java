@@ -18,7 +18,7 @@ import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.expression.PathChain;
+import io.github.nextentity.core.expression.Attribute;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
@@ -29,7 +29,6 @@ import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Lists;
-import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,19 +67,19 @@ public class Expressions {
         return toTypedExpression(ExpressionTrees.TRUE);
     }
 
-    public static <T, R> PathExpression<T, R> ofPath(PathChain column) {
+    public static <T, R> PathExpression<T, R> ofPath(Attribute column) {
         return toTypedExpression(column);
     }
 
-    public static <T, R> EntityPathExpression<T, R> ofEntity(PathChain column) {
+    public static <T, R> EntityPathExpression<T, R> ofEntity(Attribute column) {
         return toTypedExpression(column);
     }
 
-    public static <T> StringPathExpression<T> ofString(PathChain column) {
+    public static <T> StringPathExpression<T> ofString(Attribute column) {
         return toTypedExpression(column);
     }
 
-    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(PathChain column) {
+    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(Attribute column) {
         return toTypedExpression(column);
     }
 
@@ -96,7 +95,7 @@ public class Expressions {
         return toTypedExpression(expression);
     }
 
-    public static <T> BooleanPathExpression<T> ofBoolean(PathChain expression) {
+    public static <T> BooleanPathExpression<T> ofBoolean(Attribute expression) {
         return toTypedExpression(expression);
     }
 
@@ -141,7 +140,7 @@ public class Expressions {
 
         @Override
         default EntityRoot root() {
-            return Paths.root();
+            return io.github.nextentity.core.util.Paths.root();
         }
 
         @Override
@@ -445,7 +444,7 @@ public class Expressions {
         default EntityPathExpression get(Path path) {
             // PathChain expression = (PathChain) Paths.get((Path<?, ?>) path).rootNode();
             String name = ExpressionTrees.columnName(path);
-            return toTypedExpression(((PathChain) rootNode()).get(name));
+            return toTypedExpression(((Attribute) rootNode()).get(name));
         }
 
         @Override
@@ -509,15 +508,15 @@ public class Expressions {
         }
 
         default AbstractTypeExpression get0(Path<?, ?> path) {
-            PathExpression<?, ?> pathExpression = Paths.get((Path<?, ?>) path);
+            PathExpression<?, ?> pathExpression = io.github.nextentity.core.util.Paths.get((Path<?, ?>) path);
             return get0(pathExpression);
         }
 
         @NotNull
         private AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
-            PathChain expression = (PathChain) pathExpression.rootNode();
+            Attribute expression = (Attribute) pathExpression.rootNode();
             ExpressionNode expr = rootNode();
-            return toTypedExpression(((PathChain) expr).get(expression));
+            return toTypedExpression(((Attribute) expr).get(expression));
         }
 
         default AbstractTypeExpression not(Expression<?, ?> expression) {

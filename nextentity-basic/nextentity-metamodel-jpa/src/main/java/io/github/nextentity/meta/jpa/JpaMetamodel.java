@@ -1,8 +1,8 @@
 package io.github.nextentity.meta.jpa;
 
 import io.github.nextentity.core.meta.AbstractMetamodel;
-import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.meta.graph.Property;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -66,13 +66,13 @@ public class JpaMetamodel extends AbstractMetamodel {
     }
 
     @Override
-    protected boolean isMarkedId(Attribute attribute) {
+    protected boolean isMarkedId(Property attribute) {
         Id id = getAnnotation(attribute, Id.class);
         return id != null;
     }
 
     @Override
-    protected String getReferencedColumnName(Attribute attribute) {
+    protected String getReferencedColumnName(Property attribute) {
         JoinColumn annotation = getAnnotation(attribute, JoinColumn.class);
         String referencedColumnName = null;
         if (annotation != null) {
@@ -82,7 +82,7 @@ public class JpaMetamodel extends AbstractMetamodel {
     }
 
     @Override
-    protected String getJoinColumnName(Attribute attribute) {
+    protected String getJoinColumnName(Property attribute) {
         JoinColumn annotation = getAnnotation(attribute, JoinColumn.class);
         String joinColumnName = null;
         if (annotation != null) {
@@ -92,7 +92,7 @@ public class JpaMetamodel extends AbstractMetamodel {
     }
 
     @Override
-    protected boolean isVersionField(Attribute attribute) {
+    protected boolean isVersionField(Property attribute) {
         Version version = getAnnotation(attribute, Version.class);
         if (version != null) {
             Class<?> type = attribute.javaType();
@@ -110,7 +110,7 @@ public class JpaMetamodel extends AbstractMetamodel {
     }
 
     @Override
-    protected boolean isTransient(Attribute attribute) {
+    protected boolean isTransient(Property attribute) {
         return attribute == null
                || attribute.field() == null
                || Modifier.isTransient(attribute.field().getModifiers())
@@ -119,7 +119,7 @@ public class JpaMetamodel extends AbstractMetamodel {
     }
 
     @Override
-    protected boolean isBasicField(Attribute attribute) {
+    protected boolean isBasicField(Property attribute) {
         for (Class<? extends Annotation> type : JOIN_ANNOTATIONS) {
             if (getAnnotation(attribute, type) != null) {
                 return false;
@@ -129,11 +129,11 @@ public class JpaMetamodel extends AbstractMetamodel {
     }
 
     @Override
-    protected boolean isAnyToOne(Attribute attribute) {
+    protected boolean isAnyToOne(Property attribute) {
         return getAnnotation(attribute, ManyToOne.class) != null || getAnnotation(attribute, OneToOne.class) != null;
     }
 
-    protected String getColumnName(Attribute attribute) {
+    protected String getColumnName(Property attribute) {
         String columnName = getColumnNameByAnnotation(attribute);
         if (columnName == null) {
             columnName = camelbackToUnderline(attribute.name());
@@ -167,7 +167,7 @@ public class JpaMetamodel extends AbstractMetamodel {
         return symbol;
     }
 
-    protected String getColumnNameByAnnotation(Attribute attribute) {
+    protected String getColumnNameByAnnotation(Property attribute) {
         Column column = getAnnotation(attribute, Column.class);
         if (column != null && !column.name().isEmpty()) {
             return column.name();

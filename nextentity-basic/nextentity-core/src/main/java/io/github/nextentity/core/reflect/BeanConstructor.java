@@ -1,9 +1,9 @@
 package io.github.nextentity.core.reflect;
 
-import io.github.nextentity.core.meta.Type;
+import io.github.nextentity.core.meta.graph.Graph;
 
 public class BeanConstructor extends ObjectConstructor {
-    public BeanConstructor(Type type) {
+    public BeanConstructor(Graph type) {
         super(type);
     }
 

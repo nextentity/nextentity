@@ -1,6 +1,6 @@
 package io.github.nextentity.test.projection;
 
-import io.github.nextentity.core.meta.EntityAttribute;
+import io.github.nextentity.core.annotaion.EntityField;
 import io.github.nextentity.test.entity.User;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,7 +19,7 @@ public class UserModel implements UserInterface {
 
     private boolean valid;
 
-    @EntityAttribute("parentUser.username")
+    @EntityField("parentUser.username")
     private String parentUsername;
 
     public UserModel(User user) {

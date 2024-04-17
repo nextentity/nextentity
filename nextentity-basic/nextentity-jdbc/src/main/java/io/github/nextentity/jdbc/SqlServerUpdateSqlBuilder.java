@@ -1,7 +1,7 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.EntityType;
+import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.graph.EntitySchema;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -25,15 +25,15 @@ public class SqlServerUpdateSqlBuilder extends AbstractJdbcUpdateSqlBuilder {
     }
 
     @Override
-    protected @NotNull InsertSql buildInsert(@NotNull EntityType entityType,
-                                             Collection<? extends Attribute> attributes,
+    protected @NotNull InsertSql buildInsert(@NotNull EntitySchema entityType,
+                                             Collection<? extends EntityProperty> attributes,
                                              boolean batch,
                                              boolean hasId) {
         if (attributes.isEmpty()) {
-            Collection<? extends Attribute> attrs = entityType.attributes();
-            Attribute pre = null;
-            Attribute notId = null;
-            for (Attribute attribute : attrs) {
+            Collection<? extends EntityProperty> attrs = entityType.properties();
+            EntityProperty pre = null;
+            EntityProperty notId = null;
+            for (EntityProperty attribute : attrs) {
                 if (attribute != entityType.id()) {
                     notId = attribute;
                     break;

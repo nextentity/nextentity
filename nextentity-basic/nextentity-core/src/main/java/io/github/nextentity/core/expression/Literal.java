@@ -6,12 +6,6 @@ import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
  * @author HuangChengwei
  * @since 2024/4/17 下午1:27
  */
-public interface Literal extends ExpressionNode, SelectExpression {
+public interface Literal extends ExpressionNode {
     Object value();
-
-    @Override
-    default Class<?> javaType() {
-        Object value = value();
-        return value == null ? null : value.getClass();
-    }
 }

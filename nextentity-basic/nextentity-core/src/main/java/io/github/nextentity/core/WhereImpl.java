@@ -1,7 +1,6 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
-import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
@@ -25,8 +24,10 @@ import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
 import io.github.nextentity.core.expression.Operation;
 import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.expression.Selection;
-import io.github.nextentity.core.expression.Selection.MultiSelected;
+import io.github.nextentity.core.expression.SelectElement;
+import io.github.nextentity.core.expression.SelectExpression;
+import io.github.nextentity.core.expression.Selected;
+import io.github.nextentity.core.expression.SingleSelected;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
@@ -39,13 +40,11 @@ import java.util.stream.Collectors;
 @SuppressWarnings("PatternVariableCanBeUsed")
 public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractCollector<U> {
 
-    static final SingleSelectedImpl SELECT_ANY = new SingleSelectedImpl(Integer.class, ExpressionTrees.TRUE, false);
-
-    static final SingleSelectedImpl COUNT_ANY = new SingleSelectedImpl(Integer.class, ExpressionTrees.operate(ExpressionTrees.TRUE, Operator.COUNT), false);
+    static final Selected SELECT_ANY = new SingleSelected(SelectExpression.of(ExpressionTrees.TRUE), false);
+    static final Selected COUNT_ANY = new SingleSelected(SelectExpression.of(ExpressionTrees.operate(ExpressionTrees.TRUE, Operator.COUNT)), false);
 
     QueryExecutor queryExecutor;
     QueryStructureImpl queryStructure;
-
     QueryPostProcessor structurePostProcessor;
 
     public WhereImpl(QueryExecutor queryExecutor, Class<T> type, QueryPostProcessor structurePostProcessor) {
@@ -58,7 +57,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     }
 
     protected void init(Class<T> type, QueryExecutor queryExecutor, QueryPostProcessor structurePostProcessor) {
-        init(queryExecutor, new QueryStructureImpl(type), structurePostProcessor);
+        init(queryExecutor, new QueryStructureImpl(queryExecutor.metamodel().getEntity(type)), structurePostProcessor);
     }
 
     private void init(QueryExecutor queryExecutor, QueryStructureImpl queryStructure, QueryPostProcessor structurePostProcessor) {
@@ -133,31 +132,16 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
             return new QueryStructureImpl(COUNT_ANY, structure);
         } else if (queryStructure.groupBy() != null && !queryStructure.groupBy().isEmpty()) {
             structure.select = SELECT_ANY;
-            structure.fetch = Lists.of();
             return new QueryStructureImpl(COUNT_ANY, structure);
         } else {
             structure.select = COUNT_ANY;
-            structure.fetch = Lists.of();
             return structure;
         }
     }
 
     boolean requiredCountSubQuery(QueryStructureImpl structure) {
-        Selection select = structure.select();
-        if (select instanceof SingleSelectedImpl) {
-            ExpressionNode column = ((SingleSelectedImpl) select).expression();
-            return requiredCountSubQuery(column);
-        } else if (select instanceof MultiSelected) {
-            List<? extends ExpressionNode> columns = ((MultiSelected) select).expressions();
-            if (requiredCountSubQuery(columns)) {
-                return true;
-            }
-        }
-        return requiredCountSubQuery(structure.having());
-    }
-
-    protected boolean requiredCountSubQuery(List<? extends ExpressionNode> expressions) {
-        for (ExpressionNode expression : expressions) {
+        Selected select = structure.select();
+        for (ExpressionNode expression : select.expressions()) {
             if (requiredCountSubQuery(expression)) {
                 return true;
             }
@@ -216,7 +200,6 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         structure.select = SELECT_ANY;
         structure.offset = offset;
         structure.limit = 1;
-        structure.fetch = Lists.of();
         structure.orderBy = Lists.of();
         return structure;
     }

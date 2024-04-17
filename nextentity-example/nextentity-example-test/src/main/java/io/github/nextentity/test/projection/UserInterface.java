@@ -1,7 +1,7 @@
 package io.github.nextentity.test.projection;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.github.nextentity.core.meta.EntityAttribute;
+import io.github.nextentity.core.annotaion.EntityField;
 import io.github.nextentity.test.JsonSerializablePredicateValueTest;
 
 import java.util.Map;
@@ -18,7 +18,7 @@ public interface UserInterface {
 
     boolean isValid();
 
-    @EntityAttribute("parentUser.username")
+    @EntityField("parentUser.username")
     String getParentUsername();
 
     default Map<String, Object> asMap() {
