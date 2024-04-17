@@ -1,12 +1,11 @@
 package io.github.nextentity.core.expression;
 
-import io.github.nextentity.core.util.Lists;
-import io.github.nextentity.core.util.tuple.Tuple;
-import lombok.Data;
-import lombok.experimental.Accessors;
+import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author HuangChengwei
@@ -21,35 +20,18 @@ interface Selected extends Serializable {
 
     List<? extends SelectElement> elements();
 
-
-    @Data
-    @Accessors(fluent = true)
-    class MultiSelected implements Selected {
-        private final boolean distinct;
-        private final List<? extends SelectElement> elements;
-
-        @Override
-        public Class<?> resultType() {
-            return Tuple.class;
-        }
-
+    default List<? extends ExpressionNode> expressions() {
+        return elements().stream()
+                .flatMap(selectElement -> {
+                    if (selectElement instanceof ExpressionNode) {
+                        return Stream.of((ExpressionNode) selectElement);
+                    } else if (selectElement instanceof SelectEntity) {
+                        return ((SelectEntity) selectElement).attributes().stream();
+                    } else {
+                        throw new UnsupportedOperationException(selectElement.getClass().getName());
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
-    @Data
-    @Accessors(fluent = true)
-    class SingleSelected implements Selected {
-        private final SelectElement element;
-        private final boolean distinct;
-
-        @Override
-        public Class<?> resultType() {
-            return element.javaType();
-        }
-
-        public List<? extends SelectElement> elements() {
-            return Lists.of(element);
-        }
-
-
-    }
 }
