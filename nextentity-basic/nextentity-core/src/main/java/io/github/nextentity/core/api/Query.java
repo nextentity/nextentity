@@ -4,8 +4,6 @@ import io.github.nextentity.core.api.Expression.PathExpression;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.util.Lists;
@@ -434,23 +432,9 @@ public interface Query {
 
         Slice<T> slice(int offset, int limit);
 
-        QueryStructureBuilder buildMetadata();
-
         <X> SubQueryBuilder<X, T> asSubQuery();
 
         Page<T> getPage(Pageable pageable);
-    }
-
-    interface QueryStructureBuilder {
-
-        QueryStructure count();
-
-        QueryStructure getList(int offset, int maxResult, LockModeType lockModeType);
-
-        QueryStructure exist(int offset);
-
-        SliceQueryStructure slice(int offset, int limit);
-
     }
 
     interface SubQueryBuilder<T, U> extends Expression<T, List<U>> {
@@ -469,13 +453,6 @@ public interface Query {
         }
 
         Expression<T, U> getFirst(int offset);
-    }
-
-    @Data
-    @Accessors(fluent = true)
-    final class SliceQueryStructure {
-        private final QueryStructure count;
-        private final QueryStructure list;
     }
 
     @FunctionalInterface

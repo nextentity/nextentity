@@ -6,7 +6,7 @@ import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
 import io.github.nextentity.core.ExpressionTrees.SingleSelectedImpl;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.PathExpression;
-import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.expression.PathChain;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
@@ -45,11 +45,11 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public Where0<T, T> fetch(List<PathExpression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<Column> list = new ArrayList<>(expressions.size());
+        List<PathChain> list = new ArrayList<>(expressions.size());
         for (PathExpression<T, ?> expression : expressions) {
             ExpressionNode expr = expression.rootNode();
-            if (expr instanceof Column) {
-                Column column = (Column) expr;
+            if (expr instanceof PathChain) {
+                PathChain column = (PathChain) expr;
                 list.add(column);
             }
         }

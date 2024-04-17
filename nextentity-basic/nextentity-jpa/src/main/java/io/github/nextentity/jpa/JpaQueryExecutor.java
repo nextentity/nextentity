@@ -5,24 +5,24 @@ import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.expression.PathChain;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.api.ExpressionTree.Operation;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.FromSubQuery;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.EntitySelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.From;
+import io.github.nextentity.core.expression.From.FromSubQuery;
+import io.github.nextentity.core.api.Order;
+import io.github.nextentity.core.expression.Selection;
+import io.github.nextentity.core.expression.Selection.EntitySelected;
+import io.github.nextentity.core.expression.Selection.MultiSelected;
+import io.github.nextentity.core.expression.Selection.ProjectionSelected;
+import io.github.nextentity.core.expression.Selection.SingleSelected;
 import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.Projection;
 import io.github.nextentity.core.meta.ProjectionAttribute;
 import io.github.nextentity.core.meta.SubSelectType;
+import io.github.nextentity.core.reflect.Arguments;
 import io.github.nextentity.core.reflect.InstanceConstructor;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.core.util.Lists;
@@ -76,13 +76,13 @@ public class JpaQueryExecutor implements QueryExecutor {
             Projection projection = metamodel
                     .getProjection(queryStructure.from().type(), resultType);
             Collection<? extends ProjectionAttribute> attributes = projection.attributes();
-            List<Column> columns = attributes.stream()
+            List<PathChain> columns = attributes.stream()
                     .map(ProjectionAttribute::entityAttribute)
-                    .map(Attribute::column)
                     .collect(Collectors.toList());
             List<Object[]> objectsList = getObjectsList(queryStructure, columns);
             InstanceConstructor extractor = ReflectUtil.getRowInstanceConstructor(attributes, resultType);
             return objectsList.stream()
+                    .map(Arguments::of)
                     .map(extractor::newInstance)
                     .map(TypeCastUtil::<T>unsafeCast)
                     .collect(Collectors.toList());
@@ -240,14 +240,14 @@ public class JpaQueryExecutor implements QueryExecutor {
             }
         }
 
-        protected void setFetch(List<? extends Column> fetchPaths) {
+        protected void setFetch(List<? extends PathChain> fetchPaths) {
             if (fetchPaths != null) {
-                for (Column path : fetchPaths) {
+                for (PathChain path : fetchPaths) {
                     Fetch<?, ?> fetch = null;
-                    for (int i = 0; i < path.size(); i++) {
+                    for (int i = 0; i < path.deep(); i++) {
                         Fetch<?, ?> cur = fetch;
                         String stringPath = path.get(i);
-                        Column sub = path.subLength(i + 1);
+                        PathChain sub = path.subLength(i + 1);
                         fetch = (Fetch<?, ?>) fetched.computeIfAbsent(sub, k -> {
                             if (cur == null) {
                                 return root.fetch(stringPath, JoinType.LEFT);

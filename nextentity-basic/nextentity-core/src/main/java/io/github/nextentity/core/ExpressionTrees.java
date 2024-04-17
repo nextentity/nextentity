@@ -3,22 +3,27 @@ package io.github.nextentity.core;
 import io.github.nextentity.core.Expressions.AbstractTypeExpression;
 import io.github.nextentity.core.api.Expression.PathExpression;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.Column;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.api.ExpressionTree.Literal;
-import io.github.nextentity.core.api.ExpressionTree.Operation;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.Entity;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.FromSubQuery;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.EntitySelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.SortOrder;
+import io.github.nextentity.core.expression.From;
+import io.github.nextentity.core.expression.From.Entity;
+import io.github.nextentity.core.expression.From.FromSubQuery;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.PathChain;
+import io.github.nextentity.core.expression.Selection;
+import io.github.nextentity.core.expression.Selection.EntitySelected;
+import io.github.nextentity.core.expression.Selection.MultiSelected;
+import io.github.nextentity.core.expression.Selection.ProjectionSelected;
+import io.github.nextentity.core.expression.Selection.SingleSelected;
+import io.github.nextentity.core.meta.Attribute;
+import io.github.nextentity.core.meta.EntityType;
+import io.github.nextentity.core.meta.Type;
 import io.github.nextentity.core.util.Exceptions;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Lists;
@@ -68,7 +73,7 @@ public class ExpressionTrees {
         return ExpressionTrees.literal(value);
     }
 
-    public static Column of(Path<?, ?> path) {
+    public static PathChain of(Path<?, ?> path) {
         String property = columnName(path);
         return column(property);
     }
@@ -77,13 +82,13 @@ public class ExpressionTrees {
         return PathReference.of(path).getPropertyName();
     }
 
-    public static Column column(String path) {
+    public static PathChain column(String path) {
         List<String> paths = new ArrayList<>(1);
         paths.add(path);
         return column(paths);
     }
 
-    public static Column column(List<String> paths) {
+    public static PathChain column(List<String> paths) {
         Objects.requireNonNull(paths);
         if (paths.getClass() != ArrayList.class) {
             paths = new ArrayList<>(paths);
@@ -143,7 +148,7 @@ public class ExpressionTrees {
         return new LiteralImpl(value);
     }
 
-    public static Column newColumn(String[] path) {
+    public static PathChain newColumn(String[] path) {
         return new ColumnImpl(path);
     }
 
@@ -166,7 +171,7 @@ public class ExpressionTrees {
 
         ExpressionNode having = ExpressionTrees.TRUE;
 
-        List<? extends Column> fetch = Lists.of();
+        List<? extends PathChain> fetch = Lists.of();
 
         Integer offset;
 
@@ -238,7 +243,7 @@ public class ExpressionTrees {
         }
 
         @Override
-        public List<? extends Column> fetch() {
+        public List<? extends PathChain> fetch() {
             return fetch;
         }
 
@@ -310,11 +315,11 @@ public class ExpressionTrees {
 
     @lombok.Data
     @Accessors(fluent = true)
-    private static final class ColumnImpl implements Column, AbstractTypeExpression {
+    private static final class ColumnImpl implements PathChain, AbstractTypeExpression {
         private final String[] paths;
 
         @Override
-        public int size() {
+        public int deep() {
             return paths.length;
         }
 
@@ -324,31 +329,40 @@ public class ExpressionTrees {
         }
 
         @Override
-        public Column get(String path) {
-            String[] strings = new String[size() + 1];
+        public PathChain get(String path) {
+            String[] strings = new String[deep() + 1];
             System.arraycopy(paths, 0, strings, 0, paths.length);
-            strings[size()] = path;
+            strings[deep()] = path;
             return new ColumnImpl(strings);
         }
 
         @Override
-        public Column parent() {
-            return sub(size() - 1);
+        public PathChain parent() {
+            return sub(deep() - 1);
         }
 
         @Override
-        public Column subLength(int len) {
-            if (len == size()) {
+        public PathChain subLength(int len) {
+            if (len == deep()) {
                 return this;
             }
-            if (len > size()) {
+            if (len > deep()) {
                 throw new IndexOutOfBoundsException();
             }
             return sub(len);
         }
 
+        @Override
+        public Attribute toAttribute(EntityType entityType) {
+            Type type = entityType;
+            for (String s : this) {
+                type = ((EntityType) type).getAttribute(s);
+            }
+            return (Attribute) type;
+        }
+
         @Nullable
-        private Column sub(int len) {
+        private PathChain sub(int len) {
             if (len <= 0) {
                 return null;
             }
@@ -364,8 +378,8 @@ public class ExpressionTrees {
         }
 
         @Override
-        public Column get(Column column) {
-            String[] paths = new String[size() + column.size()];
+        public PathChain get(PathChain column) {
+            String[] paths = new String[deep() + column.deep()];
             int i = 0;
             for (String s : this) {
                 paths[i++] = s;

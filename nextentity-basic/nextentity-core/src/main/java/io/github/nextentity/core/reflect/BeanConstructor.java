@@ -8,7 +8,7 @@ public class BeanConstructor extends ObjectConstructor {
     }
 
     @Override
-    public Object newInstance(Object[] arguments) {
+    public Object newInstance(Arguments arguments) {
         Object result = null;
         for (Property property : properties) {
             Object value = property.newInstance(arguments);

@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.Query;
 import org.jetbrains.annotations.NotNull;
 

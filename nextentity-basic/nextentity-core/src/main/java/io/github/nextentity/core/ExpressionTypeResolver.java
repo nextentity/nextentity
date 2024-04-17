@@ -1,10 +1,10 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.ExpressionTree.Column;
+import io.github.nextentity.core.expression.PathChain;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.api.ExpressionTree.Literal;
-import io.github.nextentity.core.api.ExpressionTree.Operation;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
@@ -40,8 +40,8 @@ public class ExpressionTypeResolver {
     }
 
     public Class<?> getExpressionType(ExpressionNode expression, Class<?> entityType) {
-        if (expression instanceof Column) {
-            return getColumnType((Column) expression, entityType);
+        if (expression instanceof PathChain) {
+            return getColumnType((PathChain) expression, entityType);
         }
         if (expression instanceof Literal) {
             return getConstantType((Literal) expression);
@@ -135,7 +135,7 @@ public class ExpressionTypeResolver {
         return expression.value().getClass();
     }
 
-    public Class<?> getColumnType(Column column, Class<?> entityType) {
+    public Class<?> getColumnType(PathChain column, Class<?> entityType) {
         Type t = metamodel.getEntity(entityType);
         for (String s : column) {
             t = ((EntityType) t).getAttribute(s);

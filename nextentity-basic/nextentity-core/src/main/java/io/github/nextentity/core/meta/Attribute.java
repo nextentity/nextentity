@@ -1,9 +1,9 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.ExpressionTrees;
-import io.github.nextentity.core.api.ExpressionTree.Column;
 import io.github.nextentity.core.exception.BeanReflectiveException;
+import io.github.nextentity.core.expression.PathChain;
 import io.github.nextentity.core.reflect.ReflectUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -11,10 +11,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public interface Attribute extends Type {
+public interface Attribute extends Type, PathChain {
 
     String name();
 
@@ -25,6 +25,46 @@ public interface Attribute extends Type {
     Field field();
 
     Type declaringType();
+
+    @Override
+    Attribute get(String path);
+
+    @Override
+    Attribute get(PathChain column);
+
+    @Override
+    Class<?> javaType();
+
+    @NotNull
+    @Override
+    default Iterator<String> iterator() {
+        return referencedAttributes().stream().map(Attribute::name).iterator();
+    }
+
+    @Override
+    default Attribute toAttribute(EntityType entityType) {
+        return this;
+    }
+
+    @Override
+    default int deep() {
+        return referencedAttributes().size();
+    }
+
+    @Override
+    default String get(int i) {
+        return referencedAttributes().get(i).name();
+    }
+
+    @Override
+    default PathChain subLength(int len) {
+        return referencedAttributes().get(len - 1);
+    }
+
+    @Override
+    default PathChain parent() {
+        return declaringType() instanceof PathChain ? (PathChain) declaringType() : null;
+    }
 
     static Type getDeclaringType(Type type) {
         if (type instanceof Attribute) {
@@ -76,14 +116,6 @@ public interface Attribute extends Type {
         }
         // noinspection Java9CollectionFactory
         return Collections.unmodifiableList(new ArrayList<>(attributes));
-    }
-
-    default Column column() {
-        List<? extends Attribute> attributes = referencedAttributes();
-        List<String> paths = attributes.stream()
-                .map(Attribute::name)
-                .collect(Collectors.toList());
-        return ExpressionTrees.column(paths);
     }
 
 }

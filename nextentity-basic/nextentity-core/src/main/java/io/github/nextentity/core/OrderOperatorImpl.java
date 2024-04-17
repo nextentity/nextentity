@@ -1,7 +1,7 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.EntityRoot;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
@@ -9,7 +9,6 @@ import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
-import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
@@ -82,11 +81,6 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     @Override
     public Slice<U> slice(int offset, int limit) {
         return asc().slice(offset, limit);
-    }
-
-    @Override
-    public QueryStructureBuilder buildMetadata() {
-        return asc().buildMetadata();
     }
 
     @Override

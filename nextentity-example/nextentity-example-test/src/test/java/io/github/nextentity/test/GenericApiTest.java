@@ -6,11 +6,10 @@ import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Query.SliceQueryStructure;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
@@ -284,57 +283,6 @@ public class GenericApiTest {
             assertEquals(u0.getRandomUser(), u1.getRandomUser());
             assertEquals(u0.getTestUser(), u1.getTestUser());
         }
-    }
-
-    @ParameterizedTest
-    @ArgumentsSource(UserQueryProvider.class)
-    void testGroupBy(UserEntities userQuery) {
-        QueryStructure structure = userQuery
-                .select(Arrays.asList(get(User::getId).min(), get(User::getRandomNumber)))
-                .where(get(User::isValid).eq(true))
-                .groupBy(User::getRandomNumber)
-                .having(root -> root.get(User::getRandomNumber).eq(10))
-                .buildMetadata()
-                .getList(1, 5, LockModeType.PESSIMISTIC_WRITE);
-        System.out.println(structure);
-        SqlServerQuerySqlBuilder builder = new SqlServerQuerySqlBuilder();
-        JdbcQueryExecutor.PreparedSql sql = builder.build(structure, JpaMetamodel.of());
-        System.out.println(sql.sql());
-
-        SliceQueryStructure slice = userQuery
-                .select(Arrays.asList(get(User::getId).min(), get(User::getRandomNumber)))
-                .where(get(User::isValid).eq(true))
-                .groupBy(User::getRandomNumber)
-                .having(root -> root.get(User::getRandomNumber).eq(10))
-                .buildMetadata()
-                .slice(1, 5);
-
-        System.out.println(slice);
-        System.out.println(slice.count());
-        System.out.println(slice.list());
-        System.out.println(Operator.AND);
-
-
-        SliceQueryStructure queryStructure = userQuery
-                .select(Arrays.asList(get(User::getId).min(), get(User::getRandomNumber)))
-                .where(get(User::isValid).eq(true))
-                .groupBy(User::getRandomNumber)
-                .having(root -> root.get(User::getRandomNumber).eq(10))
-                .orderBy(User::getId)
-                .buildMetadata()
-                .slice(1, 5);
-
-
-        SliceQueryStructure queryStructure2 = userQuery
-                .select(Arrays.asList(get(User::getId).min(), get(User::getRandomNumber)))
-                .where(get(User::isValid).eq(true))
-                .groupBy(User::getRandomNumber)
-                .having(root -> root.get(User::getRandomNumber).eq(10))
-                .orderBy(User::getId).asc()
-                .buildMetadata()
-                .slice(1, 5);
-
-        assertEquals(queryStructure, queryStructure2);
     }
 
     @ParameterizedTest

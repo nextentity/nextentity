@@ -2,7 +2,6 @@ package io.github.nextentity.core.api;
 
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;

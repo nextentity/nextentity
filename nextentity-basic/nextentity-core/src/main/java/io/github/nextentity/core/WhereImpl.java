@@ -10,13 +10,9 @@ import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.ExpressionTree;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.api.ExpressionTree.Operation;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
@@ -25,10 +21,12 @@ import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.Having;
 import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
-import io.github.nextentity.core.api.Query.QueryStructureBuilder;
-import io.github.nextentity.core.api.Query.SliceQueryStructure;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.Selection;
+import io.github.nextentity.core.expression.Selection.MultiSelected;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
@@ -221,32 +219,6 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         structure.fetch = Lists.of();
         structure.orderBy = Lists.of();
         return structure;
-    }
-
-    @Override
-    public QueryStructureBuilder buildMetadata() {
-        return new QueryStructureBuilder() {
-            @Override
-            public QueryStructure count() {
-                return buildCountData();
-            }
-
-            @Override
-            public QueryStructure getList(int offset, int maxResult, LockModeType lockModeType) {
-                return buildListData(offset, maxResult, lockModeType);
-            }
-
-            @Override
-            public QueryStructure exist(int offset) {
-                return buildExistData(offset);
-            }
-
-            @Override
-            public SliceQueryStructure slice(int offset, int limit) {
-                return new SliceQueryStructure(buildCountData(), buildListData(offset, limit, LockModeType.NONE));
-            }
-
-        };
     }
 
     @Override

@@ -1,6 +1,6 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;

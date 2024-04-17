@@ -1,23 +1,23 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.ExpressionTrees;
-import io.github.nextentity.core.api.ExpressionTree.Column;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.api.ExpressionTree.Literal;
-import io.github.nextentity.core.api.ExpressionTree.Operation;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.Entity;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.From.FromSubQuery;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.EntitySelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.SortOrder;
+import io.github.nextentity.core.expression.From;
+import io.github.nextentity.core.expression.From.Entity;
+import io.github.nextentity.core.expression.From.FromSubQuery;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.PathChain;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.Selection;
+import io.github.nextentity.core.expression.Selection.EntitySelected;
+import io.github.nextentity.core.expression.Selection.MultiSelected;
+import io.github.nextentity.core.expression.Selection.ProjectionSelected;
+import io.github.nextentity.core.expression.Selection.SingleSelected;
 import io.github.nextentity.core.meta.AnyToOneAttribute;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.BasicAttribute;
@@ -63,7 +63,7 @@ abstract class AbstractQuerySqlBuilder {
 
     protected final StringBuilder sql;
     protected final List<Object> args;
-    protected final Map<Column, Integer> joins = new LinkedHashMap<>();
+    protected final Map<PathChain, Integer> joins = new LinkedHashMap<>();
     protected final QueryStructure queryStructure;
 
     protected final EntityType entity;
@@ -147,7 +147,7 @@ abstract class AbstractQuerySqlBuilder {
                     continue;
                 }
                 BasicAttribute column = (BasicAttribute) attribute;
-                Column columns = ExpressionTrees.column(column.name());
+                PathChain columns = ExpressionTrees.column(column.name());
                 selectedExpressions.add(columns);
                 selectedAttributes.add(attribute);
             }
@@ -161,7 +161,7 @@ abstract class AbstractQuerySqlBuilder {
                 if (attr.entityAttribute() instanceof EntityType) {
                     continue;
                 }
-                Column columns = attr.entityAttribute().column();
+                PathChain columns = attr.entityAttribute();
                 selectedExpressions.add(columns);
                 selectedAttributes.add(attr);
             }
@@ -186,7 +186,7 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendSelectAlias(ExpressionNode expression) {
-        if (selectIndex.get() != 0 || !(expression instanceof Column) || ((Column) expression).size() != 1) {
+        if (selectIndex.get() != 0 || !(expression instanceof PathChain) || ((PathChain) expression).deep() != 1) {
             int index = selectIndex.getAndIncrement();
             String alias = Integer.toString(index, Character.MAX_RADIX);
             sql.append(" as _").append(alias);
@@ -194,13 +194,13 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendFetchExpressions() {
-        List<? extends Column> fetchClause = queryStructure.fetch();
+        List<? extends PathChain> fetchClause = queryStructure.fetch();
         if (fetchClause != null && !fetchClause.isEmpty()) {
-            Column[] array = fetchClause.stream()
-                    .flatMap(it -> Lists.iterate(it, Objects::nonNull, Column::parent))
+            PathChain[] array = fetchClause.stream()
+                    .flatMap(it -> Lists.iterate(it, Objects::nonNull, PathChain::parent))
                     .distinct()
-                    .toArray(Column[]::new);
-            for (Column fetch : array) {
+                    .toArray(PathChain[]::new);
+            for (PathChain fetch : array) {
                 Attribute attribute = getAttribute(fetch);
                 if (!(attribute instanceof AnyToOneAttribute)) {
                     continue;
@@ -210,7 +210,7 @@ abstract class AbstractQuerySqlBuilder {
                     if (!(attr instanceof BasicAttribute)) {
                         continue;
                     }
-                    Column column = fetch.get(attr.name());
+                    PathChain column = fetch.get(attr.name());
                     selectedExpressions.add(column);
                     selectedAttributes.add(attr);
                 }
@@ -293,7 +293,7 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendPredicate(ExpressionNode node) {
-        if (node instanceof Column || node instanceof Literal) {
+        if (node instanceof PathChain || node instanceof Literal) {
             node = ExpressionTrees.operate(node, Operator.EQ, ExpressionTrees.TRUE);
         }
         appendExpression(node);
@@ -313,8 +313,8 @@ abstract class AbstractQuerySqlBuilder {
         if (expression instanceof Literal) {
             Literal constant = (Literal) expression;
             appendConstant(constant);
-        } else if (expression instanceof Column) {
-            Column column = (Column) expression;
+        } else if (expression instanceof PathChain) {
+            PathChain column = (PathChain) expression;
             appendPaths(column);
         } else if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
@@ -545,18 +545,19 @@ abstract class AbstractQuerySqlBuilder {
         sql.append(sign);
     }
 
-    protected void appendPaths(Column column) {
+    protected void appendPaths(PathChain column) {
         appendBlank();
-        int iMax = column.size() - 1;
+        int iMax = column.deep() - 1;
         if (iMax == -1)
             return;
         int i = 0;
-        if (column.size() == 1) {
+        if (column.deep() == 1) {
             appendFromAlias().append(".");
         }
         Class<?> type = queryStructure.from().type();
-
-        Column join = ExpressionTrees.column(Lists.of(column.get(0)));
+        Attribute tail = column.toAttribute(mappers.getEntity(type));
+        List<? extends Attribute> chain = tail.referencedAttributes();
+        Attribute join = chain.get(0);
 
         for (String path : column) {
             EntityType info = mappers.getEntity(type);
@@ -595,7 +596,7 @@ abstract class AbstractQuerySqlBuilder {
 
             appendTableAttribute(sql, attribute, v);
             sql.append(ON);
-            Column parent = k.parent();
+            PathChain parent = k.parent();
             if (parent == null) {
                 appendFromAlias(sql);
             } else {
@@ -638,7 +639,7 @@ abstract class AbstractQuerySqlBuilder {
         return appendTableAlias(tableName, index, sb);
     }
 
-    protected Attribute getAttribute(Column path) {
+    protected Attribute getAttribute(PathChain path) {
         Type schema = entity;
         for (String s : path) {
             if (schema instanceof EntityType) {

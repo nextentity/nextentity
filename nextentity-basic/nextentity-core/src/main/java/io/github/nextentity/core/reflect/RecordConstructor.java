@@ -33,7 +33,7 @@ public class RecordConstructor extends ObjectConstructor {
     }
 
     @Override
-    public Object newInstance(Object[] arguments) {
+    public Object newInstance(Arguments arguments) {
         try {
             Class<?> resultType = type.javaType();
             RecordComponent[] components = resultType.getRecordComponents();

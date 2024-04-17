@@ -1,6 +1,6 @@
 package io.github.nextentity.data;
 
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;

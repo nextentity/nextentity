@@ -11,7 +11,7 @@ import io.github.nextentity.core.api.Expression.StringPathExpression;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
@@ -23,7 +23,6 @@ import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderOperator;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
-import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Query.Where0;
@@ -662,11 +661,6 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     @Override
     public Slice<T> slice(int offset, int limit) {
         return target.slice(offset, limit);
-    }
-
-    @Override
-    public QueryStructureBuilder buildMetadata() {
-        return target.buildMetadata();
     }
 
     @Override

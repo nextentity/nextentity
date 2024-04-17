@@ -18,8 +18,8 @@ import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.Column;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Order;
+import io.github.nextentity.core.expression.PathChain;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
@@ -68,19 +68,19 @@ public class Expressions {
         return toTypedExpression(ExpressionTrees.TRUE);
     }
 
-    public static <T, R> PathExpression<T, R> ofPath(Column column) {
+    public static <T, R> PathExpression<T, R> ofPath(PathChain column) {
         return toTypedExpression(column);
     }
 
-    public static <T, R> EntityPathExpression<T, R> ofEntity(Column column) {
+    public static <T, R> EntityPathExpression<T, R> ofEntity(PathChain column) {
         return toTypedExpression(column);
     }
 
-    public static <T> StringPathExpression<T> ofString(Column column) {
+    public static <T> StringPathExpression<T> ofString(PathChain column) {
         return toTypedExpression(column);
     }
 
-    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(Column column) {
+    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(PathChain column) {
         return toTypedExpression(column);
     }
 
@@ -96,7 +96,7 @@ public class Expressions {
         return toTypedExpression(expression);
     }
 
-    public static <T> BooleanPathExpression<T> ofBoolean(Column expression) {
+    public static <T> BooleanPathExpression<T> ofBoolean(PathChain expression) {
         return toTypedExpression(expression);
     }
 
@@ -443,8 +443,9 @@ public class Expressions {
 
         @Override
         default EntityPathExpression get(Path path) {
-            Column expression = (Column) Paths.get((Path<?, ?>) path).rootNode();
-            return toTypedExpression(((Column) rootNode()).get(expression));
+            // PathChain expression = (PathChain) Paths.get((Path<?, ?>) path).rootNode();
+            String name = ExpressionTrees.columnName(path);
+            return toTypedExpression(((PathChain) rootNode()).get(name));
         }
 
         @Override
@@ -514,9 +515,9 @@ public class Expressions {
 
         @NotNull
         private AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
-            Column expression = (Column) pathExpression.rootNode();
+            PathChain expression = (PathChain) pathExpression.rootNode();
             ExpressionNode expr = rootNode();
-            return toTypedExpression(((Column) expr).get(expression));
+            return toTypedExpression(((PathChain) expr).get(expression));
         }
 
         default AbstractTypeExpression not(Expression<?, ?> expression) {

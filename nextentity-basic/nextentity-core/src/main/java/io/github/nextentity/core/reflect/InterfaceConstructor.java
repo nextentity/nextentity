@@ -12,7 +12,7 @@ public class InterfaceConstructor extends ObjectConstructor {
     }
 
     @Override
-    public Object newInstance(Object[] arguments) {
+    public Object newInstance(Arguments arguments) {
         Map<Method, Object> map = new HashMap<>();
         boolean hasNonnullProperty = false;
         for (Property property : properties) {

@@ -5,15 +5,16 @@ import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.EntitySelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.MultiSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.ExpressionTree.QueryStructure.Selection.SingleSelected;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.Selection;
+import io.github.nextentity.core.expression.Selection.EntitySelected;
+import io.github.nextentity.core.expression.Selection.MultiSelected;
+import io.github.nextentity.core.expression.Selection.ProjectionSelected;
+import io.github.nextentity.core.expression.Selection.SingleSelected;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.reflect.Arguments;
 import io.github.nextentity.core.reflect.InstanceConstructor;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
@@ -115,7 +116,7 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
                         array[i] = typeConverter.convert(array[i], attribute.javaType());
                     }
                 }
-                T row = TypeCastUtil.unsafeCast(extractor.newInstance(array));
+                T row = TypeCastUtil.unsafeCast(extractor.newInstance(Arguments.of(array)));
                 result.add(row);
             }
         }
