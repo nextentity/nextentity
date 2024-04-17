@@ -24,7 +24,7 @@ public interface Expression<T, U> extends ExpressionTree {
 
         EntityRoot<T> root();
 
-        Expression.NumberExpression<T, Long> count();
+        NumberExpression<T, Long> count();
 
         Predicate<T> eq(U value);
 
@@ -136,78 +136,78 @@ public interface Expression<T, U> extends ExpressionTree {
     }
 
     interface EntityPathExpression<T, U> extends PathExpression<T, U> {
-        <R> Expression.EntityPathExpression<T, R> get(Path<U, R> path);
+        <R> EntityPathExpression<T, R> get(Path<U, R> path);
 
-        Expression.StringPathExpression<T> get(StringPath<U> path);
+        StringPathExpression<T> get(StringPath<U> path);
 
-        <R extends Number> Expression.NumberPathExpression<T, R> get(NumberPath<U, R> path);
+        <R extends Number> NumberPathExpression<T, R> get(NumberPath<U, R> path);
 
-        <R> Expression.PathExpression<T, R> get(Expression.PathExpression<U, R> path);
+        <R> PathExpression<T, R> get(PathExpression<U, R> path);
 
-        Expression.StringPathExpression<T> get(Expression.StringPathExpression<U> path);
+        StringPathExpression<T> get(StringPathExpression<U> path);
 
         BooleanPathExpression<T> get(BooleanPath<T> path);
 
-        <R extends Number> Expression.NumberPathExpression<T, R> get(Expression.NumberPathExpression<U, R> path);
+        <R extends Number> NumberPathExpression<T, R> get(NumberPathExpression<U, R> path);
 
     }
 
     interface NumberExpression<T, U extends Number> extends OperatableExpression<T, U> {
-        Expression.NumberExpression<T, U> add(Expression<T, U> expression);
+        NumberExpression<T, U> add(Expression<T, U> expression);
 
-        Expression.NumberExpression<T, U> subtract(Expression<T, U> expression);
+        NumberExpression<T, U> subtract(Expression<T, U> expression);
 
-        Expression.NumberExpression<T, U> multiply(Expression<T, U> expression);
+        NumberExpression<T, U> multiply(Expression<T, U> expression);
 
-        Expression.NumberExpression<T, U> divide(Expression<T, U> expression);
+        NumberExpression<T, U> divide(Expression<T, U> expression);
 
-        Expression.NumberExpression<T, U> mod(Expression<T, U> expression);
+        NumberExpression<T, U> mod(Expression<T, U> expression);
 
-        Expression.NumberExpression<T, U> sum();
+        NumberExpression<T, U> sum();
 
-        Expression.NumberExpression<T, Double> avg();
+        NumberExpression<T, Double> avg();
 
-        Expression.NumberExpression<T, U> max();
+        NumberExpression<T, U> max();
 
-        Expression.NumberExpression<T, U> min();
+        NumberExpression<T, U> min();
 
-        default Expression.NumberExpression<T, U> add(U value) {
+        default NumberExpression<T, U> add(U value) {
             return add(root().literal(value));
         }
 
-        default Expression.NumberExpression<T, U> subtract(U value) {
+        default NumberExpression<T, U> subtract(U value) {
             return subtract(root().literal(value));
         }
 
-        default Expression.NumberExpression<T, U> multiply(U value) {
+        default NumberExpression<T, U> multiply(U value) {
             return multiply(root().literal(value));
         }
 
-        default Expression.NumberExpression<T, U> divide(U value) {
+        default NumberExpression<T, U> divide(U value) {
             return divide(root().literal(value));
         }
 
-        default Expression.NumberExpression<T, U> mod(U value) {
+        default NumberExpression<T, U> mod(U value) {
             return mod(root().literal(value));
         }
 
-        default Expression.NumberExpression<T, U> addIfNotNull(U value) {
+        default NumberExpression<T, U> addIfNotNull(U value) {
             return value == null ? this : add(value);
         }
 
-        default Expression.NumberExpression<T, U> subtractIfNotNull(U value) {
+        default NumberExpression<T, U> subtractIfNotNull(U value) {
             return value == null ? this : subtract(value);
         }
 
-        default Expression.NumberExpression<T, U> multiplyIfNotNull(U value) {
+        default NumberExpression<T, U> multiplyIfNotNull(U value) {
             return value == null ? this : multiply(value);
         }
 
-        default Expression.NumberExpression<T, U> divideIfNotNull(U value) {
+        default NumberExpression<T, U> divideIfNotNull(U value) {
             return value == null ? this : divide(value);
         }
 
-        default Expression.NumberExpression<T, U> modIfNotNull(U value) {
+        default NumberExpression<T, U> modIfNotNull(U value) {
             return value == null ? this : mod(value);
         }
 
@@ -293,17 +293,17 @@ public interface Expression<T, U> extends ExpressionTree {
             return value == null ? notLikeIfNotNull(null) : notLikeIfNotNull('%' + value + '%');
         }
 
-        Expression.StringExpression<T> lower();
+        StringExpression<T> lower();
 
-        Expression.StringExpression<T> upper();
+        StringExpression<T> upper();
 
-        Expression.StringExpression<T> substring(int offset, int length);
+        StringExpression<T> substring(int offset, int length);
 
-        default Expression.StringExpression<T> substring(int offset) {
+        default StringExpression<T> substring(int offset) {
             return substring(offset, Integer.MAX_VALUE);
         }
 
-        Expression.StringExpression<T> trim();
+        StringExpression<T> trim();
 
         NumberExpression<T, Integer> length();
     }
