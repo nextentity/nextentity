@@ -9,13 +9,13 @@ import java.util.List;
  * @since 2024/4/16 上午8:42
  */
 @Getter
-public class SqlStatement {
+public class SqlStatement<T> {
 
     protected String sql;
 
-    protected List<List<?>> parameters;
+    protected List<T> parameters;
 
-    public SqlStatement(String sql, List<List<?>> parameters) {
+    public SqlStatement(String sql, List<T> parameters) {
         this.sql = sql;
         this.parameters = parameters;
     }

@@ -6,7 +6,6 @@ import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.expression.Selected;
-import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.ResultCollector;
 
@@ -29,7 +28,6 @@ public class JdbcResultCollector implements ResultCollector {
     @Override
     public <T> List<T> resolve(ResultSet resultSet,
                                Metamodel metamodel,
-                               List<? extends EntityProperty> selected,
                                QueryStructure structure) throws SQLException {
         int type = resultSet.getType();
         List<Object> result;

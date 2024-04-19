@@ -1,6 +1,7 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
@@ -16,12 +17,10 @@ import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.expression.Selected;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.SubSelectType;
-import io.github.nextentity.core.meta.graph.EntitySchema;
 import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.meta.graph.EntityReferenced;
+import io.github.nextentity.core.meta.graph.EntitySchema;
 import io.github.nextentity.core.meta.graph.Graph;
-import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -60,7 +59,7 @@ abstract class AbstractQuerySqlBuilder {
     protected final EntitySchema entity;
     protected final Metamodel mappers;
     protected final List<ExpressionNode> selectedExpressions = new ArrayList<>();
-    protected final List<EntityProperty> selectedAttributes = new ArrayList<>();
+    // protected final List<EntityProperty> selectedAttributes = new ArrayList<>();
 
     protected final String fromAlias;
     protected final int subIndex;
@@ -99,9 +98,9 @@ abstract class AbstractQuerySqlBuilder {
     protected abstract String rightQuotedIdentifier();
 
 
-    protected PreparedSql build() {
+    protected SqlStatement<?> build() {
         doBuilder();
-        return new PreparedSqlImpl(sql.toString(), args, selectedAttributes);
+        return new SqlStatement<>(sql.toString(), args);
     }
 
     protected void doBuilder() {
@@ -539,7 +538,7 @@ abstract class AbstractQuerySqlBuilder {
                 appendTableAttribute(sql, attribute, v);
                 String referenced = join.referencedColumnName();
                 if (referenced.isEmpty()) {
-                    referenced = ((EntityProperty) entityTypeInfo.id()).columnName();
+                    referenced = entityTypeInfo.id().columnName();
                 }
                 sql.append(".").append(referenced);
             } else {
@@ -617,14 +616,6 @@ abstract class AbstractQuerySqlBuilder {
             }
 
         }
-    }
-
-    @lombok.Data
-    @Accessors(fluent = true)
-    public static final class PreparedSqlImpl implements PreparedSql {
-        private final String sql;
-        private final List<?> args;
-        private final List<EntityProperty> selected;
     }
 
 }

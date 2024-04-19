@@ -1,9 +1,9 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SqlServerQuerySqlBuilder implements QuerySqlBuilder {
 
     @Override
-    public PreparedSql build(QueryStructure structure, Metamodel metamodel) {
+    public SqlStatement<?> build(QueryStructure structure, Metamodel metamodel) {
         return new Builder(structure, metamodel).build();
     }
 

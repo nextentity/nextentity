@@ -2,14 +2,13 @@ package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.QueryExecutor;
+import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.expression.Selected;
-import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
@@ -46,20 +45,19 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
     }
 
     private <T> List<T> queryByNativeSql(@NotNull QueryStructure queryStructure) {
-        PreparedSql preparedSql = sqlBuilder.build(queryStructure, metamodel);
-        jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
+        SqlStatement<?> preparedSql = sqlBuilder.build(queryStructure, metamodel);
+        jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.getSql());
         int position = 0;
-        for (Object arg : preparedSql.args()) {
+        for (Object arg : preparedSql.getParameters()) {
             query.setParameter(++position, arg);
         }
         List<?> list = TypeCastUtil.cast(query.getResultList());
 
-        return resolve(list, preparedSql.selected(), queryStructure);
+        return resolve(list, queryStructure);
     }
 
     protected <T> List<T> resolve(
             List<?> resultSet,
-            List<? extends EntityProperty> selected,
             QueryStructure structure) {
         List<Object> result = new ArrayList<>(resultSet.size());
         if (resultSet.isEmpty()) {

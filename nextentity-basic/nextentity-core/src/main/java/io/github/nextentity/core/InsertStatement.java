@@ -9,7 +9,7 @@ import java.util.List;
  * @since 2024/4/16 上午11:40
  */
 @Getter
-public class InsertStatement extends SqlStatement {
+public class InsertStatement extends SqlStatement<List<?>> {
 
     private final Iterable<?> entities;
     private final boolean returnGeneratedKeys;

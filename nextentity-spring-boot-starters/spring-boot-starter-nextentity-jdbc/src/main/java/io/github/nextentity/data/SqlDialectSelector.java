@@ -1,10 +1,10 @@
 package io.github.nextentity.data;
 
+import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.graph.EntityProperty;
 import io.github.nextentity.core.meta.graph.EntitySchema;
-import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
 import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
@@ -50,7 +50,7 @@ public class SqlDialectSelector implements QuerySqlBuilder, JdbcUpdateSqlBuilder
 
 
     @Override
-    public JdbcQueryExecutor.PreparedSql build(QueryStructure structure, Metamodel metamodel) {
+    public SqlStatement<?> build(QueryStructure structure, Metamodel metamodel) {
         return querySqlBuilder.build(structure, metamodel);
     }
 
