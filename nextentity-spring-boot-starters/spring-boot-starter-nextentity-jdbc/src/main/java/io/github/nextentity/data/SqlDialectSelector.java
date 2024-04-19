@@ -1,10 +1,9 @@
 package io.github.nextentity.data;
 
 import io.github.nextentity.core.SqlStatement;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.meta.graph.EntityProperty;
-import io.github.nextentity.core.meta.graph.EntitySchema;
+import io.github.nextentity.core.meta.BasicAttribute;
+import io.github.nextentity.core.meta.EntitySchema;
+import io.github.nextentity.jdbc.QueryContext;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
 import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
@@ -50,8 +49,8 @@ public class SqlDialectSelector implements QuerySqlBuilder, JdbcUpdateSqlBuilder
 
 
     @Override
-    public SqlStatement<?> build(QueryStructure structure, Metamodel metamodel) {
-        return querySqlBuilder.build(structure, metamodel);
+    public SqlStatement<?> build(QueryContext context) {
+        return querySqlBuilder.build(context);
     }
 
     @Override
@@ -65,7 +64,7 @@ public class SqlDialectSelector implements QuerySqlBuilder, JdbcUpdateSqlBuilder
     }
 
     @Override
-    public PreparedSql buildUpdate(@NotNull EntitySchema entityType, @NotNull List<EntityProperty> columns) {
+    public PreparedSql buildUpdate(@NotNull EntitySchema entityType, @NotNull List<BasicAttribute> columns) {
         return updateSqlBuilder.buildUpdate(entityType, columns);
     }
 

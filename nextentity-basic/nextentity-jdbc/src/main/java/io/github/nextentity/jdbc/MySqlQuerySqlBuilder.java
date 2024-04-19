@@ -1,9 +1,7 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.SqlStatement;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
 import java.util.List;
@@ -12,23 +10,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
 
     @Override
-    public SqlStatement<?> build(QueryStructure structure, Metamodel metamodel) {
-        return new Builder(structure, metamodel).build();
+    public SqlStatement<?> build(QueryContext context) {
+        return new Builder(context).build();
     }
 
     static class Builder extends AbstractQuerySqlBuilder {
 
         public Builder(StringBuilder sql,
                        List<Object> args,
-                       QueryStructure queryStructure,
-                       Metamodel mappers,
+                       QueryContext context,
                        AtomicInteger selectIndex,
                        int subIndex) {
-            super(sql, args, queryStructure, mappers, selectIndex, subIndex);
+            super(sql, args, context, selectIndex, subIndex);
         }
 
-        public Builder(QueryStructure queryStructure, Metamodel mappers) {
-            super(queryStructure, mappers);
+
+        public Builder(QueryContext context) {
+            super(context);
         }
 
         @Override
@@ -42,19 +40,19 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         @Override
-        protected void appendQueryStructure(QueryStructure queryStructure) {
-            new Builder(sql, args, queryStructure, mappers, selectIndex, subIndex + 1).doBuilder();
+        protected void appendQueryStructure(QueryContext subContext) {
+            new Builder(sql, args, subContext, selectIndex, subIndex + 1).doBuilder();
         }
 
         @Override
-        protected void appendPredicate(ExpressionNode node) {
+        protected void appendPredicate(BaseExpression node) {
             appendExpression(node);
         }
 
         @Override
         protected void appendOffsetAndLimit() {
-            int offset = unwrap(queryStructure.offset());
-            int limit = unwrap(queryStructure.limit());
+            int offset = unwrap(context.getStructure().offset());
+            int limit = unwrap(context.getStructure().limit());
             if (offset > 0) {
                 sql.append(" limit ?,?");
                 args.add(offset);

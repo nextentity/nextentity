@@ -1,15 +1,15 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.expression.Attribute;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
-import io.github.nextentity.core.expression.Literal;
-import io.github.nextentity.core.expression.Operation;
-import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.meta.graph.EntitySchema;
-import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.meta.graph.Graph;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.Literal;
+import io.github.nextentity.core.api.expression.Operation;
+import io.github.nextentity.core.api.expression.QueryStructure;
+import io.github.nextentity.core.meta.EntitySchema;
+import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.reflect.PrimitiveTypes;
+import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.Lists;
 
 import java.math.BigDecimal;
@@ -21,7 +21,6 @@ import java.util.List;
  * @since 2024-03-26 9:01
  */
 public class ExpressionTypeResolver {
-    private final Metamodel metamodel;
 
     private static final List<Class<? extends Number>> NUMBER_TYPES = Lists.of(
             Byte.class,
@@ -35,13 +34,9 @@ public class ExpressionTypeResolver {
     );
 
 
-    public ExpressionTypeResolver(Metamodel metamodel) {
-        this.metamodel = metamodel;
-    }
-
-    public Class<?> getExpressionType(ExpressionNode expression, Class<?> entityType) {
-        if (expression instanceof Attribute) {
-            return getColumnType((Attribute) expression, entityType);
+    public static Class<?> getExpressionType(BaseExpression expression, EntityType entityType) {
+        if (expression instanceof EntityPath) {
+            return getColumnType((EntityPath) expression, entityType);
         }
         if (expression instanceof Literal) {
             return getConstantType((Literal) expression);
@@ -55,11 +50,11 @@ public class ExpressionTypeResolver {
         return Object.class;
     }
 
-    private Class<?> getSubQueryType(QueryStructure subQuery) {
+    private static Class<?> getSubQueryType(QueryStructure subQuery) {
         return subQuery.from().type();
     }
 
-    public Class<?> getOperationType(Operation expression, Class<?> entityType) {
+    public static Class<?> getOperationType(Operation expression, EntityType entityType) {
         Operator operator = expression.operator();
         // noinspection EnhancedSwitchMigration
         switch (operator) {
@@ -104,16 +99,16 @@ public class ExpressionTypeResolver {
         return Object.class;
     }
 
-    private Class<?> getFirstOperandType(Operation expression, Class<?> entityType) {
+    private static Class<?> getFirstOperandType(Operation expression, EntityType entityType) {
         if (!expression.operands().isEmpty()) {
             return getExpressionType(expression.operands().get(0), entityType);
         }
         return Object.class;
     }
 
-    private Class<?> getNumberType(Operation expression, Class<?> entityType) {
+    private static Class<?> getNumberType(Operation expression, EntityType entityType) {
         int index = -1;
-        for (ExpressionNode operand : expression.operands()) {
+        for (BaseExpression operand : expression.operands()) {
             Class<?> type = getExpressionType(operand, entityType);
             if (type.isPrimitive()) {
                 type = PrimitiveTypes.getWrapper(type);
@@ -131,16 +126,16 @@ public class ExpressionTypeResolver {
         return Object.class;
     }
 
-    public Class<?> getConstantType(Literal expression) {
+    public static Class<?> getConstantType(Literal expression) {
         return expression.value().getClass();
     }
 
-    public Class<?> getColumnType(Attribute column, Class<?> entityType) {
-        Graph t = metamodel.getEntity(entityType);
+    public static Class<?> getColumnType(EntityPath column, EntityType entityType) {
+        Schema t = entityType;
         for (String s : column) {
-            t = ((EntitySchema) t).getProperty(s);
+            t = ((EntitySchema) t).getAttribute(s);
         }
-        return t.javaType();
+        return t.type();
     }
 
 }

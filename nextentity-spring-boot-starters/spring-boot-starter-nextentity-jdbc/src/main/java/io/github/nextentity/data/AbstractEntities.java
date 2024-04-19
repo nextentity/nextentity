@@ -19,7 +19,7 @@ public abstract class AbstractEntities<T, ID> extends EntitiesImpl<T, ID> implem
                 .as(AbstractEntities.class);
         Class<T> entityType = TypeCastUtil.cast(type.resolveGeneric(0));
         Class<?> idType = type.resolveGeneric(1);
-        Class<?> expected = entitiesFactory.getMetamodel().getEntity(entityType).id().javaType();
+        Class<?> expected = entitiesFactory.getMetamodel().getEntity(entityType).id().type();
         if (expected != idType) {
             String msg = "id class defined in " + getClass() + " does not match," +
                          " expected id " + expected + ", actual id " + idType;

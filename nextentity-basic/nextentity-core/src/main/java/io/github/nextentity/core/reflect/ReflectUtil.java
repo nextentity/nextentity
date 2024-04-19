@@ -1,9 +1,6 @@
 package io.github.nextentity.core.reflect;
 
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.graph.EntityProperty;
-import io.github.nextentity.core.meta.graph.Schema;
-import io.github.nextentity.core.meta.graph.Graph;
 import io.github.nextentity.core.util.Exceptions;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -19,18 +16,11 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class ReflectUtil {
     private static final Map<Class<?>, Object> SINGLE_ENUM_MAP = new ConcurrentHashMap<>();
-
-    static final Map<Collection<? extends EntityProperty>, ObjectConstructor> CONSTRUCTORS = new ConcurrentHashMap<>();
 
     @Nullable
     public static Field getDeclaredField(@NotNull Class<?> clazz, String name) {
@@ -62,72 +52,6 @@ public class ReflectUtil {
                     writer.invoke(target, sv);
                 }
             }
-        }
-    }
-
-    public static InstanceConstructor getRowInstanceConstructor(Collection<? extends EntityProperty> attributes, Class<?> resultType) {
-        ObjectConstructor schema = CONSTRUCTORS.computeIfAbsent(attributes, ReflectUtil::doGetConstructor);
-        if (schema.type.javaType() != resultType) {
-            throw new IllegalArgumentException();
-        }
-        return schema;
-    }
-
-    private static ObjectConstructor doGetConstructor(Collection<? extends EntityProperty> attributes) {
-        Map<Graph, Property> map = new HashMap<>();
-        ObjectConstructor result = null;
-        for (EntityProperty attribute : attributes) {
-            Graph cur = attribute;
-            while (true) {
-                Property property = map.computeIfAbsent(cur, ReflectUtil::newProperty);
-                cur = EntityProperty.getDeclaringType(cur);
-                if (cur == null) {
-                    if (result == null) {
-                        result = (ObjectConstructor) property;
-                    } else if (result != property) {
-                        throw new IllegalArgumentException();
-                    }
-                    break;
-                }
-            }
-        }
-        if (result == null) {
-            throw new IllegalArgumentException();
-        }
-        int i = 0;
-        for (EntityProperty attribute : attributes) {
-            Property p = map.get(attribute);
-            PropertyImpl property = (PropertyImpl) p;
-            property.setIndex(i++);
-        }
-        Map<Graph, List<Entry<Graph, Property>>> attrs = map.entrySet().stream()
-                .filter(it -> EntityProperty.getDeclaringType(it.getKey()) != null)
-                .collect(Collectors.groupingBy(e -> EntityProperty.getDeclaringType(e.getKey())));
-        for (Entry<Graph, List<Entry<Graph, Property>>> entry : attrs.entrySet()) {
-            Property property = map.get(entry.getKey());
-            List<Entry<Graph, Property>> v = entry.getValue();
-            if (v != null && !v.isEmpty()) {
-                ((ObjectConstructor) property).setProperties(v.stream()
-                        .map(Entry::getValue)
-                        .toArray(Property[]::new));
-            }
-        }
-        result.root = true;
-        return result;
-    }
-
-    private static Property newProperty(Graph type) {
-        if (type instanceof Schema) {
-            Class<?> javaType = type.javaType();
-            if (javaType.isInterface()) {
-                return new InterfaceConstructor(type);
-            } else if (javaType.isRecord()) {
-                return new RecordConstructor(type);
-            } else {
-                return new BeanConstructor(type);
-            }
-        } else {
-            return new PropertyImpl((EntityProperty) type);
         }
     }
 

@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.SliceImpl;
+import io.github.nextentity.core.BasicExpressions.SliceImpl;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Query.Collector;

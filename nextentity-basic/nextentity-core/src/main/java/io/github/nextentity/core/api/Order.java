@@ -1,6 +1,6 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
+import io.github.nextentity.core.api.expression.BaseExpression;
 
 import java.io.Serializable;
 
@@ -11,7 +11,7 @@ import java.io.Serializable;
 public
 interface Order<T> extends Serializable {
 
-    ExpressionNode expression();
+    BaseExpression expression();
 
     SortOrder order();
 

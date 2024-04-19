@@ -4,22 +4,18 @@ import io.github.nextentity.core.PathReference;
 import io.github.nextentity.core.annotaion.EntityField;
 import io.github.nextentity.core.annotaion.SubSelect;
 import io.github.nextentity.core.exception.BeanReflectiveException;
+import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.AssociationAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.EntitySchemaImpl;
-import io.github.nextentity.core.meta.Metamodels.EntityPropertyImpl;
-import io.github.nextentity.core.meta.Metamodels.EntityReferencedImpl;
+import io.github.nextentity.core.meta.Metamodels.EntityTypeImpl;
 import io.github.nextentity.core.meta.Metamodels.ProjectionAttributeImpl;
-import io.github.nextentity.core.meta.Metamodels.ProjectionReferencedImpl;
-import io.github.nextentity.core.meta.Metamodels.PropertyImpl;
+import io.github.nextentity.core.meta.Metamodels.ProjectionAssociationAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.ProjectionSchemaImpl;
+import io.github.nextentity.core.meta.Metamodels.AttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.SubSelectEntity;
-import io.github.nextentity.core.meta.graph.EntitySchema;
-import io.github.nextentity.core.meta.graph.EntityProperty;
-import io.github.nextentity.core.meta.graph.EntityReferenced;
-import io.github.nextentity.core.meta.graph.Graph;
-import io.github.nextentity.core.meta.graph.ProjectionSchema;
-import io.github.nextentity.core.meta.graph.ProjectionProperty;
-import io.github.nextentity.core.meta.graph.Property;
 import io.github.nextentity.core.reflect.ReflectUtil;
+import io.github.nextentity.core.reflect.schema.Attribute;
+import io.github.nextentity.core.reflect.schema.Schema;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,83 +40,52 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 @Slf4j
 public abstract class AbstractMetamodel implements Metamodel {
 
-    private final Map<Class<?>, EntitySchema> entityTypes = new ConcurrentHashMap<>();
-    private final Map<List<Class<?>>, ProjectionSchema> projections = new ConcurrentHashMap<>();
+    private final Map<Class<?>, EntityType> entityTypes = new ConcurrentHashMap<>();
+    private final Map<List<Class<?>>, ProjectionType> projections = new ConcurrentHashMap<>();
 
     @Override
-    public EntitySchema getEntity(Class<?> entityType) {
+    public EntityType getEntity(Class<?> entityType) {
         return entityTypes.computeIfAbsent(entityType, this::createEntityType);
     }
 
-    @Override
-    public ProjectionSchema getProjection(Class<?> entityType, Class<?> projectionType) {
+    protected ProjectionType getProjection(Class<?> entityType, Class<?> projectionType) {
         List<Class<?>> key = Arrays.asList(entityType, projectionType);
         return projections.computeIfAbsent(key, k -> createProjection(entityType, projectionType));
     }
 
     @NotNull
-    protected ProjectionSchema createProjection(Class<?> baseType, Class<?> projectionType) {
-        ArrayList<ProjectionProperty> list = new ArrayList<>();
+    protected ProjectionType createProjection(Class<?> baseType, Class<?> projectionType) {
         EntitySchema entity = getEntity(baseType);
-        List<ProjectionProperty> immutable = Collections.unmodifiableList(list);
-        ProjectionSchemaImpl result = new ProjectionSchemaImpl(projectionType, immutable, entity);
-        ArrayList<ProjectionProperty> projectionProperties = getProjectionProperties(result);
-        list.addAll(projectionProperties);
-        list.trimToSize();
+        ProjectionSchemaImpl result = new ProjectionSchemaImpl(projectionType, entity);
+        ArrayList<ProjectionBasicAttribute> projectionProperties = getProjectionProperties(result);
+        result.setProperties(projectionProperties);
         return result;
     }
 
-    protected ArrayList<ProjectionProperty> getProjectionProperties(ProjectionSchema projectionGraph) {
-        ArrayList<ProjectionProperty> list = new ArrayList<>();
-        List<Property> attributes = getProjectionAttributes(projectionGraph.javaType(), projectionGraph);
+    protected ArrayList<ProjectionBasicAttribute> getProjectionProperties(ProjectionType projectionGraph) {
+        ArrayList<ProjectionBasicAttribute> list = new ArrayList<>();
+        List<Attribute> attributes = getProjectionAttributes(projectionGraph.type(), projectionGraph);
         EntitySchema entity = projectionGraph.entityType();
-        for (Property attribute : attributes) {
-            EntityProperty entityAttribute = getEntityAttribute(attribute, entity);
+        for (Attribute attribute : attributes) {
+            BasicAttribute entityAttribute = getEntityAttribute(attribute, entity);
             if (entityAttribute == null) {
                 continue;
             }
-            if (entityAttribute instanceof EntityReferenced) {
-                ProjectionReferencedImpl o = new ProjectionReferencedImpl(
-                        attribute, (EntityReferenced) entityAttribute, this::getProjectionProperties);
+            if (entityAttribute instanceof AssociationAttribute) {
+                ProjectionAssociationAttributeImpl o = new ProjectionAssociationAttributeImpl(
+                        attribute, (AssociationAttribute) entityAttribute, this::getProjectionProperties);
                 list.add(o);
-            } else if (attribute.javaType() == entityAttribute.javaType()) {
+            } else if (attribute.type() == entityAttribute.type()) {
                 list.add(new ProjectionAttributeImpl(attribute, entityAttribute));
             }
         }
         return list;
     }
 
-    // private void addProjectionAttributes(Class<?> projectionType,
-    //                                      ProjectionGraph projectionGraph,
-    //                                      EntityGraph entity,
-    //                                      ArrayList<ProjectionProperty> list,
-    //                                      int deep,
-    //                                      int maxDeep) {
-    //     if (deep == maxDeep) {
-    //         return;
-    //     }
-    //     List<Property> attributes = getProjectionAttributes(projectionType, projectionGraph);
-    //     for (Property attribute : attributes) {
-    //         EntityProperty entityAttribute = getEntityAttribute(attribute, entity);
-    //         if (entityAttribute == null) {
-    //             continue;
-    //         }
-    //         ProjectionAttributeImpl projectionAttribute = new ProjectionAttributeImpl(attribute, entityAttribute);
-    //         if (entityAttribute instanceof EntityGraph) {
-    //             ProjectionReferencedImpl o = new ProjectionReferencedImpl(projectionAttribute, projectionGraph, entity);
-    //             addProjectionAttributes(attribute.javaType(), o,
-    //                     (EntityGraph) entityAttribute, list, deep + 1, maxDeep);
-    //         } else if (attribute.javaType() == entityAttribute.javaType()) {
-    //             list.add(projectionAttribute);
-    //         }
-    //     }
-    // }
-
-    private List<Property> getProjectionAttributes(Class<?> projectionType, Graph owner) {
+    private List<Attribute> getProjectionAttributes(Class<?> projectionType, Schema owner) {
         if (projectionType.isInterface()) {
             return getInterfaceAttributes(projectionType, owner);
         } else if (projectionType.isRecord()) {
@@ -129,47 +94,47 @@ public abstract class AbstractMetamodel implements Metamodel {
         return getBeanAttributes(projectionType, owner);
     }
 
-    private List<Property> getRecordAttributes(Class<?> projectionType, Graph owner) {
+    private List<Attribute> getRecordAttributes(Class<?> projectionType, Schema owner) {
         RecordComponent[] components = projectionType.getRecordComponents();
         return Arrays.stream(components)
                 .map(it -> newAttribute(null, it.getAccessor(), null, owner))
                 .collect(Collectors.toList());
     }
 
-    protected EntityProperty getEntityAttribute(Property attribute, EntitySchema entity) {
-        EntityProperty entityAttribute = getEntityAttributeByAnnotation(attribute, entity);
+    protected BasicAttribute getEntityAttribute(Attribute attribute, EntitySchema entity) {
+        BasicAttribute entityAttribute = getEntityAttributeByAnnotation(attribute, entity);
         return entityAttribute == null
-                ? entity.getProperty(attribute.name())
+                ? entity.getAttribute(attribute.name())
                 : entityAttribute;
     }
 
-    private EntityProperty getEntityAttributeByAnnotation(Property attribute, EntitySchema entity) {
+    private BasicAttribute getEntityAttributeByAnnotation(Attribute attribute, EntitySchema entity) {
         EntityField entityAttribute = getAnnotation(attribute, EntityField.class);
         if (entityAttribute == null || entityAttribute.value().isEmpty()) {
             return null;
         }
         String value = entityAttribute.value();
         String[] split = value.split("\\.");
-        Graph cur = entity;
+        Schema cur = entity;
         for (String s : split) {
             if (cur instanceof EntitySchema) {
-                cur = ((EntitySchema) cur).getProperty(s);
+                cur = ((EntitySchema) cur).getAttribute(s);
             } else {
                 throw new IllegalStateException("entity attribute " + value + " not exist");
             }
         }
-        if (cur instanceof EntityProperty) {
-            if (attribute.javaType() != cur.javaType()) {
+        if (cur instanceof BasicAttribute) {
+            if (attribute.type() != cur.type()) {
                 throw new IllegalStateException("entity attribute " + value + " type mismatch");
             }
-            return (EntityProperty) cur;
+            return (BasicAttribute) cur;
         } else {
             throw new IllegalStateException("entity attribute " + value + " not exist");
         }
     }
 
     @NotNull
-    private List<Property> getInterfaceAttributes(Class<?> clazz, Graph owner) {
+    private List<Attribute> getInterfaceAttributes(Class<?> clazz, Schema owner) {
         return Arrays.stream(clazz.getMethods())
                 .map(it -> newAttribute(null, it, null, owner))
                 .collect(Collectors.toList());
@@ -177,42 +142,45 @@ public abstract class AbstractMetamodel implements Metamodel {
 
     protected abstract String getTableName(Class<?> javaType);
 
-    protected abstract boolean isMarkedId(Property attribute);
+    protected abstract boolean isMarkedId(Attribute attribute);
 
-    protected abstract String getReferencedColumnName(Property attribute);
+    protected abstract String getReferencedColumnName(Attribute attribute);
 
-    protected abstract String getJoinColumnName(Property attribute);
+    protected abstract String getJoinColumnName(Attribute attribute);
 
-    protected abstract boolean isVersionField(Property attribute);
+    protected abstract boolean isVersionField(Attribute attribute);
 
-    protected abstract boolean isTransient(Property attribute);
+    protected abstract boolean isTransient(Attribute attribute);
 
-    protected abstract boolean isBasicField(Property attribute);
+    protected abstract boolean isBasicField(Attribute attribute);
 
-    protected abstract boolean isAnyToOne(Property attribute);
+    protected abstract boolean isAnyToOne(Attribute attribute);
 
-    protected abstract String getColumnName(Property attribute);
+    protected abstract String getColumnName(Attribute attribute);
 
     protected abstract Field[] getSuperClassField(Class<?> baseClass, Class<?> superClass);
 
-    protected EntitySchema createEntityType(Class<?> entityType) {
-        EntitySchemaImpl result = new EntitySchemaImpl();
-        createEntityType(entityType, result, result);
+    protected EntityType createEntityType(Class<?> entityType) {
+        EntityTypeImpl result;
         SubSelect[] type = entityType.getAnnotationsByType(SubSelect.class);
         if (type.length == 1) {
-            return new SubSelectEntity(result, type[0].value());
+            result = new SubSelectEntity(type[0].value());
+        } else {
+            result = new EntityTypeImpl();
         }
+        createEntityType(entityType, result, result);
+        result.projectionTypes((entity, projectionType) -> getProjection(entity.type(), projectionType));
         return result;
     }
 
-    protected EntitySchemaImpl createEntityType(Class<?> entityType, EntitySchemaImpl result, Graph owner) {
-        result.javaType(entityType);
-        Map<String, EntityProperty> map = new LinkedHashMap<>();
-        result.attributes(Collections.unmodifiableMap(map));
+    protected EntitySchemaImpl createEntityType(Class<?> entityType, EntitySchemaImpl result, Schema owner) {
+        result.type(entityType);
+        Map<String, BasicAttribute> map = new LinkedHashMap<>();
+        result.dictionary(Collections.unmodifiableMap(map));
         result.tableName(getTableName(entityType));
-        List<Property> attributes = getBeanAttributes(entityType, owner);
+        List<Attribute> attributes = getBeanAttributes(entityType, owner);
         boolean hasVersion = false;
-        for (Property attr : attributes) {
+        for (Attribute attr : attributes) {
             if (map.containsKey(attr.name())) {
                 throw new IllegalStateException("Duplicate key");
             }
@@ -220,7 +188,7 @@ public abstract class AbstractMetamodel implements Metamodel {
                 continue;
             }
 
-            EntityProperty attribute;
+            BasicAttribute attribute;
             if (isBasicField(attr)) {
                 boolean versionColumn = false;
                 if (isVersionField(attr)) {
@@ -230,15 +198,15 @@ public abstract class AbstractMetamodel implements Metamodel {
                         versionColumn = hasVersion = true;
                     }
                 }
-                attribute = new EntityPropertyImpl(attr, getColumnName(attr), versionColumn);
+                attribute = new BasicAttributeImpl(attr, getColumnName(attr), versionColumn);
                 if (versionColumn) {
                     result.version(attribute);
                 }
             } else if (isAnyToOne(attr)) {
-                EntityReferencedImpl ato = new EntityReferencedImpl(attr, getColumnName(attr));
+                AssociationAttributeImpl ato = new AssociationAttributeImpl(attr, getColumnName(attr));
                 ato.joinName(getJoinColumnName(attr));
                 ato.referencedColumnName(getReferencedColumnName(attr));
-                ato.referencedSupplier(() -> createEntityType(attr.javaType(), new EntitySchemaImpl(), ato));
+                ato.referencedSupplier(() -> createEntityType(attr.type(), new EntitySchemaImpl(), ato));
                 attribute = ato;
             } else {
                 log.warn("ignored attribute {}", attr.field());
@@ -255,26 +223,25 @@ public abstract class AbstractMetamodel implements Metamodel {
         return result;
     }
 
-    protected void setAnyToOneAttributeColumnName(Map<String, EntityProperty> map) {
-        for (Entry<String, EntityProperty> entry : map.entrySet()) {
-            EntityProperty value = entry.getValue();
-            if (value instanceof EntityReferencedImpl) {
-                EntityReferencedImpl attr = (EntityReferencedImpl) value;
+    protected void setAnyToOneAttributeColumnName(Map<String, BasicAttribute> map) {
+        for (Entry<String, BasicAttribute> entry : map.entrySet()) {
+            BasicAttribute value = entry.getValue();
+            if (value instanceof AssociationAttributeImpl attr) {
                 String joinColumnName = getJoinColumnName(map, attr);
                 attr.joinColumnName(joinColumnName);
             }
         }
     }
 
-    protected String getJoinColumnName(Map<String, EntityProperty> map, EntityReferencedImpl attr) {
+    protected String getJoinColumnName(Map<String, BasicAttribute> map, AssociationAttributeImpl attr) {
         String joinName = attr.joinName();
-        EntityProperty join = map.get(joinName);
-        return join.isBasic()
+        BasicAttribute join = map.get(joinName);
+        return join.isPrimitive()
                 ? (join).columnName()
                 : joinName;
     }
 
-    protected List<Property> getBeanAttributes(Class<?> type, Graph owner) {
+    protected List<Attribute> getBeanAttributes(Class<?> type, Schema owner) {
         Map<String, PropertyDescriptor> map = new HashMap<>();
         try {
             BeanInfo beanInfo = Introspector.getBeanInfo(type);
@@ -288,7 +255,7 @@ public abstract class AbstractMetamodel implements Metamodel {
         } catch (IntrospectionException e) {
             throw new BeanReflectiveException(e);
         }
-        List<Property> attributes = getDeclaredFields(type).stream()
+        List<Attribute> attributes = getDeclaredFields(type).stream()
                 .map(field -> newAttribute(owner, field, map.remove(field.getName())))
                 .collect(Collectors.toList());
         map.values().stream()
@@ -325,7 +292,7 @@ public abstract class AbstractMetamodel implements Metamodel {
         getSuperClassDeclaredFields(baseClass, superclass, map);
     }
 
-    private Property newAttribute(Graph owner, Field field, PropertyDescriptor descriptor) {
+    private Attribute newAttribute(Schema owner, Field field, PropertyDescriptor descriptor) {
         Method getter, setter;
         if (descriptor != null) {
             getter = descriptor.getReadMethod();
@@ -341,13 +308,13 @@ public abstract class AbstractMetamodel implements Metamodel {
         return !Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers) && !Modifier.isFinal(modifiers);
     }
 
-    protected <T extends Graph> Property newAttribute(Field field, Method getter, Method setter, T owner) {
+    protected <T extends Schema> Attribute newAttribute(Field field, Method getter, Method setter, T owner) {
         Class<?> javaType = getter != null ? getter.getReturnType() : field.getType();
-        String name = field != null ? field.getName() : PathReference.getPropertyName(getter.getName());
-        return new PropertyImpl<>(javaType, name, getter, setter, field, owner);
+        String name = field != null ? field.getName() : PathReference.getFieldName(getter.getName());
+        return new AttributeImpl<>(javaType, name, getter, setter, field, owner);
     }
 
-    protected <T extends Annotation> T getAnnotation(Property attribute, Class<T> annotationClass) {
+    protected <T extends Annotation> T getAnnotation(Attribute attribute, Class<T> annotationClass) {
         T column = null;
         if (attribute.field() != null) {
             column = attribute.field().getAnnotation(annotationClass);

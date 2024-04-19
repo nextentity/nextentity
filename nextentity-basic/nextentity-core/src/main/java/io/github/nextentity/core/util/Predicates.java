@@ -1,10 +1,10 @@
 package io.github.nextentity.core.util;
 
-import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.Expressions;
+import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Predicate;
-import io.github.nextentity.core.api.ExpressionTree;
 
 import static io.github.nextentity.core.api.Operator.NOT;
 
@@ -31,7 +31,7 @@ public interface Predicates {
     }
 
     static <T> Predicate<T> not(Expression<T, Boolean> lt) {
-        ExpressionTree expression = ExpressionTrees.operate(lt.rootNode(), NOT);
+        BaseExpression expression = BasicExpressions.operate(lt, NOT);
         return Expressions.ofBoolean(expression);
     }
 

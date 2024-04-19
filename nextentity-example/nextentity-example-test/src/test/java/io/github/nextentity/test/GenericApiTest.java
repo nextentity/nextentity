@@ -8,21 +8,21 @@ import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.BasicAttribute;
+import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.meta.ProjectionType;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple2;
 import io.github.nextentity.core.util.tuple.Tuple3;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
-import io.github.nextentity.test.db.DbConfigs;
 import io.github.nextentity.test.db.UserEntities;
 import io.github.nextentity.test.entity.User;
 import io.github.nextentity.test.projection.UserInterface;
 import io.github.nextentity.test.projection.UserModel;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -114,13 +114,13 @@ public class GenericApiTest {
 
         List<User> ftList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 1
-                        && user.getRandomNumber() > 100
-                        && user.getRandomNumber() != 125
-                        && user.getRandomNumber() <= 666
-                        && (user.getRandomNumber() < 106
-                        || user.getRandomNumber() > 120
-                        || user.getRandomNumber() == 109)
-                        && user.getRandomNumber() != 128
+                                && user.getRandomNumber() > 100
+                                && user.getRandomNumber() != 125
+                                && user.getRandomNumber() <= 666
+                                && (user.getRandomNumber() < 106
+                                    || user.getRandomNumber() > 120
+                                    || user.getRandomNumber() == 109)
+                                && user.getRandomNumber() != 128
                 )
                 .collect(Collectors.toList());
 
@@ -147,13 +147,13 @@ public class GenericApiTest {
 
         List<User> ftList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 1
-                        && user.getRandomNumber() > 100
-                        && user.getRandomNumber() != 125
-                        && user.getRandomNumber() <= 666
-                        && (user.getRandomNumber() < 106
-                        || user.getRandomNumber() > 120
-                        || user.getRandomNumber() == 109)
-                        && user.getRandomNumber() != 128
+                                && user.getRandomNumber() > 100
+                                && user.getRandomNumber() != 125
+                                && user.getRandomNumber() <= 666
+                                && (user.getRandomNumber() < 106
+                                    || user.getRandomNumber() > 120
+                                    || user.getRandomNumber() == 109)
+                                && user.getRandomNumber() != 128
                 )
                 .collect(Collectors.toList());
 
@@ -211,9 +211,10 @@ public class GenericApiTest {
 
     }
 
-    @Test
-    void te() {
-        UserEntities userQuery = DbConfigs.MYSQL.getJdbc();
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void te(UserEntities userQuery) {
+        // UserEntities userQuery = DbConfigs.MYSQL.getJdbc();
         List<User> users = userQuery.fetch(
                         User::getParentUser,
                         User::getRandomUser)
@@ -583,7 +584,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
-                        || it.getId() == 3))
+                                || it.getId() == 3))
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -988,7 +989,7 @@ public class GenericApiTest {
                 .getList();
         fList = validUsers.stream().filter(user ->
                         !(user.getRandomNumber() >= 10 && user.getRandomNumber() <= 15)
-                                && user.getId() % 3 == 0)
+                        && user.getId() % 3 == 0)
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -1261,8 +1262,13 @@ public class GenericApiTest {
     }
 
     public static void main(String[] args) {
-        EntityProperty attribute = JpaMetamodel.of().getEntity(User.class).getProperty("parentUser");
+        Metamodel metamodel = JpaMetamodel.of();
+        BasicAttribute attribute = metamodel.getEntity(User.class).getAttribute("parentUser");
+        boolean dictionary = attribute.isObject();
+        System.out.println(dictionary);
         System.out.println(attribute);
+        ProjectionType projection = metamodel.getEntity(User.class).getProjection(UserInterface.class);
+        System.out.println(projection);
     }
 
     @ParameterizedTest

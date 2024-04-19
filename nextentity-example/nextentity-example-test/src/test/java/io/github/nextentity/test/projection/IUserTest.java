@@ -1,6 +1,6 @@
 package io.github.nextentity.test.projection;
 
-import io.github.nextentity.core.meta.graph.ProjectionSchema;
+import io.github.nextentity.core.meta.ProjectionType;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
 import io.github.nextentity.test.entity.User;
 
@@ -11,9 +11,9 @@ import io.github.nextentity.test.entity.User;
 class IUserTest {
 
     public static void main(String[] args) {
-        ProjectionSchema projection = JpaMetamodel.of().getProjection(User.class, IUser.class);
-        ProjectionSchema parentUser = (ProjectionSchema) projection.getProperty("parentUser");
-        System.out.println(parentUser.properties());
+        ProjectionType projection = JpaMetamodel.of().getEntity(User.class).getProjection(IUser.class);
+        ProjectionType parentUser = (ProjectionType) projection.getAttribute("parentUser");
+        System.out.println(parentUser.attributes());
     }
 
 }

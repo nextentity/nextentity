@@ -17,8 +17,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import lombok.Data;
-import lombok.experimental.Accessors;
 
 import java.util.Collection;
 import java.util.List;
@@ -437,7 +435,7 @@ public interface Query {
         Page<T> getPage(Pageable pageable);
     }
 
-    interface SubQueryBuilder<T, U> extends Expression<T, List<U>> {
+    interface SubQueryBuilder<T, U> extends Expression<T, List<U>>  {
         Expression<T, Long> count();
 
         Expression<T, List<U>> slice(int offset, int maxResult);

@@ -1,14 +1,13 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
+import io.github.nextentity.core.BasicExpressions.QueryStructureImpl;
+import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
-import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
@@ -22,12 +21,11 @@ import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.expression.Operation;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.expression.SelectElement;
-import io.github.nextentity.core.expression.SelectExpression;
-import io.github.nextentity.core.expression.Selected;
-import io.github.nextentity.core.expression.SingleSelected;
+import io.github.nextentity.core.api.expression.Operation;
+import io.github.nextentity.core.api.expression.QueryStructure;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectArray;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPrimitive;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
@@ -35,13 +33,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("PatternVariableCanBeUsed")
 public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractCollector<U> {
 
-    static final Selected SELECT_ANY = new SingleSelected(SelectExpression.of(ExpressionTrees.TRUE), false);
-    static final Selected COUNT_ANY = new SingleSelected(SelectExpression.of(ExpressionTrees.operate(ExpressionTrees.TRUE, Operator.COUNT)), false);
+    static final Selected SELECT_ANY = new SelectPrimitive().expression(BasicExpressions.TRUE).type(Boolean.class);
+    static final Selected COUNT_ANY = new SelectPrimitive()
+            .expression(BasicExpressions.operate(BasicExpressions.TRUE, Operator.COUNT));
 
     QueryExecutor queryExecutor;
     QueryStructureImpl queryStructure;
@@ -75,20 +73,19 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
 
     @Override
     public Where0<T, U> where(Expression<T, Boolean> predicate) {
-        ExpressionTree expression = predicate.rootNode();
-        if (ExpressionTrees.isNullOrTrue(expression)) {
+        if (BasicExpressions.isNullOrTrue(predicate)) {
             return this;
         }
         QueryStructureImpl structure = queryStructure.copy();
-        whereAnd(structure, expression);
+        whereAnd(structure, predicate);
         return update(structure);
     }
 
-    static void whereAnd(QueryStructureImpl structure, ExpressionTree expression) {
-        if (ExpressionTrees.isNullOrTrue(structure.where)) {
-            structure.where = expression.rootNode();
+    static void whereAnd(QueryStructureImpl structure, BaseExpression expression) {
+        if (BasicExpressions.isNullOrTrue(structure.where)) {
+            structure.where = expression;
         } else {
-            structure.where = ExpressionTrees.operate(structure.where, Operator.AND, expression);
+            structure.where = BasicExpressions.operate(structure.where, Operator.AND, expression);
         }
     }
 
@@ -121,13 +118,13 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     }
 
     @NotNull
-    ExpressionTrees.QueryStructureImpl buildCountData() {
+    BasicExpressions.QueryStructureImpl buildCountData() {
         QueryStructureImpl structure = queryStructure.copy();
         structure.lockType = LockModeType.NONE;
         structure.orderBy = Lists.of();
         if (queryStructure.select().distinct()) {
             return new QueryStructureImpl(COUNT_ANY, structure);
-        } else if (requiredCountSubQuery(queryStructure)) {
+        } else if (requiredCountSubQuery(queryStructure.select())) {
             structure.select = COUNT_ANY;
             return new QueryStructureImpl(COUNT_ANY, structure);
         } else if (queryStructure.groupBy() != null && !queryStructure.groupBy().isEmpty()) {
@@ -139,25 +136,29 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         }
     }
 
-    boolean requiredCountSubQuery(QueryStructureImpl structure) {
-        Selected select = structure.select();
-        for (ExpressionNode expression : select.expressions()) {
-            if (requiredCountSubQuery(expression)) {
-                return true;
+    boolean requiredCountSubQuery(Selected select) {
+        if (select instanceof SelectPrimitive) {
+            return requiredCountSubQuery(((SelectPrimitive) select).expression());
+        }
+        if (select instanceof SelectArray) {
+            for (Selected expression : ((SelectArray) select).items()) {
+                if (requiredCountSubQuery(expression)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    protected boolean requiredCountSubQuery(ExpressionNode expression) {
+    protected boolean requiredCountSubQuery(BaseExpression expression) {
         if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
             if (operation.operator().isAgg()) {
                 return true;
             }
-            List<? extends ExpressionNode> args = operation.operands();
+            List<? extends BaseExpression> args = operation.operands();
             if (args != null) {
-                for (ExpressionNode arg : args) {
+                for (BaseExpression arg : args) {
                     if (requiredCountSubQuery(arg)) {
                         return true;
                     }
@@ -179,7 +180,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     }
 
     @NotNull
-    ExpressionTrees.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
+    BasicExpressions.QueryStructureImpl buildListData(int offset, int maxResult, LockModeType lockModeType) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.offset = offset;
         structure.limit = maxResult;
@@ -195,7 +196,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     }
 
     @NotNull
-    ExpressionTrees.QueryStructureImpl buildExistData(int offset) {
+    BasicExpressions.QueryStructureImpl buildExistData(int offset) {
         QueryStructureImpl structure = queryStructure.copy();
         structure.select = SELECT_ANY;
         structure.offset = offset;
@@ -212,7 +213,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     @Override
     public Having<T, U> groupBy(List<? extends Expression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = expressions.stream().map(Expression::rootNode).collect(Collectors.toList());
+        structure.groupBy = expressions;
         return update(structure);
     }
 
@@ -224,19 +225,19 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     @Override
     public Having<T, U> groupBy(Path<T, ?> path) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = Lists.of(ExpressionTrees.of(path));
+        structure.groupBy = Lists.of(BasicExpressions.of(path));
         return update(structure);
     }
 
     @Override
     public Having<T, U> groupBy(Collection<Path<T, ?>> paths) {
-        return groupBy(ExpressionTrees.toExpressionList(paths));
+        return groupBy(BasicExpressions.toExpressionList(paths));
     }
 
     @Override
     public OrderBy<T, U> having(Expression<T, Boolean> predicate) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.having = predicate.rootNode();
+        structure.having = predicate;
         return update(structure);
     }
 
@@ -251,7 +252,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
             return this;
         }
         QueryStructureImpl structure = queryStructure.copy();
-        whereAnd(structure, expression.rootNode());
+        whereAnd(structure, expression);
         return update(structure);
     }
 
@@ -270,43 +271,67 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     }
 
 
-    class SubQuery<X> implements SubQueryBuilder<X, U> {
+    class SubQuery<X> implements SubQueryBuilder<X, U>, QueryStructure {
 
         @Override
         public Expression<X, Long> count() {
             QueryStructure structure = buildCountData();
-            structure = structurePostProcessor.preCountQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public Expression<X, List<U>> slice(int offset, int maxResult) {
             QueryStructure structure = buildListData(offset, maxResult, null);
-            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public Expression<X, U> getSingle(int offset) {
             QueryStructure structure = buildListData(offset, 2, null);
-            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
         @Override
         public Expression<X, U> getFirst(int offset) {
             QueryStructure structure = buildListData(offset, 1, null);
-            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
             return Expressions.of(structure);
         }
 
-        @Override
-        public ExpressionNode rootNode() {
-            QueryStructure structure = buildListData(-1, -1, null);
-            structure = structurePostProcessor.preListQuery(WhereImpl.this, structure);
-            return structure;
+        public LockModeType lockType() {
+            return queryStructure.lockType();
         }
 
+        public Integer limit() {
+            return queryStructure.limit();
+        }
+
+        public Integer offset() {
+            return queryStructure.offset();
+        }
+
+        public BaseExpression having() {
+            return queryStructure.having();
+        }
+
+        public List<? extends Order<?>> orderBy() {
+            return queryStructure.orderBy();
+        }
+
+        public List<? extends BaseExpression> groupBy() {
+            return queryStructure.groupBy();
+        }
+
+        public BaseExpression where() {
+            return queryStructure.where();
+        }
+
+        public From from() {
+            return queryStructure.from();
+        }
+
+        public Selected select() {
+            return queryStructure.select();
+        }
     }
 
 }

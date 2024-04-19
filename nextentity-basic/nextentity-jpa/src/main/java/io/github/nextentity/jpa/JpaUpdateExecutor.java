@@ -1,10 +1,10 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
-import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.expression.Attribute;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.reflect.ReflectUtil;
@@ -46,7 +46,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
 
     @Override
     public <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
-        List<ExpressionTree> ids = new ArrayList<>();
+        List<BaseExpression> ids = new ArrayList<>();
         Set<Object> uniqueValues = new HashSet<>();
         int size = 0;
         for (T entity : entities) {
@@ -54,7 +54,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
             Object id = requireId(entity);
             if (uniqueValues.add(id)) {
                 if (!util.isLoaded(entity)) {
-                    ids.add(ExpressionTrees.of(id));
+                    ids.add(BasicExpressions.of(id));
                 }
             } else {
                 throw new IllegalArgumentException("duplicate id");
@@ -67,8 +67,8 @@ public class JpaUpdateExecutor implements UpdateExecutor {
             EntityType<T> entity = entityManager.getMetamodel().entity(entityType);
             SingularAttribute<? super T, ?> id = entity.getId(entity.getIdType().getJavaType());
             String name = id.getName();
-            Attribute idPath = ExpressionTrees.column(name);
-            ExpressionTree operate = ExpressionTrees.operate(idPath, Operator.IN, ids);
+            EntityPath idPath = BasicExpressions.column(name);
+            BaseExpression operate = BasicExpressions.operate(idPath, Operator.IN, ids);
             List<T> dbList = query.from(entityType)
                     .where(Expressions.of(operate))
                     .getList();

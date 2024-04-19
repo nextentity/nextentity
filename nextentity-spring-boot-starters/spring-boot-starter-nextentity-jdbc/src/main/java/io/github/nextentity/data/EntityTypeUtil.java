@@ -54,7 +54,7 @@ public class EntityTypeUtil {
                                                                 Metamodel metamodel,
                                                                 Class<T> entityType) {
         Class<ID> idType = EntityTypeUtil.getIdType(descriptor);
-        Class<?> expected = metamodel.getEntity(entityType).id().javaType();
+        Class<?> expected = metamodel.getEntity(entityType).id().type();
         if (expected != idType) {
             String msg = descriptor.getResolvableType() + " " + descriptor
                     + " id type mismatch, expected: " + expected + ", actual: " + idType;

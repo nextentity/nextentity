@@ -1,24 +1,19 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.QueryStructureImpl;
+import io.github.nextentity.core.BasicExpressions.QueryStructureImpl;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.PathExpression;
-import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.Fetch;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where0;
-import io.github.nextentity.core.expression.Attribute;
-import io.github.nextentity.core.expression.MultiSelected;
-import io.github.nextentity.core.expression.SelectElement;
-import io.github.nextentity.core.expression.SelectEntity;
-import io.github.nextentity.core.expression.SelectExpression;
-import io.github.nextentity.core.expression.SingleSelected;
-import io.github.nextentity.core.meta.graph.EntityReferenced;
-import io.github.nextentity.core.meta.graph.EntitySchema;
-import io.github.nextentity.core.meta.graph.ProjectionSchema;
+import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectArray;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPrimitive;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.tuple.Tuple;
 import io.github.nextentity.core.util.tuple.Tuple10;
@@ -30,7 +25,6 @@ import io.github.nextentity.core.util.tuple.Tuple6;
 import io.github.nextentity.core.util.tuple.Tuple7;
 import io.github.nextentity.core.util.tuple.Tuple8;
 import io.github.nextentity.core.util.tuple.Tuple9;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,9 +32,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T> {
 
     SelectImpl() {
@@ -51,21 +45,16 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     }
 
     public Where0<T, T> fetch(List<PathExpression<T, ?>> expressions) {
-        QueryStructureImpl structure = queryStructure.copy();
-        EntitySchema entity = queryExecutor.metamodel().getEntity(queryStructure.from.type());
-        Set<EntityReferenced> fetchAttributes = new HashSet<>(expressions.size() << 1);
-        for (PathExpression<T, ?> expression : expressions) {
-            ExpressionNode expr = expression.rootNode();
-            if (expr instanceof Attribute) {
-                Attribute column = (Attribute) expr;
-                EntityReferenced attribute = (EntityReferenced) column.toAttribute(entity);
-                fetchAttributes.add(attribute);
-            }
+        if (expressions == null || expressions.isEmpty()) {
+            return this;
         }
-        SingleSelected select = (SingleSelected) structure.select;
-        SelectEntity element = (SelectEntity) select.element();
-        element = element.fetch(fetchAttributes);
-        structure.select = new SingleSelected(element, structure.select.distinct());
+        QueryStructureImpl structure = queryStructure.copy();
+        Set<EntityPath> fetchPaths = new HashSet<>(expressions.size() << 1);
+        for (PathExpression<T, ?> expression : expressions) {
+            fetchPaths.add((EntityPath) expression);
+        }
+        SelectEntity select = (SelectEntity) structure.select;
+        structure.select = new SelectEntity(select).fetch(fetchPaths);
         return update(structure);
     }
 
@@ -85,14 +74,15 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     }
 
     public <R> Where0<T, R> select(boolean distinct, Class<R> projectionType) {
-        Class<?> fromType = queryStructure.from.type();
-        if (projectionType == fromType) {
+        Class<?> entityType = fromType();
+        if (projectionType == entityType) {
             return update(queryStructure);
         }
         QueryStructureImpl structure = queryStructure.copy();
-        ProjectionSchema projection = queryExecutor.metamodel().getProjection(fromType, projectionType);
-        SelectEntity select = SelectEntity.of(projection);
-        structure.select = new SingleSelected(select, distinct);
+        structure.select = new SelectProjection()
+                .distinct(distinct)
+                .entityType(entityType)
+                .type(projectionType);
         return update(structure);
     }
 
@@ -106,22 +96,19 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public <R> Where0<T, R> select(boolean distinct, Path<T, ? extends R> path) {
         QueryStructureImpl structure = queryStructure.copy();
-        SelectElement element = toSelectElement(path);
-        structure.select = new SingleSelected(element, distinct);
+        structure.select = new SelectPrimitive()
+                .distinct(distinct)
+                .type(getType(path))
+                .expression(BasicExpressions.of(path));
         return update(structure);
     }
 
-    private <R> @NotNull SelectElement toSelectElement(Path<T, ? extends R> path) {
-        Attribute paths = ExpressionTrees.of(path);
-        return selectElement(paths);
-    }
-
     public Where0<T, Tuple> selectDistinct(Collection<Path<T, ?>> paths) {
-        return selectDistinct(ExpressionTrees.toExpressionList(paths));
+        return selectDistinct(BasicExpressions.toExpressionList(paths));
     }
 
     public Where0<T, Tuple> select(Collection<Path<T, ?>> paths) {
-        return select(ExpressionTrees.toExpressionList(paths));
+        return select(BasicExpressions.toExpressionList(paths));
     }
 
     @Override
@@ -229,31 +216,35 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public Where0<T, Tuple> select(boolean distinct, List<? extends Expression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<SelectElement> selectExpressions = expressions.stream()
-                .map(this::selectElement)
-                .collect(Collectors.toList());
-        structure.select = new MultiSelected(selectExpressions, distinct);
+        Stream<? extends Expression<T, ?>> stream = expressions.stream();
+        structure.select = selectTuple(distinct, stream);
         return update(structure);
+    }
+
+    private SelectArray selectTuple(boolean distinct, Stream<? extends Expression<T, ?>> stream) {
+        List<Selected> selectItems = stream
+                .map(expression -> new SelectPrimitive()
+                        .expression(expression)
+                        .distinct(false)
+                        .type(Object.class))
+                .collect(Collectors.toList());
+        return new SelectArray()
+                .distinct(distinct)
+                .items(selectItems);
     }
 
     public <R extends Tuple> Where0<T, R> selectTuple(boolean distinct, List<? extends Path<T, ?>> paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<SelectElement> selectExpressions = paths.stream()
-                .map(this::toSelectElement)
+        List<Selected> selectItems = paths.stream()
+                .map(path -> new SelectPrimitive()
+                        .expression(BasicExpressions.of(path))
+                        .distinct(false)
+                        .type(PathReference.of(path).getReturnType()))
                 .collect(Collectors.toList());
-        structure.select = new MultiSelected(selectExpressions, distinct);
+        structure.select = new SelectArray()
+                .distinct(distinct)
+                .items(selectItems);
         return update(structure);
-    }
-
-
-    private SelectElement selectElement(ExpressionTree expression) {
-        if (expression.rootNode() instanceof Attribute) {
-            expression = ((Attribute) expression.rootNode()).toAttribute(queryExecutor.metamodel().getEntity(queryStructure.from().type()));
-        }
-        if (expression instanceof EntityReferenced) {
-            return SelectEntity.of((EntityReferenced) expression);
-        }
-        return SelectExpression.of(expression);
     }
 
     @Override
@@ -350,10 +341,7 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     @SafeVarargs
     public final <R extends Tuple> Where0<T, R> selectTupleByExpr(boolean distinct, Expression<T, ?>... expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<SelectElement> selectExpressions = Arrays.stream(expressions)
-                .map(this::selectElement)
-                .collect(Collectors.toList());
-        structure.select = new MultiSelected(selectExpressions, distinct);
+        structure.select = selectTuple(distinct, Arrays.stream(expressions));
         return update(structure);
     }
 
@@ -367,9 +355,15 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public <R> Where0<T, R> select(boolean distinct, Expression<T, R> expression) {
         QueryStructureImpl structure = queryStructure.copy();
-        SelectElement node = selectElement(expression);
-        structure.select = new SingleSelected(node, distinct);
+        structure.select = new SelectPrimitive()
+                .distinct(distinct)
+                .expression(expression)
+                .type(Object.class);
         return update(structure);
+    }
+
+    private Class<?> fromType() {
+        return queryStructure.from().type();
     }
 
     protected Class<?> getType(Path<?, ?> path) {

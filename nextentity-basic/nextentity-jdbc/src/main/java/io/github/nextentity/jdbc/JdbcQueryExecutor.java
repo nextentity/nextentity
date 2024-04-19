@@ -4,9 +4,9 @@ import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.SqlLogger;
 import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
-import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.meta.Metamodel;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,8 @@ public class JdbcQueryExecutor implements QueryExecutor {
     @Override
     @NotNull
     public <R> List<R> getList(@NotNull QueryStructure queryStructure) {
-        SqlStatement<?> sql = sqlBuilder.build(queryStructure, metamodel);
+        QueryContext context = new QueryContext(queryStructure, metamodel, true);
+        SqlStatement<?> sql = sqlBuilder.build(context);
         printSql(sql);
         try {
             return connectionProvider.execute(connection -> {
@@ -53,7 +54,7 @@ public class JdbcQueryExecutor implements QueryExecutor {
                 try (PreparedStatement statement = connection.prepareStatement(sql.getSql())) {
                     JdbcUtil.setParam(statement, sql.getParameters());
                     try (ResultSet resultSet = statement.executeQuery()) {
-                        return collector.resolve(resultSet, metamodel, queryStructure);
+                        return collector.resolve(resultSet, context);
                     }
                 }
             });
@@ -68,23 +69,19 @@ public class JdbcQueryExecutor implements QueryExecutor {
     }
 
     private static void printSql(SqlStatement<?> sql) {
-        SqlLogger.debug("SQL: {}", sql.getSql());
+        SqlLogger.debug(sql.getSql());
         if (!sql.getParameters().isEmpty()) {
             SqlLogger.debug("ARGS: {}", sql.getParameters());
         }
     }
 
     public interface QuerySqlBuilder {
-        SqlStatement<?> build(QueryStructure structure, Metamodel metamodel);
+        SqlStatement<?> build(QueryContext context);
     }
 
 
-
     public interface ResultCollector {
-        <T> List<T> resolve(
-                ResultSet resultSet,
-                Metamodel metamodel,
-                QueryStructure structure) throws SQLException;
+        <T> List<T> resolve(ResultSet resultSet, QueryContext context) throws SQLException;
     }
 }
 

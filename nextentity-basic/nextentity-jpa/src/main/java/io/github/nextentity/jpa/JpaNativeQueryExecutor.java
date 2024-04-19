@@ -1,14 +1,13 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.converter.TypeConverter;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.expression.Selected;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.jdbc.QueryContext;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +44,9 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
     }
 
     private <T> List<T> queryByNativeSql(@NotNull QueryStructure queryStructure) {
-        SqlStatement<?> preparedSql = sqlBuilder.build(queryStructure, metamodel);
+        QueryContext context = new QueryContext(queryStructure, metamodel(), true);
+        SqlStatement<?> preparedSql = sqlBuilder.build(context);
+        // noinspection SqlSourceToSinkFlow
         jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.getSql());
         int position = 0;
         for (Object arg : preparedSql.getParameters()) {
@@ -53,35 +54,34 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
         }
         List<?> list = TypeCastUtil.cast(query.getResultList());
 
-        return resolve(list, queryStructure);
+        return resolve(list, context);
     }
 
     protected <T> List<T> resolve(
             List<?> resultSet,
-            QueryStructure structure) {
+            QueryContext context) {
         List<Object> result = new ArrayList<>(resultSet.size());
         if (resultSet.isEmpty()) {
             return TypeCastUtil.cast(result);
         }
-        Selected select = structure.select();
         Object first = resultSet.get(0);
         int columnsCount = asArray(first).length;
-        if (select.expressions().size() != columnsCount) {
+        List<BaseExpression> expressions = context.getSelects();
+        if (expressions.size() != columnsCount) {
             throw new IllegalStateException("column count error");
         }
 
-        ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
-        List<? extends ExpressionNode> expressions = select.expressions();
+        QueryStructure structure = context.getStructure();
         Class<?>[] types = expressions.stream()
-                .map(expr -> typeResolver.getExpressionType(expr, structure.from().type()))
+                .map(context::getExpressionType)
                 .toArray(Class<?>[]::new);
         if (expressions.size() != columnsCount) {
             throw new IllegalStateException();
         }
         for (Object o : resultSet) {
             Object[] array = asArray(o);
-            JpaResultExtractor extractor = new JpaResultExtractor(array, types, typeConverter, metamodel, structure.from().type());
-            Object row = extractor.extractRow(select);
+            JpaArguments arguments = new JpaArguments(array, types, typeConverter, metamodel, structure.from().type());
+            Object row = context.construct(arguments);
             result.add(row);
         }
         return TypeCastUtil.cast(result);

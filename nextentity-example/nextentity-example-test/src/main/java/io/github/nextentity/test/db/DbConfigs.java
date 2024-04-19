@@ -12,6 +12,6 @@ public interface DbConfigs {
 
     DbConfig MYSQL = new Mysql().getConfig();
     DbConfig SQLSERVER = new SqlServer().getConfig();
-    List<DbConfig> CONFIGS = Lists.of(MYSQL);
+    List<DbConfig> CONFIGS = Lists.of(MYSQL, SQLSERVER);
 
 }

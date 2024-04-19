@@ -1,12 +1,7 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.converter.TypeConverter;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.expression.Selected;
-import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.ResultCollector;
 
 import java.sql.ResultSet;
@@ -27,8 +22,7 @@ public class JdbcResultCollector implements ResultCollector {
 
     @Override
     public <T> List<T> resolve(ResultSet resultSet,
-                               Metamodel metamodel,
-                               QueryStructure structure) throws SQLException {
+                               QueryContext context) throws SQLException {
         int type = resultSet.getType();
         List<Object> result;
         if (type != ResultSet.TYPE_FORWARD_ONLY) {
@@ -39,25 +33,21 @@ public class JdbcResultCollector implements ResultCollector {
         } else {
             result = new ArrayList<>();
         }
-        Selected select = structure.select();
         int columnsCount = resultSet.getMetaData().getColumnCount();
 
-        ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
-        List<? extends ExpressionNode> expressions = select.expressions();
-        Class<?>[] types = expressions.stream()
-                .map(expr -> typeResolver.getExpressionType(expr, structure.from().type()))
+        Class<?>[] types = context.getSelects().stream()
+                .map(context::getExpressionType)
                 .toArray(Class<?>[]::new);
-        if (expressions.size() != columnsCount) {
+        if (types.length != columnsCount) {
             throw new IllegalStateException();
         }
         while (resultSet.next()) {
-            JdbcResultExtractor extractor = new JdbcResultExtractor(resultSet, metamodel, types, typeConverter, structure.from().type());
-            Object o = extractor.extractRow(select);
+            JdbcArguments arguments = new JdbcArguments(resultSet, context.getEntityType(), types, typeConverter);
+            Object o = context.construct(arguments);
             result.add(o);
         }
         return TypeCastUtil.cast(result);
     }
-
 
 
 }

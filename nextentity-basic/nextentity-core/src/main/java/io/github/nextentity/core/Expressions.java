@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.OrderImpl;
+import io.github.nextentity.core.BasicExpressions.OrderImpl;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.BooleanPathExpression;
@@ -17,7 +17,6 @@ import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
-import io.github.nextentity.core.api.ExpressionTree;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Path;
@@ -26,7 +25,9 @@ import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.expression.Attribute;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.Empty;
+import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
@@ -39,16 +40,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static io.github.nextentity.core.Expressions.TypeExpressionImpl.EMPTY;
-
 public class Expressions {
+    private static final AbstractTypeExpression EMPTY = (AbstractTypeExpression) BasicExpressions.EMPTY;
 
-    public static <T, U> OperatableExpression<T, U> of(ExpressionTree expression) {
+    public static <T, U> OperatableExpression<T, U> of(BaseExpression expression) {
         return toTypedExpression(expression);
     }
 
     public static <T, U> Expression<T, U> of(U value) {
-        return of(ExpressionTrees.literal(value));
+        return of(BasicExpressions.literal(value));
     }
 
     public static <T, U> List<Expression<T, U>> ofList(U[] values) {
@@ -64,79 +64,57 @@ public class Expressions {
     }
 
     public static <T> Predicate<T> ofTrue() {
-        return toTypedExpression(ExpressionTrees.TRUE);
+        return toTypedExpression(BasicExpressions.TRUE);
     }
 
-    public static <T, R> PathExpression<T, R> ofPath(Attribute column) {
+    public static <T, R> PathExpression<T, R> ofPath(EntityPath column) {
         return toTypedExpression(column);
     }
 
-    public static <T, R> EntityPathExpression<T, R> ofEntity(Attribute column) {
+    public static <T, R> EntityPathExpression<T, R> ofEntity(EntityPath column) {
         return toTypedExpression(column);
     }
 
-    public static <T> StringPathExpression<T> ofString(Attribute column) {
+    public static <T> StringPathExpression<T> ofString(EntityPath column) {
         return toTypedExpression(column);
     }
 
-    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(Attribute column) {
+    public static <T, U extends Number> NumberPathExpression<T, U> ofNumber(EntityPath column) {
         return toTypedExpression(column);
     }
 
-    public static <T, R> OperatableExpression<T, R> ofBasic(ExpressionTree expression) {
+    public static <T, R> OperatableExpression<T, R> ofBasic(BaseExpression expression) {
         return toTypedExpression(expression);
     }
 
-    public static <T> StringExpression<T> ofString(ExpressionTree expression) {
+    public static <T> StringExpression<T> ofString(BaseExpression expression) {
         return toTypedExpression(expression);
     }
 
-    public static <T> Predicate<T> ofBoolean(ExpressionTree expression) {
+    public static <T> Predicate<T> ofBoolean(BaseExpression expression) {
         return toTypedExpression(expression);
     }
 
-    public static <T> BooleanPathExpression<T> ofBoolean(Attribute expression) {
+    public static <T> BooleanPathExpression<T> ofBoolean(EntityPath expression) {
         return toTypedExpression(expression);
     }
 
-    public static <T, U extends Number> NumberExpression<T, U> ofNumber(ExpressionTree expression) {
+    public static <T, U extends Number> NumberExpression<T, U> ofNumber(BaseExpression expression) {
         return toTypedExpression(expression);
     }
 
-    public static <T> Predicate<T> ofPredicate(ExpressionTree expression) {
+    public static <T> Predicate<T> ofPredicate(BaseExpression expression) {
         return toTypedExpression(expression);
     }
 
-    static <T extends Expression<?, ?>> T toTypedExpression(ExpressionTree expression) {
-        AbstractTypeExpression result;
-        if (expression == null || expression instanceof AbstractTypeExpression) {
-            result = (AbstractTypeExpression) expression;
-        } else {
-            result = new TypeExpressionImpl(expression.rootNode());
-        }
-        return TypeCastUtil.unsafeCast(result);
+    static <T extends Expression<?, ?>> T toTypedExpression(BaseExpression expression) {
+        return TypeCastUtil.unsafeCast(expression);
     }
-
-    static final class TypeExpressionImpl implements AbstractTypeExpression {
-
-        static final TypeExpressionImpl EMPTY = new TypeExpressionImpl(null);
-
-        private final ExpressionNode expression;
-
-        TypeExpressionImpl(ExpressionNode expression) {
-            this.expression = expression;
-        }
-
-        @Override
-        public ExpressionNode rootNode() {
-            return expression;
-        }
-    }
-
 
     @Accessors(fluent = true)
     @SuppressWarnings("rawtypes")
     interface AbstractTypeExpression extends NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
+
         @Override
         default EntityRoot root() {
             return Paths.root();
@@ -144,13 +122,13 @@ public class Expressions {
 
         @Override
         default NumberExpression count() {
-            return toTypedExpression(ExpressionTrees.operate(rootNode(), Operator.COUNT));
+            return toTypedExpression(BasicExpressions.operate(this, Operator.COUNT));
         }
 
         @Override
         default NumberExpression countDistinct() {
-            ExpressionNode distinct = ExpressionTrees.operate(rootNode(), Operator.DISTINCT);
-            return toTypedExpression(ExpressionTrees.operate(distinct, Operator.COUNT));
+            BaseExpression distinct = BasicExpressions.operate(this, Operator.DISTINCT);
+            return toTypedExpression(BasicExpressions.operate(distinct, Operator.COUNT));
         }
 
         @Override
@@ -266,7 +244,7 @@ public class Expressions {
 
         @Override
         default Order sort(SortOrder order) {
-            return new OrderImpl(rootNode(), order);
+            return new OrderImpl(this, order);
         }
 
         @Override
@@ -336,7 +314,7 @@ public class Expressions {
 
         @Override
         default Predicate like(String value) {
-            return operate(Operator.LIKE, ExpressionTrees.of(value));
+            return operate(Operator.LIKE, BasicExpressions.of(value));
         }
 
         @Override
@@ -366,7 +344,7 @@ public class Expressions {
 
         @Override
         default StringExpression substring(int offset, int length) {
-            return operate0(Operator.SUBSTRING, Lists.of(ExpressionTrees.of(offset), ExpressionTrees.of(length)));
+            return operate0(Operator.SUBSTRING, Lists.of(BasicExpressions.of(offset), BasicExpressions.of(length)));
         }
 
         @Override
@@ -396,7 +374,7 @@ public class Expressions {
 
         @NotNull
         static AbstractTypeExpression of(Path path) {
-            return toTypedExpression(ExpressionTrees.of(path));
+            return toTypedExpression(BasicExpressions.of(path));
         }
 
         @Override
@@ -447,9 +425,9 @@ public class Expressions {
 
         @Override
         default EntityPathExpression get(Path path) {
-            // PathChain expression = (PathChain) Paths.get((Path<?, ?>) path).rootNode();
-            String name = ExpressionTrees.columnName(path);
-            return toTypedExpression(((Attribute) rootNode()).get(name));
+            // PathChain expression = (PathChain) Paths.get((Path<?, ?>) path);
+            String name = BasicExpressions.attributeName(path);
+            return toTypedExpression(((EntityPath) this).get(name));
         }
 
         @Override
@@ -519,38 +497,36 @@ public class Expressions {
 
         @NotNull
         default AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
-            Attribute expression = (Attribute) pathExpression.rootNode();
-            ExpressionNode expr = rootNode();
-            return toTypedExpression(((Attribute) expr).get(expression));
+            EntityPath expression = (EntityPath) pathExpression;
+            return toTypedExpression(((EntityPath) this).get(expression));
         }
 
         default AbstractTypeExpression not(Expression<?, ?> expression) {
-            ExpressionNode operate = ExpressionTrees.operate(expression.rootNode(), Operator.NOT);
+            BaseExpression operate = BasicExpressions.operate(expression, Operator.NOT);
             return toTypedExpression(operate);
         }
 
         @NotNull
-        default AbstractTypeExpression operate(Operator operator, ExpressionTree expression) {
-            if (rootNode() == null) {
+        default AbstractTypeExpression operate(Operator operator, BaseExpression expression) {
+            if (this instanceof Empty) {
                 return toTypedExpression(expression);
             }
-            return toTypedExpression(ExpressionTrees.operate(rootNode(), operator, expression.rootNode()));
+            return toTypedExpression(BasicExpressions.operate(this, operator, expression));
         }
 
         @NotNull
-        default AbstractTypeExpression operate(Operator operator, List<? extends ExpressionTree> expressions) {
-            List<ExpressionTree> list = expressions.stream().map(ExpressionTree::rootNode).collect(Collectors.toList());
-            return operate0(operator, list);
+        default AbstractTypeExpression operate(Operator operator, List<? extends BaseExpression> expressions) {
+            return operate0(operator, expressions);
         }
 
         @NotNull
-        default AbstractTypeExpression operate0(Operator operator, List<ExpressionTree> list) {
-            return toTypedExpression(ExpressionTrees.operate(rootNode(), operator, list));
+        default AbstractTypeExpression operate0(Operator operator, List<? extends BaseExpression> list) {
+            return toTypedExpression(BasicExpressions.operate(this, operator, list));
         }
 
         @NotNull
         default AbstractTypeExpression operate(Operator operator) {
-            return toTypedExpression(ExpressionTrees.operate(rootNode(), operator));
+            return toTypedExpression(BasicExpressions.operate(this, operator));
         }
 
         @NotNull
@@ -590,6 +566,7 @@ public class Expressions {
         default Predicate eqIfNotEmpty(String value) {
             return value == null || value.isEmpty() ? operateNull() : eq(value);
         }
+
 
     }
 }

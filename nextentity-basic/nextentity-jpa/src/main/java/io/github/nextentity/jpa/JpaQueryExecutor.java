@@ -1,24 +1,21 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.ExpressionTrees;
+import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.api.ExpressionTree.ExpressionNode;
 import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.expression.From;
-import io.github.nextentity.core.expression.From.FromSubQuery;
-import io.github.nextentity.core.expression.Operation;
-import io.github.nextentity.core.expression.Attribute;
-import io.github.nextentity.core.expression.QueryStructure;
-import io.github.nextentity.core.expression.SelectElement;
-import io.github.nextentity.core.expression.SelectEntity;
-import io.github.nextentity.core.expression.Selected;
-import io.github.nextentity.core.expression.SingleSelected;
-import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.Operation;
+import io.github.nextentity.core.api.expression.QueryStructure;
+import io.github.nextentity.core.api.expression.QueryStructure.From;
+import io.github.nextentity.core.api.expression.QueryStructure.From.FromSubQuery;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.SubSelectType;
+import io.github.nextentity.jdbc.QueryContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
@@ -33,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 public class JpaQueryExecutor implements QueryExecutor {
 
     private final EntityManager entityManager;
@@ -53,24 +49,17 @@ public class JpaQueryExecutor implements QueryExecutor {
         }
         Selected selected = queryStructure.select();
         Class<?> entityType = queryStructure.from().type();
-        if (selected instanceof SingleSelected) {
-            SingleSelected singleSelected = (SingleSelected) selected;
-            SelectElement element = singleSelected.element();
-            if (element instanceof SelectEntity) {
-                if (element.javaType() == entityType
-                        && !(((SelectEntity) element).schema() instanceof Attribute)) {
-                    List<?> resultList = getEntityResultList(queryStructure);
-                    return TypeCastUtil.cast(resultList);
-                }
-            }
+        if (selected instanceof SelectEntity) {
+            List<?> resultList = getEntityResultList(queryStructure);
+            return TypeCastUtil.cast(resultList);
         }
-
-        List<Object[]> objectsList = getObjectsList(queryStructure, selected.expressions());
+        QueryContext context = new QueryContext(queryStructure, metamodel, false);
+        List<Object[]> objectsList = getObjectsList(queryStructure, context.getSelects());
         List<Object> result = objectsList.stream()
                 .map(objects -> {
-                    JpaResultExtractor extractor = new JpaResultExtractor(
+                    JpaArguments arguments = new JpaArguments(
                             objects, null, null, metamodel, entityType);
-                    return extractor.extractRow(selected);
+                    return context.construct(arguments);
                 })
                 .collect(Collectors.toList());
         return TypeCastUtil.cast(result);
@@ -104,8 +93,8 @@ public class JpaQueryExecutor implements QueryExecutor {
         return false;
     }
 
-    private boolean hasSubQuery(Collection<? extends ExpressionTree> expressions) {
-        for (ExpressionTree operand : expressions) {
+    private boolean hasSubQuery(Collection<? extends BaseExpression> expressions) {
+        for (BaseExpression operand : expressions) {
             if (hasSubQuery(operand)) {
                 return true;
             }
@@ -113,13 +102,12 @@ public class JpaQueryExecutor implements QueryExecutor {
         return false;
     }
 
-    private boolean hasSubQuery(ExpressionTree expression) {
-        ExpressionNode tree = expression.rootNode();
-        if (tree instanceof QueryStructure) {
+    private boolean hasSubQuery(BaseExpression expression) {
+        if (expression instanceof QueryStructure) {
             return true;
         }
-        if (tree instanceof Operation) {
-            List<? extends ExpressionTree> expressions = ((Operation) tree).operands();
+        if (expression instanceof Operation) {
+            List<? extends BaseExpression> expressions = ((Operation) expression).operands();
             return hasSubQuery(expressions);
         }
         return false;
@@ -133,7 +121,7 @@ public class JpaQueryExecutor implements QueryExecutor {
         return new EntityBuilder(root, cb, query, structure).getResultList();
     }
 
-    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends ExpressionNode> columns) {
+    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends BaseExpression> columns) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<?> query = cb.createQuery(Object[].class);
         Root<?> root = query.from(structure.from().type());
@@ -142,13 +130,13 @@ public class JpaQueryExecutor implements QueryExecutor {
 
     class ObjectArrayBuilder extends Builder {
 
-        private final List<? extends ExpressionNode> selects;
+        private final List<? extends BaseExpression> selects;
 
         public ObjectArrayBuilder(Root<?> root,
                                   CriteriaBuilder cb,
                                   CriteriaQuery<?> query,
                                   QueryStructure structure,
-                                  List<? extends ExpressionNode> selects) {
+                                  List<? extends BaseExpression> selects) {
             super(root, cb, query, structure);
             this.selects = selects;
         }
@@ -211,33 +199,33 @@ public class JpaQueryExecutor implements QueryExecutor {
             }
         }
 
-        protected void setWhere(ExpressionNode where) {
-            if (!ExpressionTrees.isNullOrTrue(where)) {
+        protected void setWhere(BaseExpression where) {
+            if (!BasicExpressions.isNullOrTrue(where)) {
                 query.where(toPredicate(where));
             }
         }
 
-        protected void setGroupBy(List<? extends ExpressionNode> groupBy) {
+        protected void setGroupBy(List<? extends BaseExpression> groupBy) {
             if (groupBy != null && !groupBy.isEmpty()) {
                 List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream().map(this::toExpression).collect(Collectors.toList());
                 query.groupBy(grouping);
             }
         }
 
-        protected void setHaving(ExpressionNode having) {
-            if (!ExpressionTrees.isNullOrTrue(having)) {
+        protected void setHaving(BaseExpression having) {
+            if (!BasicExpressions.isNullOrTrue(having)) {
                 query.having(toPredicate(having));
             }
         }
 
-        protected void setFetch(Collection<? extends Attribute> fetchPaths) {
+        protected void setFetch(Collection<? extends EntityPath> fetchPaths) {
             if (fetchPaths != null) {
-                for (Attribute path : fetchPaths) {
+                for (EntityPath path : fetchPaths) {
                     Fetch<?, ?> fetch = null;
                     for (int i = 0; i < path.deep(); i++) {
                         Fetch<?, ?> cur = fetch;
                         String stringPath = path.get(i);
-                        Attribute sub = path.subLength(i + 1);
+                        EntityPath sub = path.subLength(i + 1);
                         fetch = (Fetch<?, ?>) fetched.computeIfAbsent(sub, k -> {
                             if (cur == null) {
                                 return root.fetch(stringPath, JoinType.LEFT);
@@ -253,14 +241,10 @@ public class JpaQueryExecutor implements QueryExecutor {
         protected List<?> getResultList() {
             Selected select = structure.select();
             setDistinct(select);
-            if (select instanceof SingleSelected) {
-                SelectElement element = ((SingleSelected) select).element();
-                if (element instanceof SelectEntity) {
-                    if (element.javaType() == structure.from().type()) {
-                        Collection<? extends EntityProperty> attributes = ((SelectEntity) element).fetch();
-                        setFetch(attributes);
-                    }
-                }
+            if (select instanceof SelectEntity) {
+                Collection<? extends EntityPath> attributes = ((SelectEntity) select)
+                        .fetch();
+                setFetch(attributes);
             }
             setWhere(structure.where());
             setGroupBy(structure.groupBy());

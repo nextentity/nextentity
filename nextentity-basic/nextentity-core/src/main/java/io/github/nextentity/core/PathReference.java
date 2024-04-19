@@ -24,14 +24,14 @@ public class PathReference {
 
     private static final Map<Path<?, ?>, PathReference> map = new ConcurrentHashMap<>();
 
-    private final String propertyName;
+    private final String fieldName;
     private final Class<?> returnType;
     private final Class<?> entityType;
     private final SerializedLambda serializedLambda;
 
     private PathReference(SerializedLambda serializedLambda) {
         this.serializedLambda = serializedLambda;
-        this.propertyName = getPropertyName(serializedLambda.getImplMethodName());
+        this.fieldName = getFieldName(serializedLambda.getImplMethodName());
         this.returnType = getReturnType(serializedLambda);
         this.entityType = getEntityType(serializedLambda);
     }
@@ -68,7 +68,7 @@ public class PathReference {
         }
     }
 
-    public static String getPropertyName(String methodName) {
+    public static String getFieldName(String methodName) {
         Objects.requireNonNull(methodName, "methodName");
         StringBuilder builder;
         if (methodName.length() > 3 && methodName.startsWith("get")) {

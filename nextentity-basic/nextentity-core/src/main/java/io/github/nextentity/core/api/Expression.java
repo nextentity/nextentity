@@ -5,6 +5,7 @@ import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
+import io.github.nextentity.core.api.expression.BaseExpression;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -17,7 +18,7 @@ import java.util.List;
  * @param <U> expression value type
  */
 @SuppressWarnings("unused")
-public interface Expression<T, U> extends ExpressionTree {
+public interface Expression<T, U> extends BaseExpression {
 
     interface OperatableExpression<T, U> extends Expression<T, U> {
 

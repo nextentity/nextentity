@@ -12,6 +12,7 @@ import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Slice;
+import io.github.nextentity.jdbc.QueryContext;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.core.util.tuple.Tuple;
@@ -24,6 +25,7 @@ import io.github.nextentity.test.projection.IUser;
 import io.github.nextentity.test.projection.UserInterface;
 import io.github.nextentity.test.projection.UserModel;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -35,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -111,7 +114,7 @@ class QueryBuilderTest {
         UserInterface ui = userQuery.select(UserInterface.class).getFirst();
         assertEquals(model.asMap(), ui.asMap());
 
-        ui = userQuery.selectDistinct(UserInterface.class).getFirst();
+        ui = userQuery.selectDistinct(UserInterface.class).orderBy(User::getId).getFirst();
         assertEquals(model.asMap(), ui.asMap());
 
         Long count = userQuery.select(get(User::getId).count()).getSingle();
@@ -1412,7 +1415,7 @@ class QueryBuilderTest {
         //
         //        NumberOperator<T, U, B> divide(U value);
         users = check.expected.stream().filter(it -> it.getRandomNumber() / 3. == 12).collect(Collectors.toList());
-        collector = check.collector.where(User::getRandomNumber).divide(3).eq(12);
+        collector = check.collector.<Number>where(User::getRandomNumber).divide(3.0).eq(12);
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).divide(3).eq(12));
         result.add(new Checker<>(users, collector));
@@ -1698,5 +1701,13 @@ class QueryBuilderTest {
             assertEquals(expected, actual);
         }
 
+    }
+
+    @AfterAll
+    static void afterAll() {
+        long millis = TimeUnit.NANOSECONDS.toMillis(QueryContext.timer.time().get());
+        System.out.println("----------------------------------------------------------");
+        System.out.println(millis + "ms, count: " + QueryContext.timer.count());
+        System.out.println("----------------------------------------------------------");
     }
 }

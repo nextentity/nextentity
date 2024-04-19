@@ -56,7 +56,7 @@ public final class InstanceInvocationHandler implements InvocationHandler {
     public String toString() {
         String str = data.entrySet().stream()
                 .map(e -> {
-                    String name = PathReference.getPropertyName(e.getKey().getName());
+                    String name = PathReference.getFieldName(e.getKey().getName());
                     return name + "=" + e.getValue();
                 })
                 .collect(Collectors.joining(", "));

@@ -1,44 +1,38 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.SqlStatement;
-import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SqlServerQuerySqlBuilder implements QuerySqlBuilder {
 
     @Override
-    public SqlStatement<?> build(QueryStructure structure, Metamodel metamodel) {
-        return new Builder(structure, metamodel).build();
+    public SqlStatement<?> build(QueryContext context) {
+        return new Builder(context).build();
     }
 
     static class Builder extends AbstractQuerySqlBuilder {
 
-        public Builder(StringBuilder sql,
-                       List<Object> args,
-                       QueryStructure queryStructure,
-                       Metamodel mappers,
-                       AtomicInteger selectIndex,
-                       int subIndex) {
-            super(sql, args, queryStructure, mappers, selectIndex, subIndex);
+        public Builder(StringBuilder sql, List<Object> args, QueryContext context, AtomicInteger selectIndex, int subIndex) {
+            super(sql, args, context, selectIndex, subIndex);
         }
 
-        public Builder(QueryStructure queryStructure, Metamodel mappers) {
-            this(new StringBuilder(), new ArrayList<>(), queryStructure, mappers, new AtomicInteger(), 0);
+        public Builder(QueryContext context) {
+            super(context);
         }
 
         @Override
-        protected void appendQueryStructure(QueryStructure queryStructure) {
-            new Builder(sql, args, queryStructure, mappers, selectIndex, subIndex + 1).doBuilder();
+        protected void appendQueryStructure(QueryContext subContext) {
+            new Builder(sql, args, subContext, selectIndex, subIndex + 1).doBuilder();
         }
 
         @Override
         protected void appendOffsetAndLimit() {
+            QueryStructure queryStructure = context.getStructure();
             int offset = unwrap(queryStructure.offset());
             int limit = unwrap(queryStructure.limit());
             if (offset > 0 || limit >= 0) {

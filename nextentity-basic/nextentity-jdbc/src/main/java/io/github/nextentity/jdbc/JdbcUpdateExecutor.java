@@ -6,8 +6,8 @@ import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.meta.graph.EntitySchema;
-import io.github.nextentity.core.meta.graph.EntityProperty;
+import io.github.nextentity.core.meta.EntitySchema;
+import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.jdbc.ConnectionProvider.ConnectionCallback;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder.InsertSql;
@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-@SuppressWarnings("PatternVariableCanBeUsed")
 @Slf4j
 public class JdbcUpdateExecutor implements UpdateExecutor {
 
@@ -66,7 +65,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(list, preparedSql.columns(), statement);
                 int[] updateRowCounts = statement.executeBatch();
-                List<EntityProperty> bindAttributes = preparedSql.versionColumns();
+                List<BasicAttribute> bindAttributes = preparedSql.versionColumns();
                 boolean hasVersion = isNotEmpty(bindAttributes);
                 for (int rowCount : updateRowCounts) {
                     if (rowCount != 1) {
@@ -116,14 +115,14 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
         EntitySchema meta = metamodel.getEntity(entityType);
 
-        List<EntityProperty> nonNullColumn;
+        List<BasicAttribute> nonNullColumn;
         nonNullColumn = getNonNullColumn(entity, meta);
         if (nonNullColumn.isEmpty()) {
             log.warn("no field to update");
             return entity;
         }
         PreparedSql preparedSql = sqlBuilder.buildUpdate(meta, nonNullColumn);
-        EntityProperty version = meta.version();
+        BasicAttribute version = meta.version();
         Object versionValue = version.get(entity);
         if (versionValue == null) {
             throw new IllegalArgumentException("version field must not be null");
@@ -134,7 +133,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 setArgs(Lists.of(entity), preparedSql.columns(), statement);
                 int i = statement.executeUpdate();
-                List<EntityProperty> versions = preparedSql.versionColumns();
+                List<BasicAttribute> versions = preparedSql.versionColumns();
                 boolean hasVersion = isNotEmpty(versions);
                 if (i == 0) {
                     if (hasVersion) {
@@ -153,8 +152,8 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         });
     }
 
-    private static void setNewVersion(Object entity, List<EntityProperty> versions) {
-        for (EntityProperty column : versions) {
+    private static void setNewVersion(Object entity, List<BasicAttribute> versions) {
+        for (BasicAttribute column : versions) {
             Object version = column.get(entity);
             if (version instanceof Integer) {
                 version = (Integer) version + 1;
@@ -167,10 +166,10 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         }
     }
 
-    private static <T> List<EntityProperty> getNonNullColumn(T entity, EntitySchema entityType) {
-        List<EntityProperty> columns = new ArrayList<>();
-        for (EntityProperty attribute : entityType.properties()) {
-            if (attribute.isBasic()) {
+    private static <T> List<BasicAttribute> getNonNullColumn(T entity, EntitySchema entityType) {
+        List<BasicAttribute> columns = new ArrayList<>();
+        for (BasicAttribute attribute : entityType.attributes()) {
+            if (attribute.isPrimitive()) {
                 Object invoke = attribute.get(entity);
                 if (invoke != null) {
                     columns.add(attribute);
@@ -199,7 +198,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         String sql = insertSql.sql();
         SqlLogger.debug(sql);
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            List<EntityProperty> columns = insertSql.columns();
+            List<BasicAttribute> columns = insertSql.columns();
             setArgs(entities, columns, statement);
             if (entities.size() > 1) {
                 statement.executeBatch();
@@ -211,8 +210,8 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
                     Iterator<T> iterator = entities.iterator();
                     while (keys.next()) {
                         T entity = iterator.next();
-                        EntityProperty idField = entityType.id();
-                        Object key = JdbcUtil.getValue(keys, 1, idField.javaType());
+                        BasicAttribute idField = entityType.id();
+                        Object key = JdbcUtil.getValue(keys, 1, idField.type());
                         idField.set(entity, key);
                     }
                 } catch (Exception e) {
@@ -223,12 +222,12 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     }
 
     private static <T> void setArgs(Iterable<T> entities,
-                                    List<EntityProperty> columns,
+                                    List<BasicAttribute> columns,
                                     PreparedStatement statement)
             throws SQLException {
         for (T entity : entities) {
             int i = 0;
-            for (EntityProperty column : columns) {
+            for (BasicAttribute column : columns) {
                 Object v = column.get(entity);
                 if (v instanceof Enum<?>) {
                     v = ((Enum<?>) v).ordinal();

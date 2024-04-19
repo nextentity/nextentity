@@ -3,6 +3,7 @@ package io.github.nextentity.test.db;
 import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcResultCollector;
@@ -17,8 +18,6 @@ import jakarta.persistence.EntityManagerFactory;
 import lombok.SneakyThrows;
 
 import javax.sql.DataSource;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,7 +49,7 @@ public interface DbConfigProvider {
         EntitiesFactory jdbc = new EntitiesFactory(jdbcQueryExecutor, jdbcUpdateExecutor, null, metamodel);
         EntitiesFactory jpaNative = new EntitiesFactory(jpaNativeQueryExecutor, jpaUpdateExecutor, null, metamodel);
 
-        List<EntitiesFactory> list = Collections.singletonList(jdbc);
+        List<EntitiesFactory> list = Lists.of(jdbc, jpa, jpaNative);
         return new DbConfig(querySqlBuilder,
                 updateSqlBuilder(),
                 dataSource,
