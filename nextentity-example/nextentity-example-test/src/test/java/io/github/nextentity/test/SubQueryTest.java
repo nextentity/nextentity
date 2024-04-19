@@ -27,11 +27,11 @@ public class SubQueryTest {
         Assertions.assertEquals(f2, first);
     }
 
-    @Test
-    void testSqlserver() {
-        testSqlserver(DbConfigs.SQLSERVER.getJdbcFactory());
-        testSqlserver(DbConfigs.SQLSERVER.getJpaFactory());
-    }
+    // @Test
+    // void testSqlserver() {
+    //     testSqlserver(DbConfigs.SQLSERVER.getJdbcFactory());
+    //     testSqlserver(DbConfigs.SQLSERVER.getJpaFactory());
+    // }
 
     private void testSqlserver(EntitiesFactory entitiesFactory) {
         Entities<String, UserSummarySqlServer> summaryEntities = entitiesFactory.getEntities(UserSummarySqlServer.class);

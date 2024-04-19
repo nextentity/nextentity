@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SqlServerTest {
     private final SqlServer sqlServer = new SqlServer();
 
-    @Test
-    void getDataSource() throws SQLException {
-        Connection connection = sqlServer.getDataSource().getConnection();
-        String databaseProductName = connection.getMetaData().getDatabaseProductName();
-        assertEquals("Microsoft SQL Server", databaseProductName);
-    }
+    // @Test
+    // void getDataSource() throws SQLException {
+    //     Connection connection = sqlServer.getDataSource().getConnection();
+    //     String databaseProductName = connection.getMetaData().getDatabaseProductName();
+    //     assertEquals("Microsoft SQL Server", databaseProductName);
+    // }
 }

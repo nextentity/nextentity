@@ -75,6 +75,11 @@ public class ExpressionBuilders {
         }
 
         @Override
+        public Object eqIfNotEmpty(String value) {
+            return applyCallback(value == null || value.isEmpty() ? null : base.eq(value));
+        }
+
+        @Override
         public Object eq(Expression expression) {
             return applyCallback(base.eq(expression));
         }
@@ -323,6 +328,11 @@ public class ExpressionBuilders {
         @Override
         public Object notLikeIfNotNull(String value) {
             return applyCallback(value == null ? null : base.notLike(value));
+        }
+
+        @Override
+        public Object notLikeIfNotEmpty(String value) {
+            return applyCallback(value == null || value.isEmpty() ? null : base.notLike(value));
         }
 
         @Override

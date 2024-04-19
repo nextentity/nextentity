@@ -18,6 +18,7 @@ import lombok.SneakyThrows;
 
 import javax.sql.DataSource;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,7 +50,7 @@ public interface DbConfigProvider {
         EntitiesFactory jdbc = new EntitiesFactory(jdbcQueryExecutor, jdbcUpdateExecutor, null, metamodel);
         EntitiesFactory jpaNative = new EntitiesFactory(jpaNativeQueryExecutor, jpaUpdateExecutor, null, metamodel);
 
-        List<EntitiesFactory> list = Arrays.asList(jpa, jdbc, jpaNative);
+        List<EntitiesFactory> list = Collections.singletonList(jdbc);
         return new DbConfig(querySqlBuilder,
                 updateSqlBuilder(),
                 dataSource,

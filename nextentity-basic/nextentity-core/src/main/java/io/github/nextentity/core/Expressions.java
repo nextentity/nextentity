@@ -18,17 +18,18 @@ import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.ExpressionTree;
-import io.github.nextentity.core.expression.Attribute;
-import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Operator;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.SortOrder;
+import io.github.nextentity.core.expression.Attribute;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,7 +40,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static io.github.nextentity.core.Expressions.TypeExpressionImpl.EMPTY;
-import static io.github.nextentity.core.api.Operator.*;
 
 public class Expressions {
 
@@ -137,15 +137,20 @@ public class Expressions {
     @Accessors(fluent = true)
     @SuppressWarnings("rawtypes")
     interface AbstractTypeExpression extends NumberPathExpression, StringPathExpression, BooleanPathExpression, EntityPathExpression {
-
         @Override
         default EntityRoot root() {
-            return io.github.nextentity.core.util.Paths.root();
+            return Paths.root();
         }
 
         @Override
         default NumberExpression count() {
-            return toTypedExpression(ExpressionTrees.operate(rootNode(), COUNT));
+            return toTypedExpression(ExpressionTrees.operate(rootNode(), Operator.COUNT));
+        }
+
+        @Override
+        default NumberExpression countDistinct() {
+            ExpressionNode distinct = ExpressionTrees.operate(rootNode(), Operator.DISTINCT);
+            return toTypedExpression(ExpressionTrees.operate(distinct, Operator.COUNT));
         }
 
         @Override
@@ -160,7 +165,7 @@ public class Expressions {
 
         @Override
         default Predicate eq(Expression value) {
-            return operate(EQ, value);
+            return operate(Operator.EQ, value);
         }
 
         @Override
@@ -175,12 +180,12 @@ public class Expressions {
 
         @Override
         default Predicate ne(Expression value) {
-            return operate(NE, value);
+            return operate(Operator.NE, value);
         }
 
         @Override
         default Predicate in(@NotNull Expression expressions) {
-            return operate(IN, expressions);
+            return operate(Operator.IN, expressions);
         }
 
         @Override
@@ -211,7 +216,7 @@ public class Expressions {
 
         @Override
         default Predicate isNull() {
-            return operate(IS_NULL);
+            return operate(Operator.IS_NULL);
         }
 
         @Override
@@ -226,32 +231,32 @@ public class Expressions {
 
         @Override
         default Predicate in(@NotNull List expressions) {
-            return operate(IN, asTypeExpressions(expressions));
+            return operate(Operator.IN, asTypeExpressions(expressions));
         }
 
         @Override
         default Predicate ge(Expression expression) {
-            return operate(GE, expression);
+            return operate(Operator.GE, expression);
         }
 
         @Override
         default Predicate gt(Expression expression) {
-            return operate(GT, expression);
+            return operate(Operator.GT, expression);
         }
 
         @Override
         default Predicate le(Expression expression) {
-            return operate(LE, expression);
+            return operate(Operator.LE, expression);
         }
 
         @Override
         default Predicate lt(Expression expression) {
-            return operate(LT, expression);
+            return operate(Operator.LT, expression);
         }
 
         @Override
         default Predicate between(Expression l, Expression r) {
-            return operate(BETWEEN, List.of(l, r));
+            return operate(Operator.BETWEEN, Lists.of(l, r));
         }
 
         @Override
@@ -286,52 +291,52 @@ public class Expressions {
 
         @Override
         default NumberExpression add(Expression expression) {
-            return operate(ADD, expression);
+            return operate(Operator.ADD, expression);
         }
 
         @Override
         default NumberExpression subtract(Expression expression) {
-            return operate(SUBTRACT, expression);
+            return operate(Operator.SUBTRACT, expression);
         }
 
         @Override
         default NumberExpression multiply(Expression expression) {
-            return operate(MULTIPLY, expression);
+            return operate(Operator.MULTIPLY, expression);
         }
 
         @Override
         default NumberExpression divide(Expression expression) {
-            return operate(DIVIDE, expression);
+            return operate(Operator.DIVIDE, expression);
         }
 
         @Override
         default NumberExpression mod(Expression expression) {
-            return operate(MOD, expression);
+            return operate(Operator.MOD, expression);
         }
 
         @Override
         default NumberExpression sum() {
-            return operate(SUM);
+            return operate(Operator.SUM);
         }
 
         @Override
         default NumberExpression avg() {
-            return operate(AVG);
+            return operate(Operator.AVG);
         }
 
         @Override
         default NumberExpression max() {
-            return operate(MAX);
+            return operate(Operator.MAX);
         }
 
         @Override
         default NumberExpression min() {
-            return operate(MIN);
+            return operate(Operator.MIN);
         }
 
         @Override
         default Predicate like(String value) {
-            return operate(LIKE, ExpressionTrees.of(value));
+            return operate(Operator.LIKE, ExpressionTrees.of(value));
         }
 
         @Override
@@ -351,27 +356,27 @@ public class Expressions {
 
         @Override
         default StringExpression lower() {
-            return operate(LOWER);
+            return operate(Operator.LOWER);
         }
 
         @Override
         default StringExpression upper() {
-            return operate(UPPER);
+            return operate(Operator.UPPER);
         }
 
         @Override
         default StringExpression substring(int offset, int length) {
-            return operate0(SUBSTRING, Lists.of(ExpressionTrees.of(offset), ExpressionTrees.of(length)));
+            return operate0(Operator.SUBSTRING, Lists.of(ExpressionTrees.of(offset), ExpressionTrees.of(length)));
         }
 
         @Override
         default StringExpression trim() {
-            return operate(TRIM);
+            return operate(Operator.TRIM);
         }
 
         @Override
         default NumberExpression length() {
-            return operate(LENGTH);
+            return operate(Operator.LENGTH);
         }
 
         @Override
@@ -381,12 +386,12 @@ public class Expressions {
 
         @NotNull
         default AbstractTypeExpression and(OperatableExpression<?, ?> basicExpression) {
-            return basicExpression == null ? this : operate(AND, basicExpression);
+            return basicExpression == null ? this : operate(Operator.AND, basicExpression);
         }
 
         @NotNull
         default AbstractTypeExpression or(OperatableExpression<?, ?> basicExpression) {
-            return basicExpression == null ? this : operate(OR, basicExpression);
+            return basicExpression == null ? this : operate(Operator.OR, basicExpression);
         }
 
         @NotNull
@@ -432,12 +437,12 @@ public class Expressions {
 
         @Override
         default Predicate or(Expression predicate) {
-            return operate(OR, predicate);
+            return operate(Operator.OR, predicate);
         }
 
         @Override
         default Predicate and(Expression expression) {
-            return operate(AND, expression);
+            return operate(Operator.AND, expression);
         }
 
         @Override
@@ -479,22 +484,22 @@ public class Expressions {
 
         @Override
         default Predicate not() {
-            return operate(NOT);
+            return operate(Operator.NOT);
         }
 
         @Override
         default Predicate and(Expression[] predicate) {
-            return operate(AND, Arrays.asList(predicate));
+            return operate(Operator.AND, Arrays.asList(predicate));
         }
 
         @Override
         default Predicate or(Expression[] predicate) {
-            return operate(OR, Arrays.asList(predicate));
+            return operate(Operator.OR, Arrays.asList(predicate));
         }
 
         @Override
         default Predicate and(Iterable predicates) {
-            return operate(AND, TypeCastUtil.cast(Iterators.toList((Iterable<?>) predicates)));
+            return operate(Operator.AND, TypeCastUtil.cast(Iterators.toList((Iterable<?>) predicates)));
         }
 
         @Override
@@ -504,28 +509,31 @@ public class Expressions {
 
         @Override
         default Predicate or(Iterable predicates) {
-            return operate(OR, TypeCastUtil.cast(Iterators.toList((Iterable<?>) predicates)));
+            return operate(Operator.OR, TypeCastUtil.cast(Iterators.toList((Iterable<?>) predicates)));
         }
 
         default AbstractTypeExpression get0(Path<?, ?> path) {
-            PathExpression<?, ?> pathExpression = io.github.nextentity.core.util.Paths.get((Path<?, ?>) path);
+            PathExpression<?, ?> pathExpression = Paths.get((Path<?, ?>) path);
             return get0(pathExpression);
         }
 
         @NotNull
-        private AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
+        default AbstractTypeExpression get0(PathExpression<?, ?> pathExpression) {
             Attribute expression = (Attribute) pathExpression.rootNode();
             ExpressionNode expr = rootNode();
             return toTypedExpression(((Attribute) expr).get(expression));
         }
 
         default AbstractTypeExpression not(Expression<?, ?> expression) {
-            ExpressionNode operate = ExpressionTrees.operate(expression.rootNode(), NOT);
+            ExpressionNode operate = ExpressionTrees.operate(expression.rootNode(), Operator.NOT);
             return toTypedExpression(operate);
         }
 
         @NotNull
         default AbstractTypeExpression operate(Operator operator, ExpressionTree expression) {
+            if (rootNode() == null) {
+                return toTypedExpression(expression);
+            }
             return toTypedExpression(ExpressionTrees.operate(rootNode(), operator, expression.rootNode()));
         }
 
@@ -565,6 +573,22 @@ public class Expressions {
 
         default List<? extends Expression<?, ?>> asTypeExpressions(List<?> list) {
             return TypeCastUtil.cast(list);
+        }
+
+
+        @Override
+        default Predicate likeIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? operateNull() : like(value);
+        }
+
+        @Override
+        default Predicate notLikeIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? operateNull() : notLike(value);
+        }
+
+        @Override
+        default Predicate eqIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? operateNull() : eq(value);
         }
 
     }

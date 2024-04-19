@@ -137,7 +137,10 @@ public interface ExpressionBuilder<T, U, B> {
 
     }
 
+    // TODO 未添加测试用例
     interface StringOperator<T, B> extends ExpressionBuilder<T, String, B> {
+
+        B eqIfNotEmpty(String value);
 
         B like(String value);
 
@@ -170,31 +173,60 @@ public interface ExpressionBuilder<T, U, B> {
         B likeIfNotNull(String value);
 
         default B startWithIfNotNull(String value) {
-            return likeIfNotNull(value + '%');
+            return likeIfNotNull(value == null ? null : value + '%');
         }
 
         default B endsWithIfNotNull(String value) {
-            return likeIfNotNull('%' + value);
+            return likeIfNotNull(value == null ? null : '%' + value);
         }
 
         default B containsIfNotNull(String value) {
-            return likeIfNotNull('%' + value + '%');
+            return likeIfNotNull(value == null ? null : '%' + value + '%');
         }
 
         B notLikeIfNotNull(String value);
 
         default B notStartWithIfNotNull(String value) {
-            return notLikeIfNotNull(value + '%');
+            return notLikeIfNotNull(value == null ? null : value + '%');
         }
 
         default B notEndsWithIfNotNull(String value) {
-            return notLikeIfNotNull('%' + value);
+            return notLikeIfNotNull(value == null ? null : '%' + value);
         }
 
         default B notContainsIfNotNull(String value) {
-            return notLikeIfNotNull('%' + value + '%');
+            return notLikeIfNotNull(value == null ? null : '%' + value + '%');
         }
 
+        default B likeIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? likeIfNotNull(null) : like(value);
+        }
+
+        default B startWithIfNotEmpty(String value) {
+            return likeIfNotEmpty(value == null || value.isEmpty() ? null : value + '%');
+        }
+
+        default B endsWithIfNotEmpty(String value) {
+            return likeIfNotEmpty(value == null || value.isEmpty() ? null : '%' + value);
+        }
+
+        default B containsIfNotEmpty(String value) {
+            return likeIfNotEmpty(value == null || value.isEmpty() ? null : '%' + value + '%');
+        }
+
+        B notLikeIfNotEmpty(String value);
+
+        default B notStartWithIfNotEmpty(String value) {
+            return notLikeIfNotEmpty(value == null || value.isEmpty() ? null : value + '%');
+        }
+
+        default B notEndsWithIfNotEmpty(String value) {
+            return notLikeIfNotEmpty(value == null || value.isEmpty() ? null : '%' + value);
+        }
+
+        default B notContainsIfNotEmpty(String value) {
+            return notLikeIfNotNull(value == null || value.isEmpty() ? null : '%' + value + '%');
+        }
 
         StringOperator<T, B> lower();
 

@@ -25,6 +25,8 @@ public interface Expression<T, U> extends ExpressionTree {
 
         NumberExpression<T, Long> count();
 
+        NumberExpression<T, Long> countDistinct();
+
         Predicate<T> eq(U value);
 
         Predicate<T> eqIfNotNull(U value);
@@ -292,6 +294,35 @@ public interface Expression<T, U> extends ExpressionTree {
             return value == null ? notLikeIfNotNull(null) : notLikeIfNotNull('%' + value + '%');
         }
 
+
+        Predicate<T> likeIfNotEmpty(String value);
+
+        default Predicate<T> startWithIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? likeIfNotEmpty(null) : likeIfNotEmpty(value + '%');
+        }
+
+        default Predicate<T> endsWithIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? likeIfNotEmpty(null) : likeIfNotEmpty('%' + value);
+        }
+
+        default Predicate<T> containsIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? likeIfNotEmpty(null) : likeIfNotEmpty('%' + value + '%');
+        }
+
+        Predicate<T> notLikeIfNotEmpty(String value);
+
+        default Predicate<T> notStartWithIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? notLikeIfNotEmpty(null) : notLikeIfNotEmpty(value + '%');
+        }
+
+        default Predicate<T> notEndsWithIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? notLikeIfNotEmpty(null) : notLikeIfNotEmpty('%' + value);
+        }
+
+        default Predicate<T> notContainsIfNotEmpty(String value) {
+            return value == null || value.isEmpty() ? notLikeIfNotEmpty(null) : notLikeIfNotEmpty('%' + value + '%');
+        }
+
         StringExpression<T> lower();
 
         StringExpression<T> upper();
@@ -305,6 +336,8 @@ public interface Expression<T, U> extends ExpressionTree {
         StringExpression<T> trim();
 
         NumberExpression<T, Integer> length();
+
+        Predicate<T> eqIfNotEmpty(String value);
     }
 
     interface StringPathExpression<T> extends StringExpression<T>, PathExpression<T, String> {
