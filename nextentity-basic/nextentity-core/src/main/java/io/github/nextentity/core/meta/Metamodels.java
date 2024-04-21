@@ -106,14 +106,6 @@ public class Metamodels {
         public EntitySchemaImpl() {
         }
 
-        public EntitySchemaImpl(EntitySchemaImpl entitySchema) {
-            this.type = entitySchema.type;
-            this.id = entitySchema.id;
-            this.version = entitySchema.version;
-            this.tableName = entitySchema.tableName;
-            this.dictionary = entitySchema.dictionary;
-        }
-
         public Collection<BasicAttribute> attributes() {
             return dictionary.values();
         }
