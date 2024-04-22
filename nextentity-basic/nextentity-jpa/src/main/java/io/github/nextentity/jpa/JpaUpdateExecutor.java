@@ -92,7 +92,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
     }
 
     @Override
-    public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
+    public <T> T updateExcludeNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
         Object id = requireId(entity);
         T t = entityManager.find(entityType, id);
         if (t == null) {

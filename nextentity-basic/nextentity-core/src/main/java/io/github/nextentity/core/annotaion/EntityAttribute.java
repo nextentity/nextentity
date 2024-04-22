@@ -9,7 +9,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Target({METHOD, FIELD})
 @Retention(RUNTIME)
-public @interface EntityField {
+public @interface EntityAttribute {
 
     String value() default "";
 

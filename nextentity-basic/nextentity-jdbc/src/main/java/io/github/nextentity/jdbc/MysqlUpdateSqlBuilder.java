@@ -2,7 +2,7 @@ package io.github.nextentity.jdbc;
 
 import org.jetbrains.annotations.NotNull;
 
-public class MysqlUpdateSqlBuilder extends AbstractJdbcUpdateSqlBuilder {
+public class MysqlUpdateSqlBuilder extends AbstractUpdateSqlBuilder {
 
     @Override
     protected @NotNull String rightTicks() {

@@ -1,7 +1,7 @@
 package io.github.nextentity.core.meta;
 
 import io.github.nextentity.core.PathReference;
-import io.github.nextentity.core.annotaion.EntityField;
+import io.github.nextentity.core.annotaion.EntityAttribute;
 import io.github.nextentity.core.annotaion.SubSelect;
 import io.github.nextentity.core.exception.BeanReflectiveException;
 import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
@@ -109,7 +109,7 @@ public abstract class AbstractMetamodel implements Metamodel {
     }
 
     private BasicAttribute getEntityAttributeByAnnotation(Attribute attribute, EntitySchema entity) {
-        EntityField entityAttribute = getAnnotation(attribute, EntityField.class);
+        EntityAttribute entityAttribute = getAnnotation(attribute, EntityAttribute.class);
         if (entityAttribute == null || entityAttribute.value().isEmpty()) {
             return null;
         }

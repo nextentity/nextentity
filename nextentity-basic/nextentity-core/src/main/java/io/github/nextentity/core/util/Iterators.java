@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -21,6 +22,10 @@ public class Iterators {
                     .stream(iterable.spliterator(), false)
                     .collect(Collectors.toList());
         }
+    }
+
+    public static <T, R> Iterable<R> map(Iterable<T> iterable, Function<? super T, ? extends R> mapper) {
+        return () -> new MapedIterator<>(iterable.iterator(), mapper);
     }
 
     public static <T> Iterator<T> iterate(T[] array) {
@@ -45,6 +50,27 @@ public class Iterators {
             } else {
                 return data[this.index++];
             }
+        }
+    }
+
+    public static class MapedIterator<T, R> implements Iterator<R> {
+        Iterator<T> iterator;
+        Function<? super T, ? extends R> mapper;
+
+        public MapedIterator(Iterator<T> iterator, Function<? super T, ? extends R> mapper) {
+            this.iterator = iterator;
+            this.mapper = mapper;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        @Override
+        public R next() {
+            T next = iterator.next();
+            return mapper.apply(next);
         }
     }
 }

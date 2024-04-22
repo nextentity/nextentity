@@ -1,7 +1,6 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.BasicExpressions;
-import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Order;
@@ -88,9 +87,9 @@ abstract class AbstractQuerySqlBuilder {
     protected abstract String rightQuotedIdentifier();
 
 
-    protected SqlStatement<?> build() {
+    protected QuerySqlStatement build() {
         doBuilder();
-        return new SqlStatement<>(sql.toString(), args);
+        return new QuerySqlStatement(sql.toString(), args);
     }
 
     protected void doBuilder() {
@@ -213,7 +212,7 @@ abstract class AbstractQuerySqlBuilder {
 
     protected void appendExpression(BaseExpression expression) {
         if (expression instanceof Literal) {
-            appendConstant((Literal) expression);
+            appendLiteral((Literal) expression);
         } else if (expression instanceof EntityPath) {
             appendPaths((EntityPath) expression);
         } else if (expression instanceof Operation) {
@@ -225,8 +224,8 @@ abstract class AbstractQuerySqlBuilder {
         }
     }
 
-    protected void appendConstant(Literal constant) {
-        Object value = constant.value();
+    protected void appendLiteral(Literal literal) {
+        Object value = literal.value();
         if (value instanceof Boolean) {
             appendBlank().append((Boolean) value ? 1 : 0);
         } else {

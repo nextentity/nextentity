@@ -57,7 +57,7 @@ public class Updaters {
 
         @Override
         public T updateNonNullColumn(@NotNull T entity) {
-            return update.updateNonNullColumn(entity, entityType);
+            return update.updateExcludeNullColumn(entity, entityType);
         }
 
         @Override
@@ -86,7 +86,7 @@ public class Updaters {
             delete(Lists.of(entity), entityType);
         }
 
-        <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType);
+        <T> T updateExcludeNullColumn(@NotNull T entity, @NotNull Class<T> entityType);
 
     }
 }

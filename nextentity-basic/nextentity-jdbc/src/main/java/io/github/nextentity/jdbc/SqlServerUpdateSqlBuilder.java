@@ -1,13 +1,15 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.meta.BasicAttribute;
-import io.github.nextentity.core.meta.EntitySchema;
+import io.github.nextentity.core.meta.EntityType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.StreamSupport;
 
-public class SqlServerUpdateSqlBuilder extends AbstractJdbcUpdateSqlBuilder {
+public class SqlServerUpdateSqlBuilder extends AbstractUpdateSqlBuilder {
 
     @Override
     protected @NotNull String leftTicks() {
@@ -20,32 +22,19 @@ public class SqlServerUpdateSqlBuilder extends AbstractJdbcUpdateSqlBuilder {
     }
 
     @Override
-    protected boolean generatedKeysBatchSupport() {
-        return false;
-    }
-
-    @Override
-    protected @NotNull InsertSql buildInsert(@NotNull EntitySchema entityType,
-                                             Collection<? extends BasicAttribute> attributes,
-                                             boolean batch,
-                                             boolean hasId) {
-        if (attributes.isEmpty()) {
-            Collection<? extends BasicAttribute> attrs = entityType.attributes();
-            BasicAttribute pre = null;
-            BasicAttribute notId = null;
-            for (BasicAttribute attribute : attrs) {
-                if (attribute != entityType.id()) {
-                    notId = attribute;
-                    break;
-                }
-                pre = attribute;
-            }
-            if (notId != null) {
-                attributes = Collections.singletonList(notId);
-            } else if (pre != null) {
-                attributes = Collections.singletonList(pre);
-            }
-        }
-        return super.buildInsert(entityType, attributes, batch, hasId);
+    public List<InsertSqlStatement> buildInsertStatement(Iterable<?> entities, @NotNull EntityType entityType) {
+        Collection<? extends BasicAttribute> basicAttributes = entityType.primitiveAttributes();
+        List<? extends BasicAttribute> withoutId = basicAttributes.stream().filter(attr -> attr != entityType.id()).toList();
+        return StreamSupport.stream(entities.spliterator(), false)
+                .map(entity -> {
+                    BasicAttribute id = entityType.id();
+                    List<?> single = Collections.singletonList(entity);
+                    if (id.get(entity) == null) {
+                        return buildInsertStatement(single, entityType, withoutId, true);
+                    } else {
+                        return buildInsertStatement(single, entityType, basicAttributes, false);
+                    }
+                })
+                .toList();
     }
 }

@@ -1,16 +1,17 @@
 package io.github.nextentity.data;
 
-import io.github.nextentity.core.SqlStatement;
-import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
-import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.core.meta.EntityType;
+import io.github.nextentity.jdbc.BatchSqlStatement;
+import io.github.nextentity.jdbc.InsertSqlStatement;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
 import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
 import io.github.nextentity.jdbc.MysqlUpdateSqlBuilder;
+import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.jdbc.QuerySqlStatement;
 import io.github.nextentity.jdbc.SqlServerQuerySqlBuilder;
 import io.github.nextentity.jdbc.SqlServerUpdateSqlBuilder;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.sql.DataSource;
@@ -49,27 +50,23 @@ public class SqlDialectSelector implements QuerySqlBuilder, JdbcUpdateSqlBuilder
 
 
     @Override
-    public SqlStatement<?> build(QueryContext context) {
+    public QuerySqlStatement build(QueryContext context) {
         return querySqlBuilder.build(context);
     }
 
+
     @Override
-    public InsertSql buildInsert(Iterable<?> entities, @NotNull EntitySchema entityType) {
-        return updateSqlBuilder.buildInsert(entities, entityType);
+    public List<InsertSqlStatement> buildInsertStatement(Iterable<?> entities, EntityType entityType) {
+        return updateSqlBuilder.buildInsertStatement(entities, entityType);
     }
 
     @Override
-    public PreparedSql buildUpdate(@NotNull EntitySchema entityType) {
-        return updateSqlBuilder.buildUpdate(entityType);
+    public BatchSqlStatement buildUpdateStatement(Iterable<?> entities, EntitySchema entityType, boolean excludeNull) {
+        return updateSqlBuilder.buildUpdateStatement(entities, entityType, excludeNull);
     }
 
     @Override
-    public PreparedSql buildUpdate(@NotNull EntitySchema entityType, @NotNull List<BasicAttribute> columns) {
-        return updateSqlBuilder.buildUpdate(entityType, columns);
-    }
-
-    @Override
-    public PreparedSql buildDelete(EntitySchema entity) {
-        return updateSqlBuilder.buildDelete(entity);
+    public BatchSqlStatement buildDeleteStatement(Iterable<?> entities, EntityType entity) {
+        return updateSqlBuilder.buildDeleteStatement(entities, entity);
     }
 }

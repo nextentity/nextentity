@@ -59,7 +59,7 @@ public interface QueryStructure extends BaseExpression {
         @Data
         @Accessors(fluent = true, chain = true)
         class SelectPrimitive implements Selected {
-            private Class<?> type;
+            private Class<?> type = Object.class;
             private boolean distinct;
             private BaseExpression expression;
 

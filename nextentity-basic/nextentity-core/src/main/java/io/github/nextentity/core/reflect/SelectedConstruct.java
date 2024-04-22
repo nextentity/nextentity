@@ -1,4 +1,4 @@
-package io.github.nextentity.jdbc;
+package io.github.nextentity.core.reflect;
 
 import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.expression.EntityPath;
@@ -10,8 +10,6 @@ import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.ProjectionAssociationAttribute;
 import io.github.nextentity.core.meta.ProjectionBasicAttribute;
 import io.github.nextentity.core.meta.ProjectionType;
-import io.github.nextentity.core.reflect.SchemaConstructor;
-import io.github.nextentity.core.reflect.SchemaConstructor.ObjectResult;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
 import lombok.Getter;
@@ -28,19 +26,21 @@ import static io.github.nextentity.core.api.expression.QueryStructure.Selected.S
 import static io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
 import static io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPrimitive;
 import static io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
-import static io.github.nextentity.core.reflect.SchemaConstructor.ArrayResult;
-import static io.github.nextentity.core.reflect.SchemaConstructor.IndexableProperty;
 
-@Getter
 @Accessors(fluent = true)
-public class SelectedConstruct {
+public class SelectedConstruct implements ObjectFactory {
 
+    @Getter
     private final List<BaseExpression> selects;
-    private final SchemaConstructor constructor;
+    private final ObjectFactory constructor;
 
-    public SelectedConstruct(List<BaseExpression> selects, SchemaConstructor constructor) {
+    public SelectedConstruct(List<BaseExpression> selects, ObjectFactory constructor) {
         this.selects = selects;
         this.constructor = constructor;
+    }
+
+    public Object get(Arguments arguments) {
+        return constructor.get(arguments);
     }
 
     public static SelectedConstruct of(EntityType entityType, Selected selected, boolean expandObjectAttribute) {
@@ -58,11 +58,11 @@ public class SelectedConstruct {
         }
 
         SelectedConstruct build(Selected selected) {
-            SchemaConstructor schemaConstructor = createObjectConstructor(selected);
+            ObjectFactory schemaConstructor = createObjectConstructor(selected);
             return new SelectedConstruct(Collections.unmodifiableList(selects), schemaConstructor);
         }
 
-        private SchemaConstructor createObjectConstructor(Selected selected) {
+        private AttributeConstructor createObjectConstructor(Selected selected) {
             if (selected instanceof SelectEntity) {
                 return selectEntity(((SelectEntity) selected));
             } else if (selected instanceof SelectPrimitive) {
@@ -76,7 +76,7 @@ public class SelectedConstruct {
             }
         }
 
-        private SchemaConstructor selectEntity(SelectEntity entity) {
+        private AttributeConstructor selectEntity(SelectEntity entity) {
             return selectEntity(entityType, entity.fetch());
         }
 
@@ -86,7 +86,7 @@ public class SelectedConstruct {
 
         private ObjectResult selectEntity(EntitySchema schema, Collection<? extends EntityPath> fetch) {
             Collection<? extends BasicAttribute> properties = schema.attributes();
-            List<SchemaConstructor> items = new ArrayList<>();
+            List<AttributeConstructor> items = new ArrayList<>();
             for (BasicAttribute property : properties) {
                 if (property.isPrimitive()) {
                     items.add(indexable(property));
@@ -128,8 +128,9 @@ public class SelectedConstruct {
             return property;
         }
 
-        private SchemaConstructor select(SelectProjection selected) {
-            ProjectionType projection = entityType.getProjection(selected.type());
+        private AttributeConstructor select(SelectProjection selected) {
+            Class<?> type = selected.type();
+            ProjectionType projection = entityType.getProjection(type);
             return selectProjection(projection);
         }
 
@@ -139,7 +140,7 @@ public class SelectedConstruct {
 
         private ObjectResult selectProjection(ProjectionType projection, boolean includeObject) {
             Collection<? extends ProjectionBasicAttribute> properties = projection.attributes();
-            ArrayList<SchemaConstructor> items = new ArrayList<>(properties.size());
+            ArrayList<AttributeConstructor> items = new ArrayList<>(properties.size());
             for (ProjectionBasicAttribute property : properties) {
                 if (property.isPrimitive()) {
                     items.add(mewIndexableProperty(property.entityAttribute().path()).attribute(property));
@@ -156,16 +157,16 @@ public class SelectedConstruct {
                     .attributes(items);
         }
 
-        private SchemaConstructor select(SelectArray selected) {
+        private AttributeConstructor select(SelectArray selected) {
             Collection<? extends Selected> items = selected.items();
-            ArrayList<SchemaConstructor> list = new ArrayList<>(items.size());
+            ArrayList<AttributeConstructor> list = new ArrayList<>(items.size());
             for (Selected item : items) {
                 list.add(createObjectConstructor(item));
             }
             return new ArrayResult().items(list);
         }
 
-        private SchemaConstructor select(SelectPrimitive selected) {
+        private AttributeConstructor select(SelectPrimitive selected) {
             BaseExpression expression = selected.expression();
             if (expandReferencePath && expression instanceof EntityPath) {
                 return selectEntityPath(entityType, (EntityPath) expression);
@@ -174,7 +175,7 @@ public class SelectedConstruct {
             }
         }
 
-        private SchemaConstructor selectEntityPath(EntitySchema entityType, EntityPath path) {
+        private AttributeConstructor selectEntityPath(EntitySchema entityType, EntityPath path) {
             BasicAttribute property = entityType.getAttribute(path);
             if (property.isPrimitive()) {
                 return indexable(property);

@@ -37,14 +37,11 @@ public class ExpressionTypeResolver {
     public static Class<?> getExpressionType(BaseExpression expression, EntityType entityType) {
         if (expression instanceof EntityPath) {
             return getColumnType((EntityPath) expression, entityType);
-        }
-        if (expression instanceof Literal) {
-            return getConstantType((Literal) expression);
-        }
-        if (expression instanceof Operation) {
+        } else if (expression instanceof Literal) {
+            return getLiteralType((Literal) expression);
+        } else if (expression instanceof Operation) {
             return getOperationType((Operation) expression, entityType);
-        }
-        if (expression instanceof QueryStructure) {
+        } else if (expression instanceof QueryStructure) {
             return getSubQueryType((QueryStructure) expression);
         }
         return Object.class;
@@ -126,7 +123,7 @@ public class ExpressionTypeResolver {
         return Object.class;
     }
 
-    public static Class<?> getConstantType(Literal expression) {
+    public static Class<?> getLiteralType(Literal expression) {
         return expression.value().getClass();
     }
 

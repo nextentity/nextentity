@@ -39,7 +39,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
 
     static final Selected SELECT_ANY = new SelectPrimitive().expression(BasicExpressions.TRUE).type(Boolean.class);
     static final Selected COUNT_ANY = new SelectPrimitive()
-            .expression(BasicExpressions.operate(BasicExpressions.TRUE, Operator.COUNT));
+            .expression(BasicExpressions.operate(BasicExpressions.TRUE, Operator.COUNT)).type(Long.class);
 
     QueryExecutor queryExecutor;
     QueryStructureImpl queryStructure;

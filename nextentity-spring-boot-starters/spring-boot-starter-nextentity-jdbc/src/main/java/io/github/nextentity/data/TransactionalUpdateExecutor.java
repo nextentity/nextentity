@@ -52,8 +52,8 @@ public class TransactionalUpdateExecutor implements UpdateExecutor {
 
     @Override
     @Transactional
-    public <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
-        return target.updateNonNullColumn(entity, entityType);
+    public <T> T updateExcludeNullColumn(@NotNull T entity, @NotNull Class<T> entityType) {
+        return target.updateExcludeNullColumn(entity, entityType);
     }
 
 }

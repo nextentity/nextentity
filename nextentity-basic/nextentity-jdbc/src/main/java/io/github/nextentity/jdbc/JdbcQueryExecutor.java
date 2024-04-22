@@ -2,7 +2,6 @@ package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.SqlLogger;
-import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.exception.TransactionRequiredException;
@@ -42,7 +41,7 @@ public class JdbcQueryExecutor implements QueryExecutor {
     @NotNull
     public <R> List<R> getList(@NotNull QueryStructure queryStructure) {
         QueryContext context = new QueryContext(queryStructure, metamodel, true);
-        SqlStatement<?> sql = sqlBuilder.build(context);
+        QuerySqlStatement sql = sqlBuilder.build(context);
         printSql(sql);
         try {
             return connectionProvider.execute(connection -> {
@@ -51,8 +50,8 @@ public class JdbcQueryExecutor implements QueryExecutor {
                     throw new TransactionRequiredException();
                 }
                 // noinspection SqlSourceToSinkFlow
-                try (PreparedStatement statement = connection.prepareStatement(sql.getSql())) {
-                    JdbcUtil.setParam(statement, sql.getParameters());
+                try (PreparedStatement statement = connection.prepareStatement(sql.sql())) {
+                    JdbcUtil.setParam(statement, sql.parameters());
                     try (ResultSet resultSet = statement.executeQuery()) {
                         return collector.resolve(resultSet, context);
                     }
@@ -68,15 +67,15 @@ public class JdbcQueryExecutor implements QueryExecutor {
         return metamodel;
     }
 
-    private static void printSql(SqlStatement<?> sql) {
-        SqlLogger.debug(sql.getSql());
-        if (!sql.getParameters().isEmpty()) {
-            SqlLogger.debug("ARGS: {}", sql.getParameters());
+    private static void printSql(QuerySqlStatement sql) {
+        SqlLogger.debug(sql.sql());
+        if (!sql.parameters().iterator().hasNext()) {
+            SqlLogger.debug("ARGS: {}", sql.parameters());
         }
     }
 
     public interface QuerySqlBuilder {
-        SqlStatement<?> build(QueryContext context);
+        QuerySqlStatement build(QueryContext context);
     }
 
 

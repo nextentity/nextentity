@@ -1417,7 +1417,7 @@ class QueryBuilderTest {
         users = check.expected.stream().filter(it -> it.getRandomNumber() / 3. == 12).collect(Collectors.toList());
         collector = check.collector.<Number>where(User::getRandomNumber).divide(3.0).eq(12);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).divide(3).eq(12));
+        collector = check.collector.where(Paths.<User, Number>get(User::getRandomNumber).divide(3.).eq(12));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber).divide(Expressions.of(3)).eq(12);
         result.add(new Checker<>(users, collector));

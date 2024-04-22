@@ -1,6 +1,5 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.SqlStatement;
 import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
@@ -10,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
 
     @Override
-    public SqlStatement<?> build(QueryContext context) {
+    public QuerySqlStatement build(QueryContext context) {
         return new Builder(context).build();
     }
 

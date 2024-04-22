@@ -2,6 +2,9 @@ package io.github.nextentity.core.meta;
 
 import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
+import io.github.nextentity.core.reflect.SelectedConstruct;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
 import lombok.Getter;
@@ -12,6 +15,7 @@ import lombok.experimental.Delegate;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,14 +85,31 @@ public class Metamodels {
     @Accessors(fluent = true)
     public static class EntityTypeImpl extends EntitySchemaImpl implements EntityType {
         private BiFunction<EntityType, Class<?>, ProjectionType> projectionTypes;
+        private volatile SelectedConstruct constructor;
 
         @Override
         public ProjectionType getProjection(Class<?> type) {
             return projectionTypes.apply(this, type);
         }
 
+        @Override
+        public SelectedConstruct constructor() {
+            if (constructor == null) {
+                synchronized (this) {
+                    if (constructor == null) {
+                        SelectEntity selected = new SelectEntity()
+                                .type(type())
+                                .fetch(Collections.emptyList());
+                        constructor = SelectedConstruct.of(this, selected, false);
+                    }
+                }
+            }
+            return constructor;
+        }
+
         public EntityTypeImpl() {
         }
+
 
     }
 
@@ -102,6 +123,7 @@ public class Metamodels {
         private BasicAttribute version;
         private String tableName;
         private Map<String, BasicAttribute> dictionary;
+        private transient List<?extends BasicAttribute> primitiveAttributes;
 
         public EntitySchemaImpl() {
         }
@@ -128,6 +150,14 @@ public class Metamodels {
         @Override
         public Schema declareBy() {
             return null;
+        }
+
+        @Override
+        public List<? extends BasicAttribute> primitiveAttributes() {
+            if (primitiveAttributes == null) {
+                primitiveAttributes = EntitySchema.super.primitiveAttributes();
+            }
+            return primitiveAttributes;
         }
     }
 
@@ -201,6 +231,11 @@ public class Metamodels {
         }
 
         @Override
+        public SelectedConstruct constructor() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Attribute getAttribute(String name) {
             return dictionary().get(name);
         }
@@ -212,6 +247,7 @@ public class Metamodels {
         private final Class<?> type;
         private final Map<String, ProjectionBasicAttribute> dictionary = new HashMap<>();
         private final EntitySchema entityType;
+        private volatile SelectedConstruct constructor;
 
         public ProjectionSchemaImpl(Class<?> type, EntitySchema entityType) {
             this.type = type;
@@ -231,6 +267,21 @@ public class Metamodels {
         @Override
         public Collection<? extends ProjectionBasicAttribute> attributes() {
             return dictionary.values();
+        }
+
+        @Override
+        public SelectedConstruct constructor() {
+            if (constructor == null) {
+                synchronized (this) {
+                    if (constructor == null) {
+                        SelectProjection selected = new SelectProjection()
+                                .entityType(entityType.type())
+                                .type(type());
+                        constructor = SelectedConstruct.of((EntityType) entityType(), selected, false);
+                    }
+                }
+            }
+            return constructor;
         }
 
         @Override

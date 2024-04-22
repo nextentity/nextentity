@@ -4,14 +4,13 @@ import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.exception.BeanReflectiveException;
 import io.github.nextentity.core.reflect.schema.ArraySchema;
 import io.github.nextentity.core.reflect.schema.Attribute;
-import io.github.nextentity.core.reflect.schema.AttributeFaced;
 import io.github.nextentity.core.reflect.schema.ObjectSchema;
 import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.tuple.Tuple;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
@@ -19,15 +18,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public interface SchemaConstructor extends Schema, AttributeFaced {
-    Object construct(Arguments arguments);
+public interface ObjectFactory {
+    Object get(Arguments arguments);
 
     @Data
     @Accessors(fluent = true, chain = true)
-    class ObjectResult implements SchemaConstructor, ObjectSchema {
+    class ObjectResult implements AttributeConstructor, ObjectSchema {
 
         private Class<?> type;
-        private List<SchemaConstructor> attributes;
+        private List<AttributeConstructor> attributes;
         private Attribute attribute;
 
         @Override
@@ -36,7 +35,7 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
         }
 
         @Override
-        public Object construct(Arguments arguments) {
+        public Object get(Arguments arguments) {
             if (type.isInterface()) {
                 return constructInterface(arguments);
             } else if (type.isRecord()) {
@@ -48,8 +47,8 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
 
         public Object constructObject(Arguments arguments) {
             Object result = null;
-            for (SchemaConstructor attr : attributes) {
-                Object value = attr.construct(arguments);
+            for (AttributeConstructor attr : attributes) {
+                Object value = attr.get(arguments);
                 if (value != null) {
                     if (result == null) {
                         result = ReflectUtil.newInstance(type);
@@ -63,8 +62,8 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
         public Object constructInterface(Arguments arguments) {
             Map<Method, Object> map = new HashMap<>();
             boolean hasNonnullProperty = false;
-            for (SchemaConstructor property : attributes) {
-                Object extract = property.construct(arguments);
+            for (AttributeConstructor property : attributes) {
+                Object extract = property.get(arguments);
                 hasNonnullProperty = hasNonnullProperty || extract != null;
                 map.put(property.getter(), extract);
             }
@@ -88,8 +87,8 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
             try {
                 Object[] args = new Object[components.length];
                 boolean hasNonnullProperty = false;
-                for (SchemaConstructor property : attributes) {
-                    Object extract = property.construct(arguments);
+                for (AttributeConstructor property : attributes) {
+                    Object extract = property.get(arguments);
                     hasNonnullProperty = hasNonnullProperty || extract != null;
                     Integer i = index.get(property.name());
                     if (i != null) {
@@ -99,14 +98,14 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
                 if (!hasNonnullProperty) {
                     return null;
                 }
-                Constructor<?> constructor = type.getDeclaredConstructor(parameterTypes);
+                java.lang.reflect.Constructor<?> constructor = type.getDeclaredConstructor(parameterTypes);
                 return constructor.newInstance(args);
             } catch (ReflectiveOperationException e) {
                 throw new BeanReflectiveException(e);
             }
         }
 
-        public void addProperty(SchemaConstructor schema) {
+        public void addProperty(AttributeConstructor schema) {
             if (attributes == null) {
                 attributes = new ArrayList<>();
             }
@@ -116,8 +115,8 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
 
     @Data
     @Accessors(fluent = true)
-    class ArrayResult implements SchemaConstructor, ArraySchema {
-        private List<? extends SchemaConstructor> items;
+    class ArrayResult implements AttributeConstructor, ArraySchema {
+        private List<? extends AttributeConstructor> items;
         private Attribute attribute;
 
         @Override
@@ -131,8 +130,8 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
         }
 
         @Override
-        public Tuple construct(Arguments arguments) {
-            Object[] array = items().stream().map(item -> item.construct(arguments)).toArray();
+        public Tuple get(Arguments arguments) {
+            Object[] array = items().stream().map(item -> item.get(arguments)).toArray();
             return Tuples.of(array);
         }
 
@@ -141,13 +140,13 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
 
     @Data
     @Accessors(fluent = true)
-    class IndexableProperty implements SchemaConstructor {
+    class IndexableProperty implements AttributeConstructor {
 
         private int index;
         private Attribute attribute;
 
         @Override
-        public Object construct(Arguments arguments) {
+        public Object get(Arguments arguments) {
             return arguments.get(index);
         }
 
@@ -161,5 +160,40 @@ public interface SchemaConstructor extends Schema, AttributeFaced {
             return attribute.name();
         }
 
+    }
+
+    interface AttributeConstructor extends Attribute, ObjectFactory {
+
+        Attribute attribute();
+
+        @Override
+        default String name() {
+            return attribute().name();
+        }
+
+        @Override
+        default Method getter() {
+            return attribute().getter();
+        }
+
+        @Override
+        default Method setter() {
+            return attribute().setter();
+        }
+
+        @Override
+        default Field field() {
+            return attribute().field();
+        }
+
+        @Override
+        default Schema declareBy() {
+            return attribute().declareBy();
+        }
+
+        @Override
+        default Class<?> type() {
+            return attribute().type();
+        }
     }
 }

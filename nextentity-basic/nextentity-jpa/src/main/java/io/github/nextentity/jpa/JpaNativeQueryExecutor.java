@@ -1,7 +1,7 @@
 package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.QueryExecutor;
-import io.github.nextentity.core.SqlStatement;
+import io.github.nextentity.jdbc.QuerySqlStatement;
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.expression.QueryStructure;
@@ -45,11 +45,11 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
 
     private <T> List<T> queryByNativeSql(@NotNull QueryStructure queryStructure) {
         QueryContext context = new QueryContext(queryStructure, metamodel(), true);
-        SqlStatement<?> preparedSql = sqlBuilder.build(context);
+        QuerySqlStatement preparedSql = sqlBuilder.build(context);
         // noinspection SqlSourceToSinkFlow
-        jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.getSql());
+        jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
         int position = 0;
-        for (Object arg : preparedSql.getParameters()) {
+        for (Object arg : preparedSql.parameters()) {
             query.setParameter(++position, arg);
         }
         List<?> list = TypeCastUtil.cast(query.getResultList());
