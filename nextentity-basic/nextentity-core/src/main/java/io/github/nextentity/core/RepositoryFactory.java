@@ -1,35 +1,50 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.Updaters.UpdateExecutor;
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.api.Path;
+import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.meta.Metamodel;
+import lombok.Getter;
 
 import java.io.Serializable;
 
 /**
  * @author HuangChengwei
- * @since 2024/4/15 上午9:00
+ * @since 2024-04-08 15:12
  */
-public class RepositoryFactory extends EntitiesFactory {
+
+@Getter
+public class RepositoryFactory implements Query {
+
+    private final QueryExecutor queryExecutor;
+    private final UpdateExecutor updateExecutor;
+    private final QueryPostProcessor queryPostProcessor;
+    private final Metamodel metamodel;
+
 
     public RepositoryFactory(QueryExecutor queryExecutor,
                              UpdateExecutor updateExecutor,
                              QueryPostProcessor queryPostProcessor,
                              Metamodel metamodel) {
-        super(queryExecutor, updateExecutor, queryPostProcessor, metamodel);
+        this.queryExecutor = queryExecutor;
+        this.updateExecutor = updateExecutor;
+        this.queryPostProcessor = queryPostProcessor;
+        this.metamodel = metamodel;
     }
 
-    public <ID extends Serializable, T extends Persistable<ID>> Repository<ID, T>
-    getRepository(Class<T> entityType) {
-        return new RepositoryImpl<>(getEntities(entityType, Persistable::getId));
-    }
-
-    private static class RepositoryImpl<ID extends Serializable, T extends Persistable<ID>>
-            extends EntitiesFaced<ID, T>
-            implements Repository<ID, T> {
-        public RepositoryImpl(Entities<ID, T> target) {
-            super(target);
+    public <T, ID extends Serializable> Repository<ID, T> getRepository(Class<T> entityType) {
+        if (entityType.isAssignableFrom(Persistable.class)) {
+            return getRepository(entityType, TypeCastUtil.unsafeCast((Path<Persistable<ID>, ID>) Persistable::getId));
         }
+        return new RepositoryImpl<>(this, entityType);
     }
 
+    public <T, ID extends Serializable> Repository<ID, T> getRepository(Class<T> entityType, Path<T, ID> idPath) {
+        return new RepositoryImpl<>(this, entityType, idPath);
+    }
+
+    @Override
+    public <T> Select<T> from(Class<T> type) {
+        return getRepository(type);
+    }
 }

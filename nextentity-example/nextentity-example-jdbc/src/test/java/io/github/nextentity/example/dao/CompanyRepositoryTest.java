@@ -1,7 +1,6 @@
 package io.github.nextentity.example.dao;
 
 import io.github.nextentity.core.Repository;
-import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.example.eneity.Company;
 import io.github.nextentity.example.eneity.Employee;
 import org.junit.jupiter.api.Assertions;
@@ -18,19 +17,19 @@ class CompanyRepositoryTest {
     @Autowired(required = false)
     CompanyRepository companyRepository;
     @Autowired(required = false)
-    Entities<Integer, Company> companyEntities;
+    Repository<Integer, Company> companyEntities;
     @Autowired(required = false)
     EmployeeRepository employeeRepository;
     @Autowired(required = false)
     Repository<Integer, Employee> employeeRepository2;
     @Autowired(required = false)
-    Entities<Integer, Employee> employeeEntities;
+    Repository<Integer, Employee> employeeEntities;
 
     @Test
     void testAutowired() {
-        Assertions.assertNotNull(employeeEntities);
+        Assertions.assertNotNull(employeeRepository);
         Assertions.assertNotNull(companyRepository);
-        Assertions.assertNotNull(companyEntities);
+        Assertions.assertNotNull(companyRepository);
         Assertions.assertNotNull(employeeRepository);
         Assertions.assertNotNull(employeeRepository2);
     }

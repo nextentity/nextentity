@@ -1,4 +1,4 @@
-package io.github.nextentity.core.util.tuple;
+package io.github.nextentity.core.api.tuple;
 
 public interface Tuple10<A, B, C, D, E, F, G, H, I, J> extends Tuple9<A, B, C, D, E, F, G, H, I> {
     default J get9() {

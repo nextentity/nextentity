@@ -1,6 +1,6 @@
 package io.github.nextentity.test.db;
 
-import io.github.nextentity.core.EntitiesFactory;
+import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
@@ -19,18 +19,18 @@ import java.util.List;
 @Data
 public class DbConfig {
 
-    private final EntitiesFactory jdbcFactory;
-    private final EntitiesFactory jpaFactory;
+    private final RepositoryFactory jdbcFactory;
+    private final RepositoryFactory jpaFactory;
     private QuerySqlBuilder querySqlBuilder;
     private JdbcUpdateSqlBuilder updateSqlBuilder;
     private DataSource getDataSource;
     private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
-    private List<EntitiesFactory> entitiesFactories;
+    private List<RepositoryFactory> entitiesFactories;
     private SingleConnectionProvider singleConnectionProvider;
     private Metamodel metamodel;
     private List<User> users;
-    private UserEntities jdbc, jpa;
+    private UserRepository jdbc, jpa;
     private final String setPidNullSql;
 
     public DbConfig(QuerySqlBuilder querySqlBuilder,
@@ -38,8 +38,8 @@ public class DbConfig {
                     DataSource getDataSource,
                     EntityManagerFactory entityManagerFactory,
                     EntityManager entityManager,
-                    EntitiesFactory jdbc, EntitiesFactory jpa,
-                    List<EntitiesFactory> entitiesFactories,
+                    RepositoryFactory jdbc, RepositoryFactory jpa,
+                    List<RepositoryFactory> entitiesFactories,
                     SingleConnectionProvider singleConnectionProvider,
                     Metamodel metamodel, String setPidNullSql) {
         this.querySqlBuilder = querySqlBuilder;
@@ -53,8 +53,8 @@ public class DbConfig {
         this.setPidNullSql = setPidNullSql;
         this.jdbcFactory = jdbc;
         this.jpaFactory = jpa;
-        this.jdbc = new UserEntities(jdbcFactory.getEntities(User.class), this);
-        this.jpa = new UserEntities(jpaFactory.getEntities(User.class), this);
+        this.jdbc = new UserRepository(jdbcFactory.getRepository(User.class), this);
+        this.jpa = new UserRepository(jpaFactory.getRepository(User.class), this);
 
         this.users = new DbInitializer(this).initialize();
     }

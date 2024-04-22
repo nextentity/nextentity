@@ -26,7 +26,7 @@ public class DbInitializer extends Transaction {
     public synchronized List<User> initialize() {
         doInTransaction(connection -> {
             try {
-                UserEntities query = config.getJdbc();
+                UserRepository query = config.getJdbc();
                 // resetData(connection, query);
                 allUsers = queryAllUsers(query);
             } catch (Exception e) {
@@ -36,7 +36,7 @@ public class DbInitializer extends Transaction {
         return allUsers;
     }
 
-    private void resetData(Connection connection, UserEntities query) throws SQLException {
+    private void resetData(Connection connection, UserRepository query) throws SQLException {
         String sql = config.getSetPidNullSql();
         //noinspection SqlSourceToSinkFlow
         connection.createStatement().executeUpdate(sql);
@@ -44,7 +44,7 @@ public class DbInitializer extends Transaction {
         query.insert(Users.getUsers());
     }
 
-    private List<User> queryAllUsers(UserEntities query) {
+    private List<User> queryAllUsers(UserRepository query) {
         List<User> list = query.orderBy(User::getId).asc().getList();
         Map<Integer, User> map = list.stream().collect(Collectors.toMap(User::getId, Function.identity()));
         for (User user : list) {

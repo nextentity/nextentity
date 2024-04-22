@@ -1,6 +1,6 @@
 package io.github.nextentity.example.service;
 
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.example.eneity.User;
@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final Entities<Long, User> userEntities;
+    private final Repository<Long, User> userEntities;
 
     public void updateUser(User user) {
         userEntities.update(user);

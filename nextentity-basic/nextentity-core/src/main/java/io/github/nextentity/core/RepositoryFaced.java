@@ -1,6 +1,5 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.BooleanPathExpression;
@@ -11,8 +10,8 @@ import io.github.nextentity.core.api.Expression.StringPathExpression;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
-import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
@@ -28,18 +27,19 @@ import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Query.Where0;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple10;
-import io.github.nextentity.core.util.tuple.Tuple2;
-import io.github.nextentity.core.util.tuple.Tuple3;
-import io.github.nextentity.core.util.tuple.Tuple4;
-import io.github.nextentity.core.util.tuple.Tuple5;
-import io.github.nextentity.core.util.tuple.Tuple6;
-import io.github.nextentity.core.util.tuple.Tuple7;
-import io.github.nextentity.core.util.tuple.Tuple8;
-import io.github.nextentity.core.util.tuple.Tuple9;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple10;
+import io.github.nextentity.core.api.tuple.Tuple2;
+import io.github.nextentity.core.api.tuple.Tuple3;
+import io.github.nextentity.core.api.tuple.Tuple4;
+import io.github.nextentity.core.api.tuple.Tuple5;
+import io.github.nextentity.core.api.tuple.Tuple6;
+import io.github.nextentity.core.api.tuple.Tuple7;
+import io.github.nextentity.core.api.tuple.Tuple8;
+import io.github.nextentity.core.api.tuple.Tuple9;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -50,11 +50,11 @@ import java.util.function.Function;
  * @author HuangChengwei
  * @since 2024-04-08 15:08
  */
-public class EntitiesFaced<ID, T> implements Entities<ID, T> {
+public class RepositoryFaced<ID extends Serializable, T> implements Repository<ID, T> {
 
-    private final Entities<ID, T> target;
+    private final Repository<ID, T> target;
 
-    public EntitiesFaced(Entities<ID, T> target) {
+    public RepositoryFaced(Repository<ID, T> target) {
         this.target = target;
     }
 
@@ -525,12 +525,12 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
 
     @Override
     public List<T> offset(int offset) {
-        return Entities.super.offset(offset);
+        return Repository.super.offset(offset);
     }
 
     @Override
     public List<T> limit(int limit) {
-        return Entities.super.limit(limit);
+        return Repository.super.limit(limit);
     }
 
     @Override
@@ -645,7 +645,7 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
 
     @Override
     public List<T> limit(int limit, LockModeType lockModeType) {
-        return Entities.super.limit(limit, lockModeType);
+        return Repository.super.limit(limit, lockModeType);
     }
 
     @Override
@@ -679,13 +679,13 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     }
 
     @Override
-    public List<T> insert(@NotNull Iterable<T> entities) {
-        return target.insert(entities);
+    public List<T> insert(@NotNull Iterable<T> Repository) {
+        return target.insert(Repository);
     }
 
     @Override
-    public List<T> update(@NotNull Iterable<T> entities) {
-        return target.update(entities);
+    public List<T> update(@NotNull Iterable<T> Repository) {
+        return target.update(Repository);
     }
 
     @Override
@@ -694,8 +694,8 @@ public class EntitiesFaced<ID, T> implements Entities<ID, T> {
     }
 
     @Override
-    public void delete(@NotNull Iterable<T> entities) {
-        target.delete(entities);
+    public void delete(@NotNull Iterable<T> Repository) {
+        target.delete(Repository);
     }
 
     @Override

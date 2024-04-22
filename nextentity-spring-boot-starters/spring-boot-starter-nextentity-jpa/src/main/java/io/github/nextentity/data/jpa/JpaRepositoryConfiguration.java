@@ -1,12 +1,10 @@
 package io.github.nextentity.data.jpa;
 
-import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.Persistable;
 import io.github.nextentity.core.QueryPostProcessor;
 import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
-import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.EntityTypeUtil;
 import io.github.nextentity.data.TransactionalUpdateExecutor;
@@ -28,18 +26,7 @@ import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import java.io.Serializable;
 
 @Configuration
-public class JpaEntitiesConfiguration {
-
-    @Bean
-    @Primary
-    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable> Entities<ID, T> jpaEntities(DependencyDescriptor descriptor,
-                                                                       @Qualifier("jpaRepositoryFactory")
-                                                                       EntitiesFactory factory) {
-        Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
-        EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
-        return factory.getEntities(entityType);
-    }
+public class JpaRepositoryConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)

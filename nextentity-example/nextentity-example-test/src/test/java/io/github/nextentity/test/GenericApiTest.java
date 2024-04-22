@@ -8,16 +8,16 @@ import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Slice;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple2;
+import io.github.nextentity.core.api.tuple.Tuple3;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.ProjectionType;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple2;
-import io.github.nextentity.core.util.tuple.Tuple3;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
-import io.github.nextentity.test.db.UserEntities;
+import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.entity.User;
 import io.github.nextentity.test.projection.UserInterface;
 import io.github.nextentity.test.projection.UserModel;
@@ -58,7 +58,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testAndOr(UserEntities userQuery) {
+    public void testAndOr(UserRepository userQuery) {
         User single = userQuery
                 .where(User::getId).eq(0)
                 .orderBy(User::getId).asc()
@@ -95,7 +95,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testAndOrChain(UserEntities userQuery) {
+    public void testAndOrChain(UserRepository userQuery) {
         User single = userQuery
                 .where(User::getId).eq(0)
                 .getSingle();
@@ -129,7 +129,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testAndOrChan(UserEntities userQuery) {
+    public void testAndOrChan(UserRepository userQuery) {
         User single = userQuery
                 .where(User::getId).eq(0)
                 .getSingle();
@@ -162,7 +162,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testAndOr2(UserEntities userQuery) {
+    public void testAndOr2(UserRepository userQuery) {
         User single = userQuery
                 .where(get(User::getId).eq(0))
                 .getSingle();
@@ -198,7 +198,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testComparablePredicateTesterGt(UserEntities userQuery) {
+    public void testComparablePredicateTesterGt(UserRepository userQuery) {
 
         List<User> qgt80 = userQuery
                 .where(get(User::getRandomNumber).gt(80))
@@ -213,8 +213,8 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void te(UserEntities userQuery) {
-        // UserEntities userQuery = DbConfigs.MYSQL.getJdbc();
+    void te(UserRepository userQuery) {
+        // UserRepository userQuery = DbConfigs.MYSQL.getJdbc();
         List<User> users = userQuery.fetch(
                         User::getParentUser,
                         User::getRandomUser)
@@ -236,7 +236,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testPredicateTesterEq(UserEntities userQuery) {
+    public void testPredicateTesterEq(UserRepository userQuery) {
         int userId = 20;
         User user = userQuery
                 .fetch(Arrays.asList(
@@ -308,7 +308,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testAggregateFunction(UserEntities userQuery) {
+    public void testAggregateFunction(UserRepository userQuery) {
 
         List<Expression<User, ?>> selected = Arrays.asList(
                 get(User::getRandomNumber).min(),
@@ -369,7 +369,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testSelect(UserEntities userQuery) {
+    public void testSelect(UserRepository userQuery) {
         List<Tuple2<Integer, String>> qList = userQuery
                 .select(User::getRandomNumber, User::getUsername)
                 .getList();
@@ -392,7 +392,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testTime(UserEntities userQuery) {
+    public void testTime(UserRepository userQuery) {
         long start = System.currentTimeMillis();
         userQuery
                 .orderBy(Arrays.asList(
@@ -405,7 +405,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testOrderBy(UserEntities userQuery) {
+    public void testOrderBy(UserRepository userQuery) {
         List<User> list = userQuery
                 .orderBy(Arrays.asList(
                         get(User::getRandomNumber).desc(),
@@ -489,7 +489,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testOrderBy2(UserEntities userQuery) {
+    public void testOrderBy2(UserRepository userQuery) {
         List<User> list = userQuery
                 .orderBy(
                         get(User::getRandomNumber).desc(),
@@ -554,7 +554,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testPredicate(UserEntities userQuery) {
+    public void testPredicate(UserRepository userQuery) {
         List<User> qList = userQuery
                 .where(not(get(User::getRandomNumber).ge(10)
                         .or(User::getRandomNumber).lt(5)))
@@ -603,7 +603,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testPredicate2(UserEntities userQuery) {
+    public void testPredicate2(UserRepository userQuery) {
         List<User> qList = userQuery
                 .where(or(
                         get(User::getRandomNumber).ge(10),
@@ -656,7 +656,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testGroupBy1(UserEntities userQuery) {
+    public void testGroupBy1(UserRepository userQuery) {
         List<Tuple3<Boolean, Integer, Integer>> resultList = userQuery
                 .select(User::isValid, User::getRandomNumber, User::getPid)
                 .groupBy(User::getRandomNumber, User::getPid, User::isValid)
@@ -685,7 +685,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testIsNull(UserEntities userQuery) {
+    public void testIsNull(UserRepository userQuery) {
 
         List<User> qList = userQuery.where(get(User::getPid).isNotNull())
                 .getList();
@@ -707,7 +707,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testOperatorIfNotNull(UserEntities userQuery) {
+    public void testOperatorIfNotNull(UserRepository userQuery) {
         List<User> qList = userQuery.where(User::getRandomNumber).eq(10).getList();
         List<User> fList = userQuery.users().stream().filter(u -> u.getRandomNumber() == 10)
                 .collect(Collectors.toList());
@@ -896,7 +896,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testOperator2(UserEntities userQuery) {
+    public void testOperator2(UserRepository userQuery) {
         Predicate<User> isValid = get(User::isValid);
         userQuery.where(isValid
                         .and(User::getRandomNumber).notBetween(10, 15)
@@ -907,7 +907,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testOperator(UserEntities userQuery) {
+    public void testOperator(UserRepository userQuery) {
 
         Predicate<User> isValid = get(User::isValid);
         List<User> qList = userQuery.where(isValid).getList();
@@ -1029,7 +1029,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testPredicateAssembler(UserEntities userQuery) {
+    public void testPredicateAssembler(UserRepository userQuery) {
 
         List<User> qList = userQuery.where(get(User::isValid).eq(true)
                         .and(User::getParentUser).get(User::getUsername).eq(username))
@@ -1248,7 +1248,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void testSubQuery(UserEntities userQuery) {
+    void testSubQuery(UserRepository userQuery) {
         Date time = userQuery.users().get(20).getTime();
 
         userQuery
@@ -1273,7 +1273,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testNumberPredicateTester(UserEntities userQuery) {
+    public void testNumberPredicateTester(UserRepository userQuery) {
         List<User> list = userQuery
                 .where(get(User::getRandomNumber).add(2).ge(4))
                 .getList();
@@ -1371,7 +1371,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testStringPredicateTester(UserEntities userQuery) {
+    public void testStringPredicateTester(UserRepository userQuery) {
         String username = "Roy Sawyer";
 
         List<User> qList = userQuery.where(get(User::getUsername).substring(2).eq("eremy Keynes"))
@@ -1442,7 +1442,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testResultBuilder(UserEntities userQuery) {
+    public void testResultBuilder(UserRepository userQuery) {
         List<User> resultList = userQuery.orderBy(User::getId).getList(5, 10);
         List<User> subList = userQuery.users().subList(5, 5 + 10);
         assertEquals(resultList, subList);
@@ -1523,7 +1523,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testSlice(UserEntities userQuery) {
+    public void testSlice(UserRepository userQuery) {
         Slice<String> slice = userQuery.select(User::getUsername)
                 .where(User::getParentUser).get(User::getRandomNumber).eq(10)
                 .groupBy(User::getUsername)
@@ -1548,7 +1548,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void projection(UserEntities userQuery) throws JsonProcessingException {
+    void projection(UserRepository userQuery) throws JsonProcessingException {
         List<UserInterface> list0 = userQuery.select(UserInterface.class)
                 .getList();
         List<UserInterface> list1 = userQuery.select(UserInterface.class)
@@ -1561,7 +1561,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void testInterfaceSelect(UserEntities userQuery) {
+    void testInterfaceSelect(UserRepository userQuery) {
         UserInterface list = userQuery.select(UserInterface.class)
                 .getFirst();
         String string = list.toString();
@@ -1570,7 +1570,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testAttr(UserEntities userQuery) {
+    public void testAttr(UserRepository userQuery) {
         User first = userQuery.orderBy(get(User::getId).desc()).getFirst();
         ArrayList<User> users = new ArrayList<>(userQuery.users());
         users.sort((a, b) -> Integer.compare(b.getId(), a.getId()));
@@ -1613,7 +1613,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testWhere(UserEntities userQuery) {
+    public void testWhere(UserRepository userQuery) {
         List<User> resultList = userQuery
                 .where(Paths.get(User::getParentUser).get(User::getUsername).eq(username))
                 .getList();
@@ -1657,7 +1657,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testPathBuilder(UserEntities userQuery) {
+    public void testPathBuilder(UserRepository userQuery) {
         List<User> resultList = userQuery.where(Paths.get(User::getParentUser)
                         .get(User::getParentUser).get(User::getUsername).eq(username))
                 .getList();
@@ -1694,7 +1694,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void testBigNum(UserEntities userQuery) {
+    public void testBigNum(UserRepository userQuery) {
         List<User> users = userQuery.where(get(User::getTimestamp).eq(Double.MAX_VALUE))
                 .getList();
         System.out.println(users);
@@ -1702,7 +1702,7 @@ public class GenericApiTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    public void subQueryTest(UserEntities userQuery) {
+    public void subQueryTest(UserRepository userQuery) {
         Expression<User, List<Integer>> ids = userQuery
                 .select(User::getId).where(User::getId)
                 .in(1, 2, 3)
@@ -1712,7 +1712,7 @@ public class GenericApiTest {
         System.out.println(result);
     }
 
-    private IntStream getUserIdStream(UserEntities userQuery) {
+    private IntStream getUserIdStream(UserRepository userQuery) {
         return userQuery.users().stream().mapToInt(User::getRandomNumber);
     }
 

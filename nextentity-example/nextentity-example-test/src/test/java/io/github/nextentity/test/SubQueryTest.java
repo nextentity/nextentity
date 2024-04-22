@@ -1,7 +1,7 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.EntitiesFactory;
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
+import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.test.db.DbConfigs;
 import io.github.nextentity.test.entity.UserSummaryMysql;
 import io.github.nextentity.test.entity.UserSummarySqlServer;
@@ -20,8 +20,8 @@ public class SubQueryTest {
         testMysql(DbConfigs.MYSQL.getJpaFactory());
     }
 
-    private static void testMysql(EntitiesFactory entitiesFactory) {
-        Entities<String, UserSummaryMysql> summaryEntities = entitiesFactory.getEntities(UserSummaryMysql.class);
+    private static void testMysql(RepositoryFactory entitiesFactory) {
+        Repository<String, UserSummaryMysql> summaryEntities = entitiesFactory.getRepository(UserSummaryMysql.class);
         UserSummaryMysql first = summaryEntities.getFirst();
         UserSummaryMysql f2 = summaryEntities.get(first.getUsername());
         Assertions.assertEquals(f2, first);
@@ -33,8 +33,8 @@ public class SubQueryTest {
     //     testSqlserver(DbConfigs.SQLSERVER.getJpaFactory());
     // }
 
-    private void testSqlserver(EntitiesFactory entitiesFactory) {
-        Entities<String, UserSummarySqlServer> summaryEntities = entitiesFactory.getEntities(UserSummarySqlServer.class);
+    private void testSqlserver(RepositoryFactory entitiesFactory) {
+        Repository<String, UserSummarySqlServer> summaryEntities = entitiesFactory.getRepository(UserSummarySqlServer.class);
         UserSummarySqlServer first = summaryEntities.getFirst();
         UserSummarySqlServer f2 = summaryEntities.get(first.getUsername());
         Assertions.assertEquals(f2, first);

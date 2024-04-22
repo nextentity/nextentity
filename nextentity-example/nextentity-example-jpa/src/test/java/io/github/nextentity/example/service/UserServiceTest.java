@@ -1,7 +1,7 @@
 package io.github.nextentity.example.service;
 
 import io.github.nextentity.core.Pages;
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.example.eneity.User;
 import io.github.nextentity.example.projection.IUsernameGender;
@@ -26,7 +26,7 @@ class UserServiceTest {
     @Autowired
     UserService userService;
     @Autowired
-    Entities<Long, User> userEntities;
+    Repository<Long, User> userEntities;
 
     @Test
     void getByUsername() {

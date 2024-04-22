@@ -1,6 +1,6 @@
 package io.github.nextentity.example.controller;
 
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.example.eneity.User;
 import io.github.nextentity.example.model.UserQuery;
@@ -16,14 +16,14 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final Entities<Long, User> userEntities;
+    private final Repository<Long, User> userRepository;
 
     public Page<User> getUsers(UserQuery query) {
-        return userEntities.where(query.predicate()).getPage(query.pageable());
+        return userRepository.where(query.predicate()).getPage(query.pageable());
     }
 
     public Page<User> joinExample(UserQuery2 query) {
-        return userEntities
+        return userRepository
                 .fetch(User::getParentUser, User::getRandomUser)
                 .where(query.predicate())
                 .getPage(query.pageable());

@@ -1,9 +1,9 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
 import io.github.nextentity.test.db.DbConfig;
 import io.github.nextentity.test.db.DbConfigs;
-import io.github.nextentity.test.db.UserEntities;
+import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -23,11 +23,11 @@ public class UserQueryProvider implements ArgumentsProvider {
                 .map(Arguments::of);
     }
 
-    private static Stream<UserEntities> getArguments(DbConfig config) {
+    private static Stream<UserRepository> getArguments(DbConfig config) {
         return config.getEntitiesFactories().stream()
                 .map(it -> {
-                    Entities<Integer, User> entities = it.getEntities(User.class);
-                    return new UserEntities(entities, config);
+                    Repository<Integer, User> entities = it.getRepository(User.class);
+                    return new UserRepository(entities, config);
                 });
     }
 

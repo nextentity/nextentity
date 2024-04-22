@@ -1,4 +1,4 @@
-package io.github.nextentity.core.util.tuple;
+package io.github.nextentity.core.api.tuple;
 
 import java.util.List;
 

@@ -1,12 +1,10 @@
 package io.github.nextentity.data.jdbc;
 
-import io.github.nextentity.core.EntitiesFactory;
 import io.github.nextentity.core.Persistable;
 import io.github.nextentity.core.QueryPostProcessor;
 import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.Updaters.UpdateExecutor;
-import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.EntityTypeUtil;
@@ -36,19 +34,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 @Configuration
-public class JdbcEntitiesConfiguration {
-
-    @Bean
-    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    protected <T, ID extends Serializable>
-    Entities<ID, T> jdbcEntities(DependencyDescriptor descriptor,
-                                 @Qualifier("jdbcRepositoryFactory")
-                                 EntitiesFactory factory) {
-        Class<T> entityType = EntityTypeUtil.getEntityType(descriptor);
-        EntityTypeUtil.checkIdType(descriptor, factory.getMetamodel(), entityType);
-        return factory.getEntities(entityType);
-    }
-
+public class JdbcRepositoryConfiguration {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)

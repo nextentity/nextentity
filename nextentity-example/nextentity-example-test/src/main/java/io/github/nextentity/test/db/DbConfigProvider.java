@@ -1,6 +1,6 @@
 package io.github.nextentity.test.db;
 
-import io.github.nextentity.core.EntitiesFactory;
+import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.Lists;
@@ -45,11 +45,11 @@ public interface DbConfigProvider {
         JpaNativeQueryExecutor jpaNativeQueryExecutor = new JpaNativeQueryExecutor(querySqlBuilder, manager, metamodel, typeConverter);
         JpaUpdateExecutor jpaUpdateExecutor = new JpaUpdateExecutor(manager, jpaQueryExecutor);
         JdbcUpdateExecutor jdbcUpdateExecutor = new JdbcUpdateExecutor(updateSqlBuilder(), connectionProvider, metamodel);
-        EntitiesFactory jpa = new EntitiesFactory(jpaQueryExecutor, jpaUpdateExecutor, null, metamodel);
-        EntitiesFactory jdbc = new EntitiesFactory(jdbcQueryExecutor, jdbcUpdateExecutor, null, metamodel);
-        EntitiesFactory jpaNative = new EntitiesFactory(jpaNativeQueryExecutor, jpaUpdateExecutor, null, metamodel);
+        RepositoryFactory jpa = new RepositoryFactory(jpaQueryExecutor, jpaUpdateExecutor, null, metamodel);
+        RepositoryFactory jdbc = new RepositoryFactory(jdbcQueryExecutor, jdbcUpdateExecutor, null, metamodel);
+        RepositoryFactory jpaNative = new RepositoryFactory(jpaNativeQueryExecutor, jpaUpdateExecutor, null, metamodel);
 
-        List<EntitiesFactory> list = Lists.of(jdbc, jpa, jpaNative);
+        List<RepositoryFactory> list = Lists.of(jdbc, jpa, jpaNative);
         return new DbConfig(querySqlBuilder,
                 updateSqlBuilder(),
                 dataSource,

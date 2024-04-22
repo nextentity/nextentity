@@ -1,4 +1,4 @@
-package io.github.nextentity.core.util.tuple;
+package io.github.nextentity.core.api.tuple;
 
 public interface Tuple4<A, B, C, D> extends Tuple3<A, B, C> {
 

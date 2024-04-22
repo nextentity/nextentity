@@ -1,6 +1,5 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
 import io.github.nextentity.core.api.Path;
@@ -10,6 +9,7 @@ import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Delegate;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author HuangChengwei
  * @since 2024-04-08 15:08
  */
-public class EntitiesImpl<T, ID> extends SelectImpl<T> implements Entities<ID, T> {
+public class RepositoryImpl<ID extends Serializable, T> extends SelectImpl<T> implements Repository<ID, T> {
 
     @Delegate
     protected final EntityRoot<T> entityRoot = Paths.root();
@@ -29,26 +29,26 @@ public class EntitiesImpl<T, ID> extends SelectImpl<T> implements Entities<ID, T
     protected OperatableExpression<T, ID> idExpression;
     protected Function<T, ID> getId;
 
-    public EntitiesImpl(EntitiesFactory entitiesFactory, Class<T> entityType, Path<T, ID> idPath) {
+    public RepositoryImpl(RepositoryFactory entitiesFactory, Class<T> entityType, Path<T, ID> idPath) {
         init(entitiesFactory, entityType, idPath);
     }
 
 
-    public EntitiesImpl(EntitiesFactory entitiesFactory, Class<T> type) {
+    public RepositoryImpl(RepositoryFactory entitiesFactory, Class<T> type) {
         init(entitiesFactory, type);
     }
 
-    protected EntitiesImpl() {
+    protected RepositoryImpl() {
     }
 
-    private void init(EntitiesFactory entitiesFactory, Class<T> entityType, Path<T, ID> idPath) {
+    private void init(RepositoryFactory entitiesFactory, Class<T> entityType, Path<T, ID> idPath) {
         super.init(entityType, entitiesFactory.getQueryExecutor(), entitiesFactory.getQueryPostProcessor());
         this.update = Updaters.create(entitiesFactory.getUpdateExecutor(), entityType);
         this.idExpression = entityRoot.get(idPath);
         this.getId = idPath::apply;
     }
 
-    protected void init(EntitiesFactory entitiesFactory, Class<T> entityType) {
+    protected void init(RepositoryFactory entitiesFactory, Class<T> entityType) {
         super.init(entityType, entitiesFactory.getQueryExecutor(), entitiesFactory.getQueryPostProcessor());
         update = Updaters.create(entitiesFactory.getUpdateExecutor(), entityType);
         BasicAttribute idAttribute = entitiesFactory.getMetamodel().getEntity(entityType).id();

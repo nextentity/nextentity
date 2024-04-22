@@ -14,17 +14,17 @@ import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectAr
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPrimitive;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple10;
+import io.github.nextentity.core.api.tuple.Tuple2;
+import io.github.nextentity.core.api.tuple.Tuple3;
+import io.github.nextentity.core.api.tuple.Tuple4;
+import io.github.nextentity.core.api.tuple.Tuple5;
+import io.github.nextentity.core.api.tuple.Tuple6;
+import io.github.nextentity.core.api.tuple.Tuple7;
+import io.github.nextentity.core.api.tuple.Tuple8;
+import io.github.nextentity.core.api.tuple.Tuple9;
 import io.github.nextentity.core.util.Lists;
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple10;
-import io.github.nextentity.core.util.tuple.Tuple2;
-import io.github.nextentity.core.util.tuple.Tuple3;
-import io.github.nextentity.core.util.tuple.Tuple4;
-import io.github.nextentity.core.util.tuple.Tuple5;
-import io.github.nextentity.core.util.tuple.Tuple6;
-import io.github.nextentity.core.util.tuple.Tuple7;
-import io.github.nextentity.core.util.tuple.Tuple8;
-import io.github.nextentity.core.util.tuple.Tuple9;
 
 import java.util.Arrays;
 import java.util.Collection;

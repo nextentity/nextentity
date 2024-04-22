@@ -2,7 +2,6 @@ package io.github.nextentity.data;
 
 import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Entities;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.meta.Metamodel;
@@ -42,8 +41,8 @@ public class EntityTypeUtil {
 
     public static <ID> Class<ID> getIdType(DependencyDescriptor descriptor) {
         Class<?> type = null;
-        if (Entities.class.isAssignableFrom(descriptor.getDependencyType())) {
-            type = descriptor.getResolvableType().as(Entities.class).resolveGeneric(0);
+        if (Repository.class.isAssignableFrom(descriptor.getDependencyType())) {
+            type = descriptor.getResolvableType().as(Repository.class).resolveGeneric(0);
         } else if (Repository.class.isAssignableFrom(descriptor.getDependencyType())) {
             type = descriptor.getResolvableType().as(Repository.class).resolveGeneric(0);
         }

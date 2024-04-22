@@ -1,7 +1,7 @@
 package io.github.nextentity.test.db;
 
-import io.github.nextentity.core.EntitiesFaced;
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
+import io.github.nextentity.core.RepositoryFaced;
 import io.github.nextentity.test.entity.User;
 import lombok.SneakyThrows;
 
@@ -14,11 +14,11 @@ import java.util.function.Function;
  * @author HuangChengwei
  * @since 2024-04-10 16:10
  */
-public class UserEntities extends EntitiesFaced<Integer, User> {
+public class UserRepository extends RepositoryFaced<Integer, User> {
     private final DbConfig dbConfig;
     private final Transaction transaction;
 
-    public UserEntities(Entities<Integer, User> target, DbConfig dbConfig) {
+    public UserRepository(Repository<Integer, User> target, DbConfig dbConfig) {
         super(target);
         this.dbConfig = dbConfig;
         this.transaction = new Transaction(dbConfig);

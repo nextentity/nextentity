@@ -1,11 +1,11 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.EntitiesFactory;
-import io.github.nextentity.core.api.Entities;
+import io.github.nextentity.core.Repository;
+import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.test.db.DbConfig;
 import io.github.nextentity.test.db.Transaction;
-import io.github.nextentity.test.db.UserEntities;
+import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.entity.AutoGenId;
 import io.github.nextentity.test.entity.User;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,17 +25,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UpdateTest {
 
-    Select<User> query(UserEntities updater) {
+    Select<User> query(UserRepository updater) {
         return updater;
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void insert(UserEntities userUpdater) {
+    void insert(UserRepository userUpdater) {
         userUpdater.doInTransaction(() -> doInsert(userUpdater));
     }
 
-    private void doInsert(UserEntities userUpdater) {
+    private void doInsert(UserRepository userUpdater) {
         List<User> existUsers = query(userUpdater).where(User::getId).in(10000000, 10000001, 10000002)
                 .getList();
         if (!existUsers.isEmpty()) {
@@ -65,11 +65,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void update(UserEntities userUpdater) {
+    void update(UserRepository userUpdater) {
         userUpdater.doInTransaction(() -> testUpdate(userUpdater));
     }
 
-    private void testUpdate(UserEntities userUpdater) {
+    private void testUpdate(UserRepository userUpdater) {
         List<User> users = query(userUpdater).where(User::getId).in(1, 2, 3).getList();
         for (User user : users) {
             user.setRandomNumber(user.getRandomNumber() + 1);
@@ -86,11 +86,11 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    void updateNonNullColumn(UserEntities userUpdater) {
+    void updateNonNullColumn(UserRepository userUpdater) {
         userUpdater.doInTransaction(() -> testUpdateNonNullColumn(userUpdater));
     }
 
-    private void testUpdateNonNullColumn(UserEntities userUpdater) {
+    private void testUpdateNonNullColumn(UserRepository userUpdater) {
         List<User> users = query(userUpdater).where(User::getId).in(1, 2, 3).getList();
         List<User> users2 = new ArrayList<>(users.size());
         for (User user : users) {
@@ -111,9 +111,9 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    public void test(UserEntities userUpdater) {
+    public void test(UserRepository userUpdater) {
         userUpdater.doInTransaction(() -> {
-            UserEntities jdbc = userUpdater.getConfig().getJdbc();
+            UserRepository jdbc = userUpdater.getConfig().getJdbc();
             User user = ((Select<User>) jdbc).where(User::getId).eq(10000006).getSingle();
             if (user != null) {
                 jdbc.delete(user);
@@ -127,7 +127,7 @@ public class UpdateTest {
         });
 
         userUpdater.doInTransaction(() -> {
-            UserEntities jpa = userUpdater.getConfig().getJpa();
+            UserRepository jpa = userUpdater.getConfig().getJpa();
             User user = ((Select<User>) jpa).where(User::getId).eq(10000007).getSingle();
             if (user != null) {
                 jpa.delete(user);
@@ -143,7 +143,7 @@ public class UpdateTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserUpdaterProvider.class)
-    public void test2(UserEntities userUpdater) {
+    public void test2(UserRepository userUpdater) {
         User a = userUpdater.getConfig().getJdbc().where(User::getId).eq(1).getSingle();
         User b = userUpdater.getConfig().getJpa().where(User::getId).eq(1).getSingle();
         System.out.println(a);
@@ -153,8 +153,8 @@ public class UpdateTest {
     @ParameterizedTest
     @ArgumentsSource(DbProvider.class)
     void testIdGenerator(DbConfig config) {
-        EntitiesFactory factory = config.getJdbcFactory();
-        Entities<Long, AutoGenId> entities = factory.getEntities(AutoGenId.class);
+        RepositoryFactory factory = config.getJdbcFactory();
+        Repository<Long, AutoGenId> entities = factory.getRepository(AutoGenId.class);
         Transaction transaction = new Transaction(config);
         transaction.doInTransaction(() -> {
             List<AutoGenId> list = Arrays.asList(new AutoGenId("a"), new AutoGenId("b"));
@@ -169,7 +169,7 @@ public class UpdateTest {
         });
     }
 
-    private static void checkId(List<AutoGenId> list, Entities<Long, AutoGenId> entities) {
+    private static void checkId(List<AutoGenId> list, Repository<Long, AutoGenId> entities) {
         for (AutoGenId autoGenId : list) {
             assertNotNull(autoGenId.getId());
         }

@@ -2,9 +2,9 @@ package io.github.nextentity.core.api.expression;
 
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Order;
+import io.github.nextentity.core.api.tuple.Tuple;
 import io.github.nextentity.core.reflect.schema.ArraySchema;
 import io.github.nextentity.core.reflect.schema.Schema;
-import io.github.nextentity.core.util.tuple.Tuple;
 import lombok.Data;
 import lombok.experimental.Accessors;
 

@@ -12,12 +12,12 @@ import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple2;
 import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple2;
-import io.github.nextentity.test.db.UserEntities;
+import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.domain.Page;
 import io.github.nextentity.test.domain.Pageable;
 import io.github.nextentity.test.entity.User;
@@ -52,7 +52,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void select2(UserEntities userQuery) {
+    void select2(UserRepository userQuery) {
         List<Tuple2<Integer, Integer>> list = userQuery.selectDistinct(
                         User::getId, User::getRandomNumber)
                 // .orderBy(User::getId)
@@ -62,21 +62,21 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void select3(UserEntities userQuery) {
+    void select3(UserRepository userQuery) {
         IUser first1 = userQuery.select(IUser.class).getFirst(90);
         System.out.println(first1);
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void select4(UserEntities userQuery) {
+    void select4(UserRepository userQuery) {
         List<User> list = userQuery.selectDistinct(User::getParentUser).getList();
         System.out.println(list);
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void select(UserEntities userQuery) {
+    void select(UserRepository userQuery) {
 
         int offset = 90;
         User f2 = userQuery.fetch(User::getParentUser).orderBy(User::getId).getFirst(offset);
@@ -757,7 +757,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void selectDistinct(UserEntities userQuery) {
+    void selectDistinct(UserRepository userQuery) {
         List<Integer> list = userQuery.selectDistinct(User::getRandomNumber)
                 .getList();
         List<Integer> collect = userQuery.users()
@@ -800,7 +800,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void fetch(UserEntities userQuery) {
+    void fetch(UserRepository userQuery) {
         List<User> users = userQuery.fetch(User::getParentUser).orderBy(User::getId).getList();
 
         assertEquals(users, userQuery.users());
@@ -836,7 +836,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void groupBy(UserEntities userQuery) {
+    void groupBy(UserRepository userQuery) {
         List<Tuple> list = userQuery
                 .select(Lists.of(
                         get(User::getRandomNumber),
@@ -906,20 +906,20 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void orderBy(UserEntities userQuery) {
+    void orderBy(UserRepository userQuery) {
         testOrderBy(Lists.of(new Checker<>(userQuery.users(), userQuery)));
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void combinatorial(UserEntities userQuery) {
+    void combinatorial(UserRepository userQuery) {
         testOrderBy(getWhereTestCase(new Checker<>(userQuery.users(), userQuery), userQuery.users()));
 
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void testEmptyIn(UserEntities userQuery) {
+    void testEmptyIn(UserRepository userQuery) {
         List<User> list = userQuery.where(User::getId).notIn().getList();
         assertEquals(list, userQuery.users());
     }
@@ -988,7 +988,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void getList(UserEntities userQuery) {
+    void getList(UserRepository userQuery) {
 
         List<User> users = userQuery.getList();
         assertEquals(users.size(), userQuery.users().size());
@@ -1003,7 +1003,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void where(UserEntities userQuery) {
+    void where(UserRepository userQuery) {
         Checker<User, Where<User, User>> check = new Checker<>(userQuery.users(), userQuery);
         getWhereTestCase(check, userQuery.users());
     }
@@ -1562,7 +1562,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void queryList(UserEntities userQuery) {
+    void queryList(UserRepository userQuery) {
         User single = userQuery
                 .where(User::getId).le(10)
                 .getSingle(10);
@@ -1621,11 +1621,11 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void lock(UserEntities userQuery) {
+    void lock(UserRepository userQuery) {
         userQuery.doInTransaction(() -> testLock(userQuery));
     }
 
-    private static void testLock(UserEntities userQuery) {
+    private static void testLock(UserRepository userQuery) {
         for (LockModeType lockModeType : LockModeType.values()) {
             try {
                 User single = userQuery
