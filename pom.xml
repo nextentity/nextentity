@@ -6,7 +6,7 @@
 
   <groupId>io.github.nextentity</groupId>
   <artifactId>nextentity</artifactId>
-  <version>1.0.2-jdk8</version><!-- project version -->
+  <version>1.1.0-jdk8</version><!-- project version -->
 
   <packaging>pom</packaging>
 
@@ -35,6 +35,7 @@
     <spring.version>5.3.33</spring.version>
     <junit.version>5.10.0</junit.version>
     <hikaricp.version>4.0.3</hikaricp.version>
+    <mssql-jdbc.version>12.6.1.jre8</mssql-jdbc.version>
   </properties>
 
   <licenses>
@@ -88,6 +89,11 @@
         <groupId>org.hibernate</groupId>
         <artifactId>hibernate-core</artifactId>
         <version>${hibernate.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.sqlserver</groupId>
+        <artifactId>mssql-jdbc</artifactId>
+        <version>${mssql-jdbc.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jetbrains</groupId>

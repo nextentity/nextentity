@@ -1,125 +1,35 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.Query.Select;
-import io.github.nextentity.core.converter.TypeConverter;
-import io.github.nextentity.jdbc.ConnectionProvider;
-import io.github.nextentity.jdbc.JdbcQueryExecutor;
-import io.github.nextentity.jdbc.JdbcResultCollector;
-import io.github.nextentity.jdbc.MySqlQuerySqlBuilder;
-import io.github.nextentity.jpa.JpaNativeQueryExecutor;
-import io.github.nextentity.jpa.JpaQueryExecutor;
-import io.github.nextentity.meta.jpa.JpaMetamodel;
+import io.github.nextentity.core.Repository;
+import io.github.nextentity.test.db.DbConfig;
+import io.github.nextentity.test.db.DbConfigs;
+import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.entity.User;
-import lombok.Getter;
-import lombok.SneakyThrows;
-import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
 public class UserQueryProvider implements ArgumentsProvider {
-    public static final Select<User> jdbc = jdbc();
-    public static final Select<User> jpa = jpa();
-    public static final Select<User> jpaNative = jpaNative();
-
-    @Getter(lazy = true)
-    @Accessors(fluent = true)
-    private static final List<User> users = loadAllUsers();
-
-    private static List<User> loadAllUsers() {
-        EntityManager manager = EntityManagers.getEntityManager();
-        CriteriaBuilder builder = manager.getCriteriaBuilder();
-        CriteriaQuery<User> query = builder.createQuery(User.class);
-        Root<User> root = query.from(User.class);
-        query.orderBy(builder.asc(root.get("id")));
-        List<User> list = manager.createQuery(query).getResultList();
-        Map<Integer, User> map = list.stream().collect(Collectors.toMap(User::getId, Function.identity()));
-        return list.stream()
-                .map(user -> {
-                    user = user.clone();
-                    Integer pid = user.getPid();
-                    if (pid != null) {
-                        User p = map.get(pid);
-                        user.setParentUser(p);
-                    }
-                    return user;
-                })
-                .collect(Collectors.toList());
-    }
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
-        EntityManagers.getEntityManager().clear();
-        return Stream.of(
-                Arguments.of(jdbc),
-                Arguments.of(jpa),
-                Arguments.of(jpaNative)
-        );
+        return DbConfigs.CONFIGS.stream()
+                .peek(dbConfig -> dbConfig.getEntityManager().clear())
+                .flatMap(UserQueryProvider::getArguments)
+                .map(Arguments::of);
     }
 
-    private static Select<User> jpa() {
-        Query query = jpaQuery();
-        log.debug("create jpa query: " + query);
-        return query.from(User.class);
+    private static Stream<UserRepository> getArguments(DbConfig config) {
+        return config.getEntitiesFactories().stream()
+                .map(it -> {
+                    Repository<Integer, User> entities = it.getRepository(User.class);
+                    return new UserRepository(entities, config);
+                });
     }
 
-    private static Select<User> jpaNative() {
-        Query query = jpaNaviveQuery();
-        log.debug("create jpa query: " + query);
-        return query.from(User.class);
-    }
 
-    public static Query jpaQuery() {
-        JpaQueryExecutor jpaQueryExecutor = getJpaQueryExecutor();
-        return jpaQueryExecutor
-                .createQuery(new TestPostProcessor());
-    }
-
-    @NotNull
-    public static JpaQueryExecutor getJpaQueryExecutor() {
-        EntityManager manager = EntityManagers.getEntityManager();
-        return new JpaQueryExecutor(manager, JpaMetamodel.of(), getJdbcQueryExecutor());
-    }
-
-    public static Query jpaNaviveQuery() {
-        EntityManager manager = EntityManagers.getEntityManager();
-        return new JpaNativeQueryExecutor(new MySqlQuerySqlBuilder(), manager, JpaMetamodel.of(), TypeConverter.ofDefault())
-                .createQuery(new TestPostProcessor());
-    }
-
-    @SneakyThrows
-    private static Select<User> jdbc() {
-        Query query = jdbcQuery();
-        log.debug("create jdbc query: " + query);
-        return query.from(User.class);
-    }
-
-    public static Query jdbcQuery() {
-        JdbcQueryExecutor queryExecutor = getJdbcQueryExecutor();
-        return queryExecutor.createQuery(new TestPostProcessor());
-    }
-
-    @NotNull
-    public static JdbcQueryExecutor getJdbcQueryExecutor() {
-        ConnectionProvider sqlExecutor = SingleConnectionProvider.CONNECTION_PROVIDER;
-        return new JdbcQueryExecutor(JpaMetamodel.of(),
-                new MySqlQuerySqlBuilder(),
-                sqlExecutor,
-                new JdbcResultCollector()
-        );
-    }
 }

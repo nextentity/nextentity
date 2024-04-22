@@ -1,15 +1,16 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple10;
-import io.github.nextentity.core.util.tuple.Tuple2;
-import io.github.nextentity.core.util.tuple.Tuple3;
-import io.github.nextentity.core.util.tuple.Tuple4;
-import io.github.nextentity.core.util.tuple.Tuple5;
-import io.github.nextentity.core.util.tuple.Tuple6;
-import io.github.nextentity.core.util.tuple.Tuple7;
-import io.github.nextentity.core.util.tuple.Tuple8;
-import io.github.nextentity.core.util.tuple.Tuple9;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple10;
+import io.github.nextentity.core.api.tuple.Tuple2;
+import io.github.nextentity.core.api.tuple.Tuple3;
+import io.github.nextentity.core.api.tuple.Tuple4;
+import io.github.nextentity.core.api.tuple.Tuple5;
+import io.github.nextentity.core.api.tuple.Tuple6;
+import io.github.nextentity.core.api.tuple.Tuple7;
+import io.github.nextentity.core.api.tuple.Tuple8;
+import io.github.nextentity.core.api.tuple.Tuple9;
+import io.github.nextentity.core.util.Iterators;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -113,8 +114,12 @@ public class Tuples {
         @NotNull
         @Override
         public Iterator<Object> iterator() {
-            return new ArrayIterator<>(data);
+            return Iterators.iterate(data);
         }
 
+        @Override
+        public String toString() {
+            return toList().toString();
+        }
     }
 }

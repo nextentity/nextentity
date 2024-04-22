@@ -1,7 +1,7 @@
 package io.github.nextentity.test.projection;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.github.nextentity.core.meta.EntityAttribute;
+import io.github.nextentity.core.annotaion.EntityAttribute;
 import io.github.nextentity.test.JsonSerializablePredicateValueTest;
 
 import java.util.Map;

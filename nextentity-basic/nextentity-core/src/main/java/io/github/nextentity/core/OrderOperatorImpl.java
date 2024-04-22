@@ -1,16 +1,15 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Expression.Order;
+import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.Order;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
-import io.github.nextentity.core.api.Query.QueryStructureBuilder;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
-import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
 import io.github.nextentity.core.api.SortOrder;
@@ -23,10 +22,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
-    private final QueryConditionBuilder<T, U> builder;
+    private final WhereImpl<T, U> builder;
     private final Collection<Path<T, Comparable<?>>> orderByPaths;
 
-    public OrderOperatorImpl(QueryConditionBuilder<T, U> builder, Collection<Path<T, Comparable<?>>> orderByPaths) {
+    public OrderOperatorImpl(WhereImpl<T, U> builder, Collection<Path<T, Comparable<?>>> orderByPaths) {
         this.builder = builder;
         this.orderByPaths = orderByPaths;
     }
@@ -50,7 +49,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
-    public Collector<U> orderBy(Function<Root<T>, List<? extends Order<T>>> ordersBuilder) {
+    public Collector<U> orderBy(Function<EntityRoot<T>, List<? extends Order<T>>> ordersBuilder) {
         return orderBy(ordersBuilder.apply(Paths.root()));
     }
 
@@ -85,11 +84,6 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
-    public QueryStructureBuilder buildMetadata() {
-        return asc().buildMetadata();
-    }
-
-    @Override
     public <X> SubQueryBuilder<X, U> asSubQuery() {
         return asc().asSubQuery();
     }
@@ -100,7 +94,7 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
-    public Root<T> root() {
+    public EntityRoot<T> root() {
         return Paths.root();
     }
 }

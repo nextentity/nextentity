@@ -1,7 +1,7 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.api.Updater;
+import io.github.nextentity.core.util.Lists;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -12,15 +12,15 @@ import java.util.List;
  */
 public class Updaters {
 
-    public static <T> Updater<T> create(Update update, Class<T> type) {
-        return new UpdaterImpl<>(update, type);
+    public static <T> Update<T> create(UpdateExecutor updateExecutor, Class<T> type) {
+        return new UpdateImpl<>(updateExecutor, type);
     }
 
-    public static class UpdaterImpl<T> implements Updater<T> {
-        private final Update update;
+    public static class UpdateImpl<T> implements Update<T> {
+        private final UpdateExecutor update;
         private final Class<T> entityType;
 
-        public UpdaterImpl(Update update, Class<T> entityType) {
+        public UpdateImpl(UpdateExecutor update, Class<T> entityType) {
             this.entityType = entityType;
             this.update = update;
         }
@@ -57,12 +57,36 @@ public class Updaters {
 
         @Override
         public T updateNonNullColumn(@NotNull T entity) {
-            return update.updateNonNullColumn(entity, entityType);
+            return update.updateExcludeNullColumn(entity, entityType);
         }
 
         @Override
         public String toString() {
             return "Updater(" + entityType.getSimpleName() + ')';
         }
+    }
+
+    public interface UpdateExecutor {
+
+        default <T> T insert(@NotNull T entity, @NotNull Class<T> entityType) {
+            return insert(Lists.of(entity), entityType).get(0);
+        }
+
+        <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
+
+        <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
+
+        default <T> T update(@NotNull T entity, Class<T> entityType) {
+            return update(Lists.of(entity), entityType).get(0);
+        }
+
+        <T> void delete(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
+
+        default <T> void delete(@NotNull T entity, @NotNull Class<T> entityType) {
+            delete(Lists.of(entity), entityType);
+        }
+
+        <T> T updateExcludeNullColumn(@NotNull T entity, @NotNull Class<T> entityType);
+
     }
 }

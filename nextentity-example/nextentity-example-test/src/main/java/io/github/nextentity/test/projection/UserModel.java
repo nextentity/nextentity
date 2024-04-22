@@ -1,6 +1,6 @@
 package io.github.nextentity.test.projection;
 
-import io.github.nextentity.core.meta.EntityAttribute;
+import io.github.nextentity.core.annotaion.EntityAttribute;
 import io.github.nextentity.test.entity.User;
 import lombok.Data;
 import lombok.NoArgsConstructor;

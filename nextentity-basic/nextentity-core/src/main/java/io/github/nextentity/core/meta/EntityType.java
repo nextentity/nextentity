@@ -1,13 +1,21 @@
 package io.github.nextentity.core.meta;
 
-public interface EntityType extends ObjectType {
+import io.github.nextentity.core.reflect.Arguments;
+import io.github.nextentity.core.reflect.ObjectFactory;
+import io.github.nextentity.core.reflect.SelectedConstruct;
 
-    Attribute id();
+/**
+ * @author HuangChengwei
+ * @since 2024/4/20 下午5:34
+ */
+public interface EntityType extends EntitySchema, ObjectFactory {
 
-    String tableName();
+    ProjectionType getProjection(Class<?> type);
 
-    Attribute getAttribute(String fieldName);
+    SelectedConstruct constructor();
 
-    Attribute version();
-
+    @Override
+    default Object get(Arguments arguments) {
+        return constructor().get(arguments);
+    }
 }

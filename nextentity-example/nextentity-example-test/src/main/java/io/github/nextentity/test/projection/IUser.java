@@ -12,6 +12,7 @@ public interface IUser {
 
     U getParentUser();
 
+
     @Data
     class U {
         int id;

@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public abstract class JdbcUtil {
@@ -89,7 +88,7 @@ public abstract class JdbcUtil {
         return TypeCastUtil.unsafeCast(result);
     }
 
-    public static void setParam(PreparedStatement pst, List<?> args) throws SQLException {
+    public static void setParam(PreparedStatement pst, Iterable<?> args) throws SQLException {
         int i = 0;
         for (Object arg : args) {
             if (arg instanceof Enum) {

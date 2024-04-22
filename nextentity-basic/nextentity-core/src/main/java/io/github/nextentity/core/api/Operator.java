@@ -32,7 +32,7 @@ public enum Operator {
     SUBTRACT("-", 4),
     MULTIPLY("*", 3, true),
     DIVIDE("/", 3),
-    MOD("mod", 3),
+    MOD("%", 3),
     NULLIF("nullif", 0),
     IF_NULL("ifnull", 0),
 
@@ -42,7 +42,7 @@ public enum Operator {
     COUNT("count", 0, false, true),
     AVG("avg", 0, false, true),
     SUM("sum", 0, false, true),
-    ;
+    DISTINCT("distinct", 0, false, false);
 
     private final String sign;
     private final int priority;

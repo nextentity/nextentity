@@ -1,9 +1,6 @@
 package io.github.nextentity.core.reflect;
 
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.Attribute;
-import io.github.nextentity.core.meta.ObjectType;
-import io.github.nextentity.core.meta.Type;
 import io.github.nextentity.core.util.Exceptions;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -22,18 +19,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class ReflectUtil {
     private static final Map<Class<?>, Object> SINGLE_ENUM_MAP = new ConcurrentHashMap<>();
-
-    static final Map<Collection<? extends Attribute>, ObjectConstructor> CONSTRUCTORS = new ConcurrentHashMap<>();
 
     @Nullable
     public static Field getDeclaredField(@NotNull Class<?> clazz, String name) {
@@ -65,69 +55,6 @@ public class ReflectUtil {
                     writer.invoke(target, sv);
                 }
             }
-        }
-    }
-
-    public static InstanceConstructor getRowInstanceConstructor(Collection<? extends Attribute> attributes, Class<?> resultType) {
-        ObjectConstructor schema = CONSTRUCTORS.computeIfAbsent(attributes, ReflectUtil::doGetConstructor);
-        if (schema.type.javaType() != resultType) {
-            throw new IllegalArgumentException();
-        }
-        return schema;
-    }
-
-    private static ObjectConstructor doGetConstructor(Collection<? extends Attribute> attributes) {
-        Map<Type, Property> map = new HashMap<>();
-        ObjectConstructor result = null;
-        for (Attribute attribute : attributes) {
-            Type cur = attribute;
-            while (true) {
-                Property property = map.computeIfAbsent(cur, ReflectUtil::newProperty);
-                cur = Attribute.getDeclaringType(cur);
-                if (cur == null) {
-                    if (result == null) {
-                        result = (ObjectConstructor) property;
-                    } else if (result != property) {
-                        throw new IllegalArgumentException();
-                    }
-                    break;
-                }
-            }
-        }
-        if (result == null) {
-            throw new IllegalArgumentException();
-        }
-        int i = 0;
-        for (Attribute attribute : attributes) {
-            PropertyImpl property = (PropertyImpl) map.get(attribute);
-            property.setIndex(i++);
-        }
-        Map<Type, List<Entry<Type, Property>>> attrs = map.entrySet().stream()
-                .filter(it -> Attribute.getDeclaringType(it.getKey()) != null)
-                .collect(Collectors.groupingBy(e -> Attribute.getDeclaringType(e.getKey())));
-        for (Entry<Type, List<Entry<Type, Property>>> entry : attrs.entrySet()) {
-            Property property = map.get(entry.getKey());
-            List<Entry<Type, Property>> v = entry.getValue();
-            if (v != null && !v.isEmpty()) {
-                ((ObjectConstructor) property).setProperties(v.stream()
-                        .map(Entry::getValue)
-                        .toArray(Property[]::new));
-            }
-        }
-        result.root = true;
-        return result;
-    }
-
-    private static Property newProperty(Type type) {
-        if (type instanceof ObjectType) {
-            Class<?> javaType = type.javaType();
-            if (javaType.isInterface()) {
-                return new InterfaceConstructor(type);
-            } else {
-                return new BeanConstructor(type);
-            }
-        } else {
-            return new PropertyImpl((Attribute) type);
         }
     }
 
@@ -188,10 +115,10 @@ public class ReflectUtil {
     }
 
     @NotNull
-    public static Object newProxyInstance(Property[] fields, @NotNull Class<?> resultType, Map<Method, Object> map) {
+    public static Object newProxyInstance(@NotNull Class<?> resultType, Map<Method, Object> map) {
         ClassLoader classLoader = resultType.getClassLoader();
         Class<?>[] interfaces = {resultType};
-        return Proxy.newProxyInstance(classLoader, interfaces, new InstanceInvocationHandler(fields, resultType, map));
+        return Proxy.newProxyInstance(classLoader, interfaces, new InstanceInvocationHandler(resultType, map));
     }
 
     public static void typeCheck(Object value, Class<?> type) {

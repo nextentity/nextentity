@@ -1,5 +1,6 @@
 package io.github.nextentity.example.eneity;
 
+import io.github.nextentity.core.Persistable;
 import lombok.Data;
 
 import javax.persistence.Entity;
@@ -10,7 +11,7 @@ import javax.persistence.ManyToOne;
 
 @Data
 @Entity
-public class Employee {
+public class Employee implements Persistable<Integer> {
     @Id
     private Integer id;
     private String name;

@@ -1,12 +1,11 @@
 package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.QueryExecutor;
-import io.github.nextentity.core.SQL;
-import io.github.nextentity.core.api.Expression.QueryStructure;
+import io.github.nextentity.core.SqlLogger;
 import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
-import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +27,10 @@ public class JdbcQueryExecutor implements QueryExecutor {
     @NotNull
     private final ResultCollector collector;
 
-    public JdbcQueryExecutor(@NotNull Metamodel metamodel, @NotNull QuerySqlBuilder sqlBuilder, @NotNull ConnectionProvider connectionProvider, @NotNull ResultCollector collector) {
+    public JdbcQueryExecutor(@NotNull Metamodel metamodel,
+                             @NotNull QuerySqlBuilder sqlBuilder,
+                             @NotNull ConnectionProvider connectionProvider,
+                             @NotNull ResultCollector collector) {
         this.metamodel = metamodel;
         this.sqlBuilder = sqlBuilder;
         this.connectionProvider = connectionProvider;
@@ -38,7 +40,8 @@ public class JdbcQueryExecutor implements QueryExecutor {
     @Override
     @NotNull
     public <R> List<R> getList(@NotNull QueryStructure queryStructure) {
-        PreparedSql sql = sqlBuilder.build(queryStructure, metamodel);
+        QueryContext context = new QueryContext(queryStructure, metamodel, true);
+        QuerySqlStatement sql = sqlBuilder.build(context);
         printSql(sql);
         try {
             return connectionProvider.execute(connection -> {
@@ -48,9 +51,9 @@ public class JdbcQueryExecutor implements QueryExecutor {
                 }
                 // noinspection SqlSourceToSinkFlow
                 try (PreparedStatement statement = connection.prepareStatement(sql.sql())) {
-                    JdbcUtil.setParam(statement, sql.args());
+                    JdbcUtil.setParam(statement, sql.parameters());
                     try (ResultSet resultSet = statement.executeQuery()) {
-                        return collector.resolve(resultSet, metamodel, sql.selected(), queryStructure);
+                        return collector.resolve(resultSet, context);
                     }
                 }
             });
@@ -59,34 +62,25 @@ public class JdbcQueryExecutor implements QueryExecutor {
         }
     }
 
-    private static void printSql(PreparedSql sql) {
-        SQL.debug("SQL: {}", sql.sql());
-        if (!sql.args().isEmpty()) {
-            SQL.debug("ARGS: {}", sql.args());
+    @Override
+    public Metamodel metamodel() {
+        return metamodel;
+    }
+
+    private static void printSql(QuerySqlStatement sql) {
+        SqlLogger.debug(sql.sql());
+        if (!sql.parameters().iterator().hasNext()) {
+            SqlLogger.debug("ARGS: {}", sql.parameters());
         }
     }
 
     public interface QuerySqlBuilder {
-        PreparedSql build(QueryStructure structure, Metamodel metamodel);
-
+        QuerySqlStatement build(QueryContext context);
     }
 
-    public interface PreparedSql {
-
-        String sql();
-
-        List<?> args();
-
-        List<Attribute> selected();
-
-    }
 
     public interface ResultCollector {
-        <T> List<T> resolve(
-                ResultSet resultSet,
-                Metamodel metamodel,
-                List<? extends Attribute> selected,
-                QueryStructure structure) throws SQLException;
+        <T> List<T> resolve(ResultSet resultSet, QueryContext context) throws SQLException;
     }
 }
 

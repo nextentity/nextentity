@@ -1,5 +1,7 @@
 package io.github.nextentity.core.converter;
 
+import io.github.nextentity.core.reflect.PrimitiveTypes;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,6 +28,9 @@ public class TypeConverters implements TypeConverter {
     @Override
     public Object convert(Object value, Class<?> targetType) {
         if (targetType.isInstance(value)) {
+            return value;
+        }
+        if (targetType.isPrimitive() && PrimitiveTypes.getWrapper(targetType).isInstance(value)) {
             return value;
         }
         for (TypeConverter converter : converters) {

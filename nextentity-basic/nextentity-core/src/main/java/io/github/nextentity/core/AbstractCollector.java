@@ -1,12 +1,12 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.ExpressionTrees.SliceImpl;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.BasicExpressions.SliceImpl;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
 import io.github.nextentity.core.api.Query.Collector;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.Sliceable;
+import io.github.nextentity.core.util.Lists;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
