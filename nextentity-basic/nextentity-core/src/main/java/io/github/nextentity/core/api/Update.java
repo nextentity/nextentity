@@ -1,36 +1,23 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.Updaters;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public interface Update {
+public interface Update<T> {
 
-    default <T> T insert(@NotNull T entity, @NotNull Class<T> entityType) {
-        return insert(Lists.of(entity), entityType).get(0);
-    }
+    T insert(@NotNull T entity);
 
-    <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
+    List<T> insert(@NotNull Iterable<T> entities);
 
-    <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
+    List<T> update(@NotNull Iterable<T> entities);
 
-    default <T> T update(@NotNull T entity, Class<T> entityType) {
-        return update(Lists.of(entity), entityType).get(0);
-    }
+    T update(@NotNull T entity);
 
-    <T> void delete(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
+    void delete(@NotNull Iterable<T> entities);
 
-    default <T> void delete(@NotNull T entity, @NotNull Class<T> entityType) {
-        delete(Lists.of(entity), entityType);
-    }
+    void delete(@NotNull T entity);
 
-    <T> T updateNonNullColumn(@NotNull T entity, @NotNull Class<T> entityType);
-
-    /**
-     * @deprecated use {@link Updaters#create}
-     */
-    @Deprecated
-    <T> Updater<T> getUpdater(@NotNull Class<T> type);
+    T updateNonNullColumn(@NotNull T entity);
 
 }

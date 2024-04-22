@@ -1,6 +1,6 @@
 package io.github.nextentity.example.model;
 
-import io.github.nextentity.core.api.TypedExpression;
+import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.example.eneity.Gender;
 import io.github.nextentity.example.eneity.User;
@@ -20,7 +20,7 @@ public class UserQuery implements PageablePredicate<User> {
     private Integer size;
 
     @Override
-    public TypedExpression<User, Boolean> predicate() {
+    public Expression<User, Boolean> predicate() {
         return Paths.get(User::getUsername).eqIfNotNull(username)
                 .and(User::getGender).eqIfNotNull(gender)
                 .and(User::getParentUser).get(User::getUsername).eqIfNotNull(parentUsername);

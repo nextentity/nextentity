@@ -1,23 +1,22 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.api.ExpressionOperator.NumberOperator;
-import io.github.nextentity.core.api.ExpressionOperator.PathOperator;
-import io.github.nextentity.core.api.ExpressionOperator.StringOperator;
+import io.github.nextentity.core.api.Expression.PathExpression;
+import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
-import io.github.nextentity.core.api.TypedExpression.PathExpression;
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple10;
-import io.github.nextentity.core.util.tuple.Tuple2;
-import io.github.nextentity.core.util.tuple.Tuple3;
-import io.github.nextentity.core.util.tuple.Tuple4;
-import io.github.nextentity.core.util.tuple.Tuple5;
-import io.github.nextentity.core.util.tuple.Tuple6;
-import io.github.nextentity.core.util.tuple.Tuple7;
-import io.github.nextentity.core.util.tuple.Tuple8;
-import io.github.nextentity.core.util.tuple.Tuple9;
-import lombok.Data;
-import lombok.experimental.Accessors;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple10;
+import io.github.nextentity.core.api.tuple.Tuple2;
+import io.github.nextentity.core.api.tuple.Tuple3;
+import io.github.nextentity.core.api.tuple.Tuple4;
+import io.github.nextentity.core.api.tuple.Tuple5;
+import io.github.nextentity.core.api.tuple.Tuple6;
+import io.github.nextentity.core.api.tuple.Tuple7;
+import io.github.nextentity.core.api.tuple.Tuple8;
+import io.github.nextentity.core.api.tuple.Tuple9;
+import io.github.nextentity.core.util.Lists;
 
 import java.util.Collection;
 import java.util.List;
@@ -34,11 +33,11 @@ public interface Query {
 
         <R> Where<T, R> select(Class<R> projectionType);
 
-        Where0<T, Tuple> select(List<? extends TypedExpression<T, ?>> paths);
+        Where0<T, Tuple> select(List<? extends Expression<T, ?>> paths);
 
         Where0<T, Tuple> select(ExpressionsBuilder<T> selectBuilder);
 
-        <R> Where0<T, R> select(TypedExpression<T, R> expression);
+        <R> Where0<T, R> select(Expression<T, R> expression);
 
         <R> Where0<T, R> select(Path<T, ? extends R> path);
 
@@ -62,31 +61,31 @@ public interface Query {
 
         <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h, Path<T, I> i, Path<T, J> j);
 
-        <A, B> Where0<T, Tuple2<A, B>> select(TypedExpression<T, A> a, TypedExpression<T, B> b);
+        <A, B> Where0<T, Tuple2<A, B>> select(Expression<T, A> a, Expression<T, B> b);
 
-        <A, B, C> Where0<T, Tuple3<A, B, C>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c);
+        <A, B, C> Where0<T, Tuple3<A, B, C>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c);
 
-        <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d);
+        <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d);
 
-        <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e);
+        <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e);
 
-        <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f);
+        <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f);
 
-        <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g);
+        <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g);
 
-        <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h);
+        <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h);
 
-        <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i);
+        <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i);
 
-        <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> select(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i, TypedExpression<T, J> j);
+        <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> select(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i, Expression<T, J> j);
 
         <R> Where<T, R> selectDistinct(Class<R> projectionType);
 
-        Where0<T, Tuple> selectDistinct(List<? extends TypedExpression<T, ?>> paths);
+        Where0<T, Tuple> selectDistinct(List<? extends Expression<T, ?>> paths);
 
         Where0<T, Tuple> selectDistinct(ExpressionsBuilder<T> selectBuilder);
 
-        <R> Where0<T, R> selectDistinct(TypedExpression<T, R> expression);
+        <R> Where0<T, R> selectDistinct(Expression<T, R> expression);
 
         <R> Where0<T, R> selectDistinct(Path<T, ? extends R> path);
 
@@ -110,23 +109,23 @@ public interface Query {
 
         <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h, Path<T, I> i, Path<T, J> j);
 
-        <A, B> Where0<T, Tuple2<A, B>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b);
+        <A, B> Where0<T, Tuple2<A, B>> selectDistinct(Expression<T, A> a, Expression<T, B> b);
 
-        <A, B, C> Where0<T, Tuple3<A, B, C>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c);
+        <A, B, C> Where0<T, Tuple3<A, B, C>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c);
 
-        <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d);
+        <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d);
 
-        <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e);
+        <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e);
 
-        <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f);
+        <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f);
 
-        <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g);
+        <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g);
 
-        <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h);
+        <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h);
 
-        <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i);
+        <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i);
 
-        <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> selectDistinct(TypedExpression<T, A> a, TypedExpression<T, B> b, TypedExpression<T, C> c, TypedExpression<T, D> d, TypedExpression<T, E> e, TypedExpression<T, F> f, TypedExpression<T, G> g, TypedExpression<T, H> h, TypedExpression<T, I> i, TypedExpression<T, J> j);
+        <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> selectDistinct(Expression<T, A> a, Expression<T, B> b, Expression<T, C> c, Expression<T, D> d, Expression<T, E> e, Expression<T, F> f, Expression<T, G> g, Expression<T, H> h, Expression<T, I> i, Expression<T, J> j);
 
     }
 
@@ -147,22 +146,22 @@ public interface Query {
         }
 
         default Where<T, T> fetch(Collection<Path<T, ?>> paths) {
-            Root<T> root = root();
+            EntityRoot<T> root = root();
             return fetch(paths.stream().map(root::get).collect(Collectors.toList()));
         }
 
         default Where<T, T> fetch(Path<T, ?> path) {
-            Root<T> root = root();
+            EntityRoot<T> root = root();
             return fetch(root.get(path));
         }
 
         default Where<T, T> fetch(Path<T, ?> p0, Path<T, ?> p1) {
-            Root<T> root = root();
+            EntityRoot<T> root = root();
             return fetch(root.get(p0), root.get(p1));
         }
 
         default Where<T, T> fetch(Path<T, ?> p0, Path<T, ?> p1, Path<T, ?> p3) {
-            Root<T> root = root();
+            EntityRoot<T> root = root();
             return fetch(root.get(p0), root.get(p1), root.get(p3));
         }
 
@@ -170,7 +169,7 @@ public interface Query {
 
     interface Where<T, U> extends OrderBy<T, U> {
 
-        Where<T, U> where(TypedExpression<T, Boolean> predicate);
+        Where<T, U> where(Expression<T, Boolean> predicate);
 
         default Where<T, U> where(PredicateBuilder<T> predicateBuilder) {
             return where(predicateBuilder.build(root()));
@@ -194,7 +193,7 @@ public interface Query {
 
     interface Where0<T, U> extends GroupBy<T, U>, Where<T, U> {
 
-        Where0<T, U> where(TypedExpression<T, Boolean> predicate);
+        Where0<T, U> where(Expression<T, Boolean> predicate);
 
         default Where0<T, U> where(PredicateBuilder<T> predicateBuilder) {
             return where(predicateBuilder.build(root()));
@@ -216,7 +215,7 @@ public interface Query {
     }
 
     interface GroupBy<T, U> extends OrderBy<T, U> {
-        Having<T, U> groupBy(List<? extends TypedExpression<T, ?>> expressions);
+        Having<T, U> groupBy(List<? extends Expression<T, ?>> expressions);
 
         Having<T, U> groupBy(ExpressionsBuilder<T> expressionsBuilder);
 
@@ -247,7 +246,7 @@ public interface Query {
 
     interface Having<T, U> extends OrderBy<T, U> {
 
-        OrderBy<T, U> having(TypedExpression<T, Boolean> predicate);
+        OrderBy<T, U> having(Expression<T, Boolean> predicate);
 
         default OrderBy<T, U> having(PredicateBuilder<T> predicateBuilder) {
             return having(predicateBuilder.build(root()));
@@ -255,21 +254,21 @@ public interface Query {
 
     }
 
-    interface OrderBy<T, U> extends Collector<U>, RootProvider<T> {
+    interface OrderBy<T, U> extends Collector<U>, EntityRootProvider<T> {
 
-        Collector<U> orderBy(List<? extends Expression.Order<T>> orders);
+        Collector<U> orderBy(List<? extends Order<T>> orders);
 
-        Collector<U> orderBy(Function<Root<T>, List<? extends Expression.Order<T>>> ordersBuilder);
+        Collector<U> orderBy(Function<EntityRoot<T>, List<? extends Order<T>>> ordersBuilder);
 
-        default Collector<U> orderBy(Expression.Order<T> order) {
+        default Collector<U> orderBy(Order<T> order) {
             return orderBy(Lists.of(order));
         }
 
-        default Collector<U> orderBy(Expression.Order<T> p0, Expression.Order<T> p1) {
+        default Collector<U> orderBy(Order<T> p0, Order<T> p1) {
             return orderBy(Lists.of(p0, p1));
         }
 
-        default Collector<U> orderBy(Expression.Order<T> order1, Expression.Order<T> order2, Expression.Order<T> order3) {
+        default Collector<U> orderBy(Order<T> order1, Order<T> order2, Order<T> order3) {
             return orderBy(Lists.of(order1, order2, order3));
         }
 
@@ -289,8 +288,8 @@ public interface Query {
 
     }
 
-    interface RootProvider<T> {
-        Root<T> root();
+    interface EntityRootProvider<T> {
+        EntityRoot<T> root();
     }
 
     interface OrderOperator<T, U> extends OrderBy<T, U> {
@@ -313,6 +312,14 @@ public interface Query {
 
         default List<T> getList(int offset, int maxResult) {
             return getList(offset, maxResult, null);
+        }
+
+        default List<T> offset(int offset) {
+            return getList(offset, -1, null);
+        }
+
+        default List<T> limit(int limit) {
+            return getList(0, limit, null);
         }
 
         boolean exist(int offset);
@@ -407,8 +414,12 @@ public interface Query {
             return list.isEmpty() ? null : list.get(0);
         }
 
-        default List<T> getList(int offset, LockModeType lockModeType) {
+        default List<T> offset(int offset, LockModeType lockModeType) {
             return getList(offset, -1, lockModeType);
+        }
+
+        default List<T> limit(int limit, LockModeType lockModeType) {
+            return getList(0, limit, lockModeType);
         }
 
         default List<T> getList(LockModeType lockModeType) {
@@ -419,56 +430,35 @@ public interface Query {
 
         Slice<T> slice(int offset, int limit);
 
-        QueryStructureBuilder buildMetadata();
-
         <X> SubQueryBuilder<X, T> asSubQuery();
 
         Page<T> getPage(Pageable pageable);
     }
 
-    interface QueryStructureBuilder {
+    interface SubQueryBuilder<T, U> extends Expression<T, List<U>>  {
+        Expression<T, Long> count();
 
-        Expression.QueryStructure count();
+        Expression<T, List<U>> slice(int offset, int maxResult);
 
-        Expression.QueryStructure getList(int offset, int maxResult, LockModeType lockModeType);
-
-        Expression.QueryStructure exist(int offset);
-
-        SliceQueryStructure slice(int offset, int limit);
-
-    }
-
-    interface SubQueryBuilder<T, U> extends TypedExpression<T, List<U>> {
-        TypedExpression<T, Long> count();
-
-        TypedExpression<T, List<U>> slice(int offset, int maxResult);
-
-        default TypedExpression<T, U> getSingle() {
+        default Expression<T, U> getSingle() {
             return getSingle(-1);
         }
 
-        TypedExpression<T, U> getSingle(int offset);
+        Expression<T, U> getSingle(int offset);
 
-        default TypedExpression<T, U> getFirst() {
+        default Expression<T, U> getFirst() {
             return getFirst(-1);
         }
 
-        TypedExpression<T, U> getFirst(int offset);
-    }
-
-    @Data
-    @Accessors(fluent = true)
-    final class SliceQueryStructure {
-        private final Expression.QueryStructure count;
-        private final Expression.QueryStructure list;
+        Expression<T, U> getFirst(int offset);
     }
 
     @FunctionalInterface
     interface PredicateBuilder<T> {
-        TypedExpression<T, Boolean> build(Root<T> root);
+        Expression<T, Boolean> build(EntityRoot<T> root);
     }
 
     interface ExpressionsBuilder<T> {
-        List<? extends TypedExpression<T, ?>> apply(Root<T> root);
+        List<? extends Expression<T, ?>> apply(EntityRoot<T> root);
     }
 }

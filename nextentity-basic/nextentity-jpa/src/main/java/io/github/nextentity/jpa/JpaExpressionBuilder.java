@@ -1,18 +1,16 @@
 package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Expression.Column;
-import io.github.nextentity.core.api.Expression.Constant;
-import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Expression.Operation;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.Literal;
+import io.github.nextentity.core.api.expression.Operation;
 import io.github.nextentity.core.api.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.FetchParent;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.jetbrains.annotations.NotNull;
@@ -28,28 +26,28 @@ public class JpaExpressionBuilder {
 
     protected final CriteriaBuilder cb;
 
-    protected final Map<Column, FetchParent<?, ?>> fetched = new HashMap<>();
+    protected final Map<EntityPath, FetchParent<?, ?>> fetched = new HashMap<>();
 
     public JpaExpressionBuilder(Root<?> root, CriteriaBuilder cb) {
         this.root = root;
         this.cb = cb;
     }
 
-    public jakarta.persistence.criteria.Expression<?> toExpression(ExpressionTree expression) {
-        if (expression instanceof Constant) {
-            Constant cv = (Constant) expression;
+    public jakarta.persistence.criteria.Expression<?> toExpression(BaseExpression expression) {
+        if (expression instanceof Literal) {
+            Literal cv = (Literal) expression;
             return cb.literal(cv.value());
         }
-        if (expression instanceof Column) {
-            Column pv = (Column) expression;
+        if (expression instanceof EntityPath) {
+            EntityPath pv = (EntityPath) expression;
             return getPath(pv);
         }
         if (expression instanceof Operation) {
             Operation ov = (Operation) expression;
             Operator operator = ov.operator();
             jakarta.persistence.criteria.Expression<?> e0 = toExpression(ov.firstOperand());
-            ExpressionTree e1 = ov.secondOperand();
-            ExpressionTree e2 = ov.thirdOperand();
+            BaseExpression e1 = ov.secondOperand();
+            BaseExpression e2 = ov.thirdOperand();
             switch (operator) {
                 case NOT:
                     return toPredicate(e0).not();
@@ -87,13 +85,13 @@ public class JpaExpressionBuilder {
                 case IS_NOT_NULL:
                     return cb.isNotNull(e0);
                 case IN: {
-                    List<? extends ExpressionTree> operands = ov.operands();
+                    List<? extends BaseExpression> operands = ov.operands();
                     if (operands.size() <= 1) {
                         return cb.literal(false);
                     } else {
                         CriteriaBuilder.In<Object> in = cb.in(e0);
                         for (int i = 1; i < operands.size(); i++) {
-                            ExpressionTree arg = operands.get(i);
+                            BaseExpression arg = operands.get(i);
                             in = in.value(toExpression(arg));
                         }
                         return in;
@@ -107,7 +105,7 @@ public class JpaExpressionBuilder {
                 case UPPER:
                     return cb.upper(cast(e0));
                 case SUBSTRING: {
-                    List<? extends Expression> operands = ov.operands();
+                    List<? extends BaseExpression> operands = ov.operands();
                     if (operands.size() == 2) {
                         return cb.substring(cast(e0), cast(toExpression(e1)));
                     } else if (operands.size() == 3) {
@@ -159,7 +157,7 @@ public class JpaExpressionBuilder {
         }
     }
 
-    public Predicate toPredicate(ExpressionTree expression) {
+    public Predicate toPredicate(BaseExpression expression) {
         return toPredicate(toExpression(expression));
     }
 
@@ -171,7 +169,7 @@ public class JpaExpressionBuilder {
     }
 
     @NotNull
-    private Predicate[] toPredicateArray(List<? extends ExpressionTree> operands) {
+    private Predicate[] toPredicateArray(List<? extends BaseExpression> operands) {
         return operands.stream()
                 .map(this::toPredicate)
                 .toArray(Predicate[]::new);
@@ -185,13 +183,13 @@ public class JpaExpressionBuilder {
         return TypeCastUtil.unsafeCast(o);
     }
 
-    protected Path<?> getPath(Column column) {
+    protected jakarta.persistence.criteria.Path<?> getPath(EntityPath column) {
         From<?, ?> r = root;
-        int size = column.size();
+        int size = column.deep();
         for (int i = 0; i < size; i++) {
             String s = column.get(i);
             if (i != size - 1) {
-                Column offset = column.subLength(i + 1);
+                EntityPath offset = column.subLength(i + 1);
                 r = join(offset);
             } else {
                 return r.get(s);
@@ -201,7 +199,7 @@ public class JpaExpressionBuilder {
         return r;
     }
 
-    private Join<?, ?> join(Column column) {
+    private Join<?, ?> join(EntityPath column) {
         return (Join<?, ?>) fetched.compute(column, (k, v) -> {
             if (v instanceof Join<?, ?>) {
                 return v;

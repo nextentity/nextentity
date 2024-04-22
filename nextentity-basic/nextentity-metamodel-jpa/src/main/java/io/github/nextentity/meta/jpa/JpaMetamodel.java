@@ -1,8 +1,8 @@
 package io.github.nextentity.meta.jpa;
 
 import io.github.nextentity.core.meta.AbstractMetamodel;
-import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
+import io.github.nextentity.core.reflect.schema.Attribute;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -95,7 +95,7 @@ public class JpaMetamodel extends AbstractMetamodel {
     protected boolean isVersionField(Attribute attribute) {
         Version version = getAnnotation(attribute, Version.class);
         if (version != null) {
-            Class<?> type = attribute.javaType();
+            Class<?> type = attribute.type();
             if (isSupportVersion(type)) {
                 return true;
             } else {
@@ -151,9 +151,18 @@ public class JpaMetamodel extends AbstractMetamodel {
         }
     }
 
+    private final static String[][] AROUND_SYMBOL = {
+            {"[", "]"},
+            {"`", "`"},
+            {"\"", "\""}
+    };
+
     protected String unwrapSymbol(String symbol) {
-        while (symbol.startsWith("`") && symbol.endsWith("`")) {
-            symbol = symbol.substring(1, symbol.length() - 1);
+        for (String[] strings : AROUND_SYMBOL) {
+            if (symbol.startsWith(strings[0]) && symbol.endsWith(strings[1])) {
+                symbol = symbol.substring(1, symbol.length() - 1);
+                break;
+            }
         }
         return symbol;
     }

@@ -1,22 +1,13 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.ExpressionTypeResolver;
 import io.github.nextentity.core.QueryExecutor;
-import io.github.nextentity.core.Tuples;
+import io.github.nextentity.jdbc.QuerySqlStatement;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Expression.ExpressionTree;
-import io.github.nextentity.core.api.Expression.QueryStructure;
-import io.github.nextentity.core.api.Expression.Selection;
-import io.github.nextentity.core.api.Expression.Selection.EntitySelected;
-import io.github.nextentity.core.api.Expression.Selection.MultiSelected;
-import io.github.nextentity.core.api.Expression.Selection.ProjectionSelected;
-import io.github.nextentity.core.api.Expression.Selection.SingleSelected;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.converter.TypeConverter;
-import io.github.nextentity.core.meta.Attribute;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.reflect.InstanceConstructor;
-import io.github.nextentity.core.reflect.ReflectUtil;
-import io.github.nextentity.jdbc.JdbcQueryExecutor.PreparedSql;
+import io.github.nextentity.jdbc.QueryContext;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class JpaNativeQueryExecutor implements QueryExecutor {
@@ -48,78 +38,53 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
         return queryByNativeSql(queryStructure);
     }
 
+    @Override
+    public Metamodel metamodel() {
+        return metamodel;
+    }
+
     private <T> List<T> queryByNativeSql(@NotNull QueryStructure queryStructure) {
-        PreparedSql preparedSql = sqlBuilder.build(queryStructure, metamodel);
+        QueryContext context = new QueryContext(queryStructure, metamodel(), true);
+        QuerySqlStatement preparedSql = sqlBuilder.build(context);
+        // noinspection SqlSourceToSinkFlow
         jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
         int position = 0;
-        for (Object arg : preparedSql.args()) {
+        for (Object arg : preparedSql.parameters()) {
             query.setParameter(++position, arg);
         }
         List<?> list = TypeCastUtil.cast(query.getResultList());
 
-        return resolve(list, preparedSql.selected(), queryStructure);
+        return resolve(list, context);
     }
 
     protected <T> List<T> resolve(
             List<?> resultSet,
-            List<? extends Attribute> selected,
-            QueryStructure structure) {
-        List<T> result = new ArrayList<>(resultSet.size());
+            QueryContext context) {
+        List<Object> result = new ArrayList<>(resultSet.size());
         if (resultSet.isEmpty()) {
-            return result;
+            return TypeCastUtil.cast(result);
         }
-        Selection select = structure.select();
-        int columnsCount = asArray(resultSet.get(0)).length;
+        Object first = resultSet.get(0);
+        int columnsCount = asArray(first).length;
+        List<BaseExpression> expressions = context.getSelects();
+        if (expressions.size() != columnsCount) {
+            throw new IllegalStateException("column count error");
+        }
 
-        if (select instanceof MultiSelected multiSelected) {
-            if (multiSelected.expressions().size() != columnsCount) {
-                throw new IllegalStateException("column count error");
-            }
-            ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
-            List<Class<?>> types = multiSelected.expressions().stream()
-                    .map(expr -> typeResolver.getExpressionType(expr, structure.from().type()))
-                    .collect(Collectors.toList());
-            for (Object r : resultSet) {
-                Object[] row = asArray(r);
-                if (typeConverter != null) {
-                    for (int i = 0; i < types.size(); i++) {
-                        Class<?> attribute = types.get(i);
-                        row[i] = typeConverter.convert(row[i], attribute);
-                    }
-                }
-                result.add(TypeCastUtil.unsafeCast(Tuples.of(row)));
-            }
-        } else if (select instanceof SingleSelected) {
-            if (1 != columnsCount) {
-                throw new IllegalStateException();
-            }
-            ExpressionTree expression = ((SingleSelected) select).expression();
-            ExpressionTypeResolver typeResolver = new ExpressionTypeResolver(metamodel);
-            Class<?> type = typeResolver.getExpressionType(expression, structure.from().type());
-            for (Object r : resultSet) {
-                Object val = asArray(r)[0];
-                val = typeConverter.convert(val, type);
-                result.add(TypeCastUtil.unsafeCast(val));
-            }
-        } else {
-            if (selected.size() != columnsCount) {
-                throw new IllegalStateException();
-            }
-            Class<?> resultType = getResultType(structure);
-            InstanceConstructor extractor = ReflectUtil.getRowInstanceConstructor(selected, resultType);
-            for (Object r : resultSet) {
-                Object[] array = asArray(r);
-                if (typeConverter != null) {
-                    for (int i = 0; i < selected.size(); i++) {
-                        Attribute attribute = selected.get(i);
-                        array[i] = typeConverter.convert(array[i], attribute.javaType());
-                    }
-                }
-                T row = TypeCastUtil.unsafeCast(extractor.newInstance(array));
-                result.add(row);
-            }
+        QueryStructure structure = context.getStructure();
+        Class<?>[] types = expressions.stream()
+                .map(context::getExpressionType)
+                .toArray(Class<?>[]::new);
+        if (expressions.size() != columnsCount) {
+            throw new IllegalStateException();
         }
-        return result;
+        for (Object o : resultSet) {
+            Object[] array = asArray(o);
+            JpaArguments arguments = new JpaArguments(array, types, typeConverter, metamodel, structure.from().type());
+            Object row = context.construct(arguments);
+            result.add(row);
+        }
+        return TypeCastUtil.cast(result);
     }
 
     private Object[] asArray(Object r) {
@@ -127,18 +92,5 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
             return (Object[]) r;
         }
         return new Object[]{r};
-    }
-
-    private static Class<?> getResultType(QueryStructure structure) {
-        Selection select = structure.select();
-        Class<?> resultType;
-        if (select instanceof EntitySelected) {
-            resultType = structure.from().type();
-        } else if (select instanceof ProjectionSelected) {
-            resultType = select.resultType();
-        } else {
-            throw new IllegalStateException();
-        }
-        return resultType;
     }
 }

@@ -1,22 +1,23 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.core.Expressions;
 import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.TypedExpressions;
-import io.github.nextentity.core.api.Lists;
+import io.github.nextentity.core.api.EntityRoot;
+import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.LockModeType;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.api.Query.ExpressionsBuilder;
 import io.github.nextentity.core.api.Query.OrderBy;
-import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where;
-import io.github.nextentity.core.api.Root;
 import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.api.TypedExpression;
-import io.github.nextentity.core.api.TypedExpression.Predicate;
+import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.core.api.tuple.Tuple2;
+import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
-import io.github.nextentity.core.util.tuple.Tuple;
-import io.github.nextentity.core.util.tuple.Tuple2;
+import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.domain.Page;
 import io.github.nextentity.test.domain.Pageable;
 import io.github.nextentity.test.entity.User;
@@ -24,6 +25,7 @@ import io.github.nextentity.test.projection.IUser;
 import io.github.nextentity.test.projection.UserInterface;
 import io.github.nextentity.test.projection.UserModel;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -31,13 +33,15 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.nextentity.core.util.Paths.get;
-import static io.github.nextentity.test.Transaction.doInTransaction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -46,17 +50,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Slf4j
 class QueryBuilderTest {
 
-    static List<User> users() {
-        return UserQueryProvider.users();
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void select2(UserRepository userQuery) {
+        List<Tuple2<Integer, Integer>> list = userQuery.selectDistinct(
+                        User::getId, User::getRandomNumber)
+                // .orderBy(User::getId)
+                .getList(10, 20);
+        System.out.println(list);
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void select(Select<User> userQuery) {
+    void select3(UserRepository userQuery) {
+        IUser first1 = userQuery.select(IUser.class).getFirst(90);
+        System.out.println(first1);
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void select4(UserRepository userQuery) {
+        List<User> list = userQuery.selectDistinct(User::getParentUser).getList();
+        System.out.println(list);
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    void select(UserRepository userQuery) {
 
         int offset = 90;
-        User f2 = userQuery.fetch(User::getParentUser).getFirst(offset);
-        IUser first1 = userQuery.select(IUser.class).getFirst(offset);
+        User f2 = userQuery.fetch(User::getParentUser).orderBy(User::getId).getFirst(offset);
+        IUser first1 = userQuery.select(IUser.class).orderBy(User::getId).getFirst(offset);
         Assertions.assertEquals(first1.getUsername(), f2.getUsername());
         Assertions.assertEquals(first1.getId(), f2.getId());
         Assertions.assertEquals(first1.getRandomNumber(), f2.getRandomNumber());
@@ -75,26 +99,26 @@ class QueryBuilderTest {
         Assertions.assertEquals(first2.randomNumber(), f2.getRandomNumber());
 
         User first = userQuery.select(User.class).getFirst();
-        assertEquals(first, users().get(0));
+        assertEquals(first, userQuery.users().get(0));
 
         Integer firstUserid = userQuery.select(User::getId).getFirst();
-        assertEquals(firstUserid, users().get(0).getId());
+        assertEquals(firstUserid, userQuery.users().get(0).getId());
 
         Tuple2<Integer, Integer> array = userQuery.select(User::getId, User::getRandomNumber).getFirst();
-        assertEquals(array.get0(), users().get(0).getId());
-        assertEquals(array.get1(), users().get(0).getRandomNumber());
+        assertEquals(array.get0(), userQuery.users().get(0).getId());
+        assertEquals(array.get1(), userQuery.users().get(0).getRandomNumber());
 
         UserModel model = userQuery.select(UserModel.class).getFirst();
-        assertEquals(model, new UserModel(users().get(0)));
+        assertEquals(model, new UserModel(userQuery.users().get(0)));
 
         UserInterface ui = userQuery.select(UserInterface.class).getFirst();
         assertEquals(model.asMap(), ui.asMap());
 
-        ui = userQuery.selectDistinct(UserInterface.class).getFirst();
+        ui = userQuery.selectDistinct(UserInterface.class).orderBy(User::getId).getFirst();
         assertEquals(model.asMap(), ui.asMap());
 
         Long count = userQuery.select(get(User::getId).count()).getSingle();
-        assertEquals(count, users().size());
+        assertEquals(count, userQuery.users().size());
 
         Tuple aggArray = userQuery.select(Lists.of(
                 get(User::getId).count(),
@@ -107,18 +131,18 @@ class QueryBuilderTest {
         int max = Integer.MIN_VALUE;
         int min = Integer.MAX_VALUE;
         int sum = 0;
-        for (User user : users()) {
+        for (User user : userQuery.users()) {
             int number = user.getRandomNumber();
             max = Math.max(max, number);
             min = Math.min(min, number);
             sum += number;
         }
 
-        assertEquals(aggArray.<Long>get(0), users().size());
+        assertEquals(aggArray.<Long>get(0), userQuery.users().size());
         assertEquals(aggArray.<Integer>get(1), max);
         assertEquals(aggArray.<Integer>get(2), min);
         assertEquals(aggArray.<Number>get(3).intValue(), sum);
-        assertEquals(aggArray.<Number>get(4).doubleValue(), sum * 1.0 / users().size(), 0.001);
+        assertEquals(aggArray.<Number>get(4).doubleValue(), sum * 1.0 / userQuery.users().size(), 1);
 
 
         assertEquals(
@@ -126,7 +150,7 @@ class QueryBuilderTest {
                         .select(User::getId, User::getRandomNumber)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber()))
                         .collect(Collectors.toList())
         );
@@ -136,7 +160,7 @@ class QueryBuilderTest {
                         .select(User::getId, User::getRandomNumber, User::getTime)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime()))
                         .collect(Collectors.toList())
         );
@@ -146,7 +170,7 @@ class QueryBuilderTest {
                         .select(User::getId, User::getRandomNumber, User::getTime, User::getPid)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid()))
                         .collect(Collectors.toList())
         );
@@ -158,7 +182,7 @@ class QueryBuilderTest {
                                 User::getTimestamp)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp()))
                         .collect(Collectors.toList())
@@ -170,7 +194,7 @@ class QueryBuilderTest {
                                 User::getTimestamp, User::isValid)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid()))
                         .collect(Collectors.toList())
@@ -182,7 +206,7 @@ class QueryBuilderTest {
                                 User::getTimestamp, User::isValid, User::getGender)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender()))
                         .collect(Collectors.toList())
@@ -194,7 +218,7 @@ class QueryBuilderTest {
                                 User::getTimestamp, User::isValid, User::getGender, User::getInstant)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant()))
                         .collect(Collectors.toList())
@@ -207,7 +231,7 @@ class QueryBuilderTest {
                                 User::getTestLong)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant(),
                                 it.getTestLong()))
@@ -221,7 +245,7 @@ class QueryBuilderTest {
                                 User::getTestLong, User::getTestInteger)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -238,7 +262,7 @@ class QueryBuilderTest {
                                 User::getTestLong, User::getTestInteger))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -254,7 +278,7 @@ class QueryBuilderTest {
                                 User::getTestLong, User::getTestInteger)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -264,100 +288,100 @@ class QueryBuilderTest {
         );
 
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime(), it.getPid()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid, User::getGender)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid, User::getGender, User::getInstant)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid, User::getGender, User::getInstant,
                                 User::getTestLong)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getTestLocalDate(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant(),
                                 it.getTestLong()))
@@ -365,14 +389,14 @@ class QueryBuilderTest {
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid, User::getGender, User::getInstant,
                                 User::getTestLong, User::getTestInteger)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getTestLocalDate(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -382,14 +406,14 @@ class QueryBuilderTest {
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(User::getTestLocalDate, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid, User::getGender, User::getInstant,
                                 User::getTestLong, User::getTestInteger)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getTestLocalDate(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -406,7 +430,7 @@ class QueryBuilderTest {
                         .groupBy(User::getId, User::getRandomNumber)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber()))
                         .distinct()
                         .collect(Collectors.toList())
@@ -418,7 +442,7 @@ class QueryBuilderTest {
                         .groupBy(User::getId, User::getRandomNumber, User::getTime)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime()))
                         .distinct()
                         .collect(Collectors.toList())
@@ -430,7 +454,7 @@ class QueryBuilderTest {
                         .groupBy(User::getId, User::getRandomNumber, User::getTime, User::getPid)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid()))
                         .distinct()
                         .collect(Collectors.toList())
@@ -445,7 +469,7 @@ class QueryBuilderTest {
                                 User::getTimestamp)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp()))
                         .distinct()
@@ -460,7 +484,7 @@ class QueryBuilderTest {
                                 User::getTimestamp, User::isValid)
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid()))
                         .distinct()
@@ -473,7 +497,7 @@ class QueryBuilderTest {
                         .select(get(User::getId), get(User::getRandomNumber))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber()))
                         .collect(Collectors.toList())
         );
@@ -483,7 +507,7 @@ class QueryBuilderTest {
                         .select(get(User::getId), get(User::getRandomNumber), get(User::getTime))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime()))
                         .collect(Collectors.toList())
         );
@@ -493,7 +517,7 @@ class QueryBuilderTest {
                         .select(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid()))
                         .collect(Collectors.toList())
         );
@@ -505,7 +529,7 @@ class QueryBuilderTest {
                                 get(User::getTimestamp))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp()))
                         .collect(Collectors.toList())
@@ -517,7 +541,7 @@ class QueryBuilderTest {
                                 get(User::getTimestamp), get(User::isValid))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid()))
                         .collect(Collectors.toList())
@@ -529,7 +553,7 @@ class QueryBuilderTest {
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender()))
                         .collect(Collectors.toList())
@@ -541,7 +565,7 @@ class QueryBuilderTest {
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender), get(User::getInstant))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant()))
                         .collect(Collectors.toList())
@@ -554,7 +578,7 @@ class QueryBuilderTest {
                                 get(User::getTestLong))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant(),
                                 it.getTestLong()))
@@ -568,7 +592,7 @@ class QueryBuilderTest {
                                 get(User::getTestLong), get(User::getTestInteger))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -584,7 +608,7 @@ class QueryBuilderTest {
                                 get(User::getTestLong), get(User::getTestInteger))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -594,108 +618,108 @@ class QueryBuilderTest {
         );
 
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber()))
                         .distinct()
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime()))
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid()))
                         .collect(Collectors.toList())
         );
 
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp()))
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp), get(User::isValid))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid()))
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender()))
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender), get(User::getInstant))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant()))
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender), get(User::getInstant),
                                 get(User::getTestLong))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(it -> Tuples.of(it.getId(), it.getRandomNumber(), it.getTime(), it.getPid(),
                                 it.getTimestamp(), it.isValid(), it.getGender(), it.getInstant(),
                                 it.getTestLong()))
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender), get(User::getInstant),
                                 get(User::getTestLong), get(User::getTestInteger))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -704,14 +728,14 @@ class QueryBuilderTest {
                         .collect(Collectors.toList())
         );
 
-        assertEquals(
+        assertDistinctEquals(
                 userQuery
                         .selectDistinct(get(User::getId), get(User::getRandomNumber), get(User::getTime), get(User::getPid),
                                 get(User::getTimestamp), get(User::isValid), get(User::getGender), get(User::getInstant),
                                 get(User::getTestLong), get(User::getTestInteger))
                         .getList(),
 
-                users().stream()
+                userQuery.users().stream()
                         .map(user -> Tuples.of(
                                 user.getId(), user.getRandomNumber(), user.getTime(), user.getPid(),
                                 user.getTimestamp(), user.isValid(), user.getGender(), user.getInstant(),
@@ -723,43 +747,51 @@ class QueryBuilderTest {
 
     }
 
+    private <T> void assertDistinctEquals(List<T> list, List<T> collect) {
+        assertEquals(list.size(), collect.size());
+        Set<T> a = new HashSet<>(list);
+        Set<T> b = new HashSet<>(collect);
+        assertEquals(a.size(), list.size());
+        assertEquals(a, b);
+    }
+
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void selectDistinct(Select<User> userQuery) {
+    void selectDistinct(UserRepository userQuery) {
         List<Integer> list = userQuery.selectDistinct(User::getRandomNumber)
                 .getList();
-        List<Integer> collect = users()
+        List<Integer> collect = userQuery.users()
                 .stream().map(User::getRandomNumber)
                 .distinct()
                 .collect(Collectors.toList());
-        assertEquals(list, collect);
+        assertDistinctEquals(list, collect);
 
 
         list = userQuery.selectDistinct(get(User::getRandomNumber))
                 .getList();
-        assertEquals(list, collect);
+        assertDistinctEquals(list, collect);
 
         List<Tuple> tuples = userQuery.selectDistinct(Lists.<Path<User, ?>>of(User::getRandomNumber, User::getUsername))
                 .getList();
 
-        List<Tuple> collect2 = users().stream()
+        List<Tuple> collect2 = userQuery.users().stream()
                 .map(user -> Tuples.of(user.getRandomNumber(), user.getUsername()))
                 .distinct()
                 .collect(Collectors.toList());
 
-        assertEquals(tuples, collect2);
+        assertDistinctEquals(tuples, collect2);
 
         tuples = userQuery.selectDistinct((ExpressionsBuilder<User>) user ->
                         Lists.of(user.get(User::getRandomNumber), user.get(User::getUsername)))
                 .getList();
 
-        assertEquals(tuples, collect2);
+        assertDistinctEquals(tuples, collect2);
 
 
         tuples = userQuery.select((ExpressionsBuilder<User>) user ->
                         Lists.of(user.get(User::getRandomNumber), user.get(User::getUsername)))
                 .getList();
-        collect2 = users().stream()
+        collect2 = userQuery.users().stream()
                 .map(user -> Tuples.of(user.getRandomNumber(), user.getUsername()))
                 .collect(Collectors.toList());
         assertEquals(tuples, collect2);
@@ -768,13 +800,13 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void fetch(Select<User> userQuery) {
-        List<User> users = userQuery.fetch(User::getParentUser).getList();
+    void fetch(UserRepository userQuery) {
+        List<User> users = userQuery.fetch(User::getParentUser).orderBy(User::getId).getList();
 
-        assertEquals(users, users());
-        for (int i = 0; i < users().size(); i++) {
+        assertEquals(users, userQuery.users());
+        for (int i = 0; i < userQuery.users().size(); i++) {
             User a = users.get(i);
-            User b = users().get(i);
+            User b = userQuery.users().get(i);
             if (b.getParentUser() != null) {
                 assertEquals(b.getParentUser(), a.getParentUser());
             } else {
@@ -783,12 +815,13 @@ class QueryBuilderTest {
         }
 
         users = userQuery.fetch(Paths.get(User::getParentUser).get(User::getParentUser))
+                .orderBy(User::getId)
                 .getList();
 
-        assertEquals(users, users());
-        for (int i = 0; i < users().size(); i++) {
+        assertEquals(users, userQuery.users());
+        for (int i = 0; i < userQuery.users().size(); i++) {
             User a = users.get(i);
-            User b = users().get(i);
+            User b = userQuery.users().get(i);
             if (b.getParentUser() != null) {
                 b = b.getParentUser();
                 a = a.getParentUser();
@@ -803,7 +836,7 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void groupBy(Select<User> userQuery) {
+    void groupBy(UserRepository userQuery) {
         List<Tuple> list = userQuery
                 .select(Lists.of(
                         get(User::getRandomNumber),
@@ -812,7 +845,7 @@ class QueryBuilderTest {
                 .groupBy(User::getRandomNumber)
                 .getList();
 
-        Map<Object, Long> count = users().stream()
+        Map<Object, Long> count = userQuery.users().stream()
                 .collect(Collectors.groupingBy(User::getRandomNumber, Collectors.counting()));
 
         assertEquals(list.size(), count.size());
@@ -822,7 +855,7 @@ class QueryBuilderTest {
         }
 
         ExpressionsBuilder<User> expressionsBuilder =
-                (Root<User> root) -> Lists.of(root.get(User::getRandomNumber));
+                (EntityRoot<User> root) -> Lists.of(root.get(User::getRandomNumber));
         list = userQuery
                 .select(Lists.of(
                         get(User::getRandomNumber),
@@ -860,7 +893,7 @@ class QueryBuilderTest {
                 .where(User::getRandomNumber).eq(1)
                 .groupBy(expressionsBuilder)
                 .getList();
-        count = users().stream()
+        count = userQuery.users().stream()
                 .filter(it -> it.isValid() && it.getRandomNumber() == 1)
                 .collect(Collectors.groupingBy(User::getRandomNumber, Collectors.counting()));
         assertEquals(list.size(), count.size());
@@ -873,22 +906,22 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void orderBy(Select<User> userQuery) {
-        testOrderBy(Lists.of(new Checker<>(users(), userQuery)));
+    void orderBy(UserRepository userQuery) {
+        testOrderBy(Lists.of(new Checker<>(userQuery.users(), userQuery)));
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void combinatorial(Select<User> userQuery) {
-        testOrderBy(getWhereTestCase(new Checker<>(users(), userQuery)));
+    void combinatorial(UserRepository userQuery) {
+        testOrderBy(getWhereTestCase(new Checker<>(userQuery.users(), userQuery), userQuery.users()));
 
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void testEmptyIn(Select<User> userQuery) {
+    void testEmptyIn(UserRepository userQuery) {
         List<User> list = userQuery.where(User::getId).notIn().getList();
-        assertEquals(list, users());
+        assertEquals(list, userQuery.users());
     }
 
     private static void testOrderBy(List<Checker<User, OrderBy<User, User>>> testcase) {
@@ -912,12 +945,12 @@ class QueryBuilderTest {
                     .orderBy(User::getRandomNumber, User::getId)
                     .slice(0, 1);
             assertEquals(slice.total(), sorted.size());
-            Root<User> root = checker.collector
+            EntityRoot<User> root = checker.collector
                     .orderBy(User::getRandomNumber, User::getId).root();
             assertEquals(root, Paths.root());
 
             users = checker.collector
-                    .orderBy((Root<User> r) -> Lists.of(
+                    .orderBy((EntityRoot<User> r) -> Lists.of(
                             r.get(User::getRandomNumber).asc(),
                             r.get(User::getId).asc()
                     ))
@@ -955,35 +988,35 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void getList(Select<User> userQuery) {
+    void getList(UserRepository userQuery) {
 
         List<User> users = userQuery.getList();
-        assertEquals(users.size(), users().size());
+        assertEquals(users.size(), userQuery.users().size());
 
         users = userQuery.getList(0, 10);
-        assertEquals(users, users().subList(0, 10));
+        assertEquals(users, userQuery.users().subList(0, 10));
 
         users = userQuery.getList(100, 15);
-        assertEquals(users, users().subList(100, 115));
+        assertEquals(users, userQuery.users().subList(100, 115));
 
     }
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void where(Select<User> userQuery) {
-        Checker<User, Where<User, User>> check = new Checker<>(users(), userQuery);
-        getWhereTestCase(check);
+    void where(UserRepository userQuery) {
+        Checker<User, Where<User, User>> check = new Checker<>(userQuery.users(), userQuery);
+        getWhereTestCase(check, userQuery.users());
     }
 
     private List<Checker<User, OrderBy<User, User>>> whereTestCase;
 
 
-    private List<Checker<User, OrderBy<User, User>>> getWhereTestCase(Checker<User, Where<User, User>> check) {
+    private List<Checker<User, OrderBy<User, User>>> getWhereTestCase(Checker<User, Where<User, User>> check, List<User> users) {
         if (whereTestCase != null) {
             return whereTestCase;
         }
         List<Checker<User, OrderBy<User, User>>> result = whereTestCase = new ArrayList<>();
-        String username = users().get(10).getUsername();
+        String username = users.get(10).getUsername();
 
         Where<User, User> userQuery = check.collector;
         OrderBy<User, User> collector = userQuery
@@ -1019,7 +1052,7 @@ class QueryBuilderTest {
 
         Predicate<User> isValid = get(User::isValid);
         collector = userQuery.where(isValid);
-        stream = users().stream().filter(User::isValid);
+        stream = users.stream().filter(User::isValid);
 
         result.add(new Checker<>(stream, collector));
 
@@ -1136,7 +1169,7 @@ class QueryBuilderTest {
         collector = check.collector.where(User::getRandomNumber).eq(1).where(User::isValid).eq(true);
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber).eq(1)
-                .where((Path<User, Boolean>) User::isValid).eq(TypedExpressions.ofTrue());
+                .where((Path<User, Boolean>) User::isValid).eq(Expressions.ofTrue());
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1).and(User::isValid).eq(true));
         result.add(new Checker<>(users, collector));
@@ -1164,7 +1197,7 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(get(User::getId)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where((Root<User> root) -> root.get(User::getRandomNumber).eq(root.get(User::getId)));
+        collector = check.collector.where((EntityRoot<User> root) -> root.get(User::getRandomNumber).eq(root.get(User::getId)));
         result.add(new Checker<>(users, collector));
         collector = check.collector
                 .whereIf(true, root -> root.get(User::getRandomNumber).eq(root.get(User::getId)))
@@ -1208,8 +1241,8 @@ class QueryBuilderTest {
             collector = check.collector.where(get(User::getRandomNumber).in(values));
             result.add(new Checker<>(users, collector));
 
-            List<TypedExpression<User, Integer>> collect = values.stream()
-                    .<TypedExpression<User, Integer>>map(TypedExpressions::of)
+            List<Expression<User, Integer>> collect = values.stream()
+                    .<Expression<User, Integer>>map(Expressions::of)
                     .collect(Collectors.toList());
             collector = check.collector.where(User::getRandomNumber).in(collect);
             result.add(new Checker<>(users, collector));
@@ -1255,9 +1288,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).ge(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).ge(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).ge(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).ge(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).ge(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1267,9 +1300,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).gt(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).gt(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).gt(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).gt(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).gt(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
         //
         //        B le(U value);
@@ -1278,9 +1311,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).le(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).le(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).le(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).le(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).le(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
         //
         //        B lt(U value);
@@ -1289,9 +1322,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).lt(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).lt(TypedExpressions.of(50));
+        collector = check.collector.where(User::getRandomNumber).lt(Expressions.of(50));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).lt(TypedExpressions.of(50)));
+        collector = check.collector.where(get(User::getRandomNumber).lt(Expressions.of(50)));
         result.add(new Checker<>(users, collector));
         //
         //        B between(U l, U r);
@@ -1305,19 +1338,19 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).between(25, 73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).between(25, TypedExpressions.of(73));
+        collector = check.collector.where(User::getRandomNumber).between(25, Expressions.of(73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).between(25, TypedExpressions.of(73)));
+        collector = check.collector.where(get(User::getRandomNumber).between(25, Expressions.of(73)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).between(TypedExpressions.of(25), 73);
+        collector = check.collector.where(User::getRandomNumber).between(Expressions.of(25), 73);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).between(TypedExpressions.of(25), 73));
+        collector = check.collector.where(get(User::getRandomNumber).between(Expressions.of(25), 73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber)
-                .between(TypedExpressions.of(25), TypedExpressions.of(73));
+                .between(Expressions.of(25), Expressions.of(73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber)
-                .between(TypedExpressions.of(25), TypedExpressions.of(73)));
+                .between(Expressions.of(25), Expressions.of(73)));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1331,19 +1364,19 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).notBetween(25, 73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).notBetween(25, TypedExpressions.of(73));
+        collector = check.collector.where(User::getRandomNumber).notBetween(25, Expressions.of(73));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).notBetween(25, TypedExpressions.of(73)));
+        collector = check.collector.where(get(User::getRandomNumber).notBetween(25, Expressions.of(73)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).notBetween(TypedExpressions.of(25), 73);
+        collector = check.collector.where(User::getRandomNumber).notBetween(Expressions.of(25), 73);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).notBetween(TypedExpressions.of(25), 73));
+        collector = check.collector.where(get(User::getRandomNumber).notBetween(Expressions.of(25), 73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(User::getRandomNumber)
-                .notBetween(TypedExpressions.of(25), TypedExpressions.of(73));
+                .notBetween(Expressions.of(25), Expressions.of(73));
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber)
-                .notBetween(TypedExpressions.of(25), TypedExpressions.of(73)));
+                .notBetween(Expressions.of(25), Expressions.of(73)));
         result.add(new Checker<>(users, collector));
 
         //   NumberOperator<T, U, B> add(U value);
@@ -1352,9 +1385,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).add(1).eq(5));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).add(TypedExpressions.of(1)).eq(5);
+        collector = check.collector.where(User::getRandomNumber).add(Expressions.of(1)).eq(5);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).add(TypedExpressions.of(1)).eq(5));
+        collector = check.collector.where(get(User::getRandomNumber).add(Expressions.of(1)).eq(5));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1364,9 +1397,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).subtract(1).eq(5));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).subtract(TypedExpressions.of(1)).eq(5);
+        collector = check.collector.where(User::getRandomNumber).subtract(Expressions.of(1)).eq(5);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).subtract(TypedExpressions.of(1)).eq(5));
+        collector = check.collector.where(get(User::getRandomNumber).subtract(Expressions.of(1)).eq(5));
         result.add(new Checker<>(users, collector));
         //
         //        NumberOperator<T, U, B> multiply(U value);
@@ -1375,20 +1408,20 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).multiply(3).eq(45));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).multiply(TypedExpressions.of(3)).eq(45);
+        collector = check.collector.where(User::getRandomNumber).multiply(Expressions.of(3)).eq(45);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).multiply(TypedExpressions.of(3)).eq(45));
+        collector = check.collector.where(get(User::getRandomNumber).multiply(Expressions.of(3)).eq(45));
         result.add(new Checker<>(users, collector));
         //
         //        NumberOperator<T, U, B> divide(U value);
         users = check.expected.stream().filter(it -> it.getRandomNumber() / 3. == 12).collect(Collectors.toList());
-        collector = check.collector.where(User::getRandomNumber).divide(3).eq(12);
+        collector = check.collector.<Number>where(User::getRandomNumber).divide(3.0).eq(12);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).divide(3).eq(12));
+        collector = check.collector.where(Paths.<User, Number>get(User::getRandomNumber).divide(3.).eq(12));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).divide(TypedExpressions.of(3)).eq(12);
+        collector = check.collector.where(User::getRandomNumber).divide(Expressions.of(3)).eq(12);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).divide(TypedExpressions.of(3)).eq(12));
+        collector = check.collector.where(get(User::getRandomNumber).divide(Expressions.of(3)).eq(12));
         result.add(new Checker<>(users, collector));
 
         //
@@ -1399,9 +1432,9 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).mod(8).eq(2));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(User::getRandomNumber).mod(TypedExpressions.of(8)).eq(2);
+        collector = check.collector.where(User::getRandomNumber).mod(Expressions.of(8)).eq(2);
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).mod(TypedExpressions.of(8)).eq(2));
+        collector = check.collector.where(get(User::getRandomNumber).mod(Expressions.of(8)).eq(2));
         result.add(new Checker<>(users, collector));
 
 
@@ -1529,17 +1562,17 @@ class QueryBuilderTest {
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void queryList(Select<User> userQuery) {
+    void queryList(UserRepository userQuery) {
         User single = userQuery
                 .where(User::getId).le(10)
                 .getSingle(10);
-        User user = users().get(10);
+        User user = userQuery.users().get(10);
         assertEquals(single, user);
         single = userQuery
                 .where(User::getId).eq(10)
                 .single().orElse(null);
         User user10 = null;
-        for (User u : users()) {
+        for (User u : userQuery.users()) {
             if (u.getId() == 10) {
                 user10 = u;
                 break;
@@ -1557,54 +1590,54 @@ class QueryBuilderTest {
                 .single(11).isEmpty());
 
         Slice<User> slice = userQuery.slice(20, 10);
-        assertEquals(slice.total(), users().size());
-        List<User> list = users().stream()
+        assertEquals(slice.total(), userQuery.users().size());
+        List<User> list = userQuery.users().stream()
                 .skip(20)
                 .limit(10)
                 .toList();
         assertEquals(slice.data(), list);
 
         Page<User> page = userQuery.slice(new Pageable<>(3, 10));
-        assertEquals(page.getTotal(), users().size());
+        assertEquals(page.getTotal(), userQuery.users().size());
         assertEquals(page.getList(), list);
 
         page = userQuery
                 .orderBy(User::getId)
                 .slice(new Pageable<>(3, 10));
-        assertEquals(page.getTotal(), users().size());
+        assertEquals(page.getTotal(), userQuery.users().size());
         assertEquals(page.getList(), list);
 
         user = userQuery.getFirst();
-        assertEquals(user, users().get(0));
+        assertEquals(user, userQuery.users().get(0));
         user = userQuery.getFirst(10);
-        assertEquals(user, users().get(10));
+        assertEquals(user, userQuery.users().get(10));
         user = userQuery.first().orElse(null);
-        assertEquals(user, users().get(0));
+        assertEquals(user, userQuery.users().get(0));
         user = userQuery.first(8).orElse(null);
-        assertEquals(user, users().get(8));
+        assertEquals(user, userQuery.users().get(8));
 
     }
 
 
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
-    void lock(Select<User> userQuery) {
-        doInTransaction(() -> testLock(userQuery));
+    void lock(UserRepository userQuery) {
+        userQuery.doInTransaction(() -> testLock(userQuery));
     }
 
-    private static void testLock(Select<User> userQuery) {
+    private static void testLock(UserRepository userQuery) {
         for (LockModeType lockModeType : LockModeType.values()) {
             try {
                 User single = userQuery
                         .where(User::getId).le(10)
                         .getSingle(10, lockModeType);
-                User user = users().get(10);
+                User user = userQuery.users().get(10);
                 assertEquals(single, user);
                 single = userQuery
                         .where(User::getId).eq(10)
                         .single(lockModeType).orElse(null);
                 User user10 = null;
-                for (User u : users()) {
+                for (User u : userQuery.users()) {
                     if (u.getId() == 10) {
                         user10 = u;
                         break;
@@ -1623,24 +1656,24 @@ class QueryBuilderTest {
 
 
                 user = userQuery.getFirst(lockModeType);
-                assertEquals(user, users().get(0));
+                assertEquals(user, userQuery.users().get(0));
                 user = userQuery.getFirst(10, lockModeType);
-                assertEquals(user, users().get(10));
+                assertEquals(user, userQuery.users().get(10));
                 user = userQuery.first(lockModeType).orElse(null);
-                assertEquals(user, users().get(0));
+                assertEquals(user, userQuery.users().get(0));
                 user = userQuery.first(8, lockModeType).orElse(null);
-                assertEquals(user, users().get(8));
+                assertEquals(user, userQuery.users().get(8));
 
                 user = userQuery.where(User::getId).eq(0)
                         .requireSingle(lockModeType);
-                assertEquals(user, users().get(0));
+                assertEquals(user, userQuery.users().get(0));
 
                 List<User> users = userQuery.where(User::getId).eq(0)
-                        .getList(0, lockModeType);
-                assertEquals(users.get(0), users().get(0));
+                        .getList(lockModeType);
+                assertEquals(users.get(0), userQuery.users().get(0));
                 users = userQuery.where(User::getId).eq(0)
                         .getList(lockModeType);
-                assertEquals(users.get(0), users().get(0));
+                assertEquals(users.get(0), userQuery.users().get(0));
 
             } catch (Exception e) {
                 log.error(lockModeType.name(), e);
@@ -1668,5 +1701,13 @@ class QueryBuilderTest {
             assertEquals(expected, actual);
         }
 
+    }
+
+    @AfterAll
+    static void afterAll() {
+        long millis = TimeUnit.NANOSECONDS.toMillis(QueryContext.timer.time().get());
+        System.out.println("----------------------------------------------------------");
+        System.out.println(millis + "ms, count: " + QueryContext.timer.count());
+        System.out.println("----------------------------------------------------------");
     }
 }

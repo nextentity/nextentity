@@ -13,5 +13,8 @@ module nextentity.core {
     exports io.github.nextentity.core.reflect;
     exports io.github.nextentity.core.util;
     exports io.github.nextentity.core.converter;
-    exports io.github.nextentity.core.util.tuple;
+    exports io.github.nextentity.core.api.expression;
+    exports io.github.nextentity.core.annotaion;
+    exports io.github.nextentity.core.reflect.schema;
+    exports io.github.nextentity.core.api.tuple;
 }

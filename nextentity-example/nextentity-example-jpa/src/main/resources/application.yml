@@ -4,9 +4,6 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    open-in-view: false
 logging:
   level:
     io.github.nextentity.sql: debug
-    org.hibernate.SQL: debug

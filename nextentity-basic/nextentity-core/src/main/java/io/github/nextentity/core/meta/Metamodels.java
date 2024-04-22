@@ -1,9 +1,13 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.api.Expression.Column;
-import lombok.AllArgsConstructor;
+import io.github.nextentity.core.BasicExpressions;
+import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
+import io.github.nextentity.core.reflect.SelectedConstruct;
+import io.github.nextentity.core.reflect.schema.Attribute;
+import io.github.nextentity.core.reflect.schema.Schema;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.experimental.Delegate;
@@ -11,129 +15,288 @@ import lombok.experimental.Delegate;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Metamodels {
 
     @Getter
     @Accessors(fluent = true)
-    public static class AttributeImpl implements Attribute {
+    public static class AttributeImpl<T extends Schema> implements Attribute {
+        protected Class<?> type;
+        protected String name;
+        protected Method getter;
+        protected Method setter;
+        protected Field field;
+        protected T declareBy;
 
-        private final Class<?> javaType;
-        private final Type declaringType;
-        private final String name;
-        private final Method getter;
-        private final Method setter;
-        private final Field field;
-        @Getter(lazy = true)
-        private final List<? extends Attribute> referencedAttributes = Attribute.super.referencedAttributes();
-        @Getter(lazy = true)
-        private final Column column = Attribute.super.column();
+        public AttributeImpl() {
+        }
 
-        public AttributeImpl(Class<?> javaType, Type declaringType, String name, Method getter, Method setter, Field field) {
-            this.javaType = javaType;
-            this.declaringType = declaringType;
+        public AttributeImpl(Class<?> javaType, String name, Method getter, Method setter, Field field, T declareBy) {
+            this.type = javaType;
             this.name = name;
             this.getter = getter;
             this.setter = setter;
             this.field = field;
+            this.declareBy = declareBy;
         }
 
-    }
-
-    @Getter
-    @Setter
-    @RequiredArgsConstructor
-    @Accessors(fluent = true)
-    public static class RootEntity implements EntityType {
-
-        private Class<?> javaType;
-        private Attribute id;
-        private Attribute version;
-        private String tableName;
-        private Map<String, Attribute> attributes;
-
-        public Collection<Attribute> attributes() {
-            return attributes.values();
+        public AttributeImpl(Attribute attribute, T declareBy) {
+            this(attribute.type(), attribute.name(), attribute.getter(), attribute.setter(), attribute.field(), declareBy);
         }
 
         @Override
-        public Attribute getAttribute(String fieldName) {
-            return attributes.get(fieldName);
+        public String toString() {
+            return name();
+        }
+    }
+
+
+    @Getter
+    @Accessors(fluent = true)
+    public static class BasicAttributeImpl extends AttributeImpl<EntitySchema> implements BasicAttribute {
+        private final String columnName;
+        private final boolean isVersion;
+        private final List<? extends BasicAttribute> referencedAttributes;
+        private final EntityPath path;
+
+        public BasicAttributeImpl(Attribute attribute, String columnName, boolean isVersion) {
+            super(attribute, (EntitySchema) attribute.declareBy());
+            this.columnName = columnName;
+            this.isVersion = isVersion;
+            this.referencedAttributes = BasicAttribute.super.attributePaths();
+            List<String> paths = referencedAttributes.stream()
+                    .map(BasicAttribute::name)
+                    .toList();
+            this.path = BasicExpressions.column(paths);
         }
 
     }
 
     @Getter
     @Setter
-    @RequiredArgsConstructor
     @Accessors(fluent = true)
-    public static class SubSelectEntity implements SubSelectType {
-        @Delegate
-        private final RootEntity entity;
-        private final String subSelectSql;
-    }
+    public static class EntityTypeImpl extends EntitySchemaImpl implements EntityType {
+        private BiFunction<EntityType, Class<?>, ProjectionType> projectionTypes;
+        private volatile SelectedConstruct constructor;
 
-    @Getter
-    @RequiredArgsConstructor
-    @Accessors(fluent = true)
-    public static class BasicAttributeImpl implements BasicAttribute {
-        @Delegate
-        private final Attribute attribute;
-        private final String columnName;
-        private final boolean hasVersion;
+        @Override
+        public ProjectionType getProjection(Class<?> type) {
+            return projectionTypes.apply(this, type);
+        }
+
+        @Override
+        public SelectedConstruct constructor() {
+            if (constructor == null) {
+                synchronized (this) {
+                    if (constructor == null) {
+                        SelectEntity selected = new SelectEntity()
+                                .type(type())
+                                .fetch(Collections.emptyList());
+                        constructor = SelectedConstruct.of(this, selected, false);
+                    }
+                }
+            }
+            return constructor;
+        }
+
+        public EntityTypeImpl() {
+        }
+
+
     }
 
     @Getter
     @Setter
     @Accessors(fluent = true)
-    public static class AnyToOneAttributeImpl implements AnyToOneAttribute {
-        @Delegate
-        private Attribute attribute;
+    public static class EntitySchemaImpl implements EntitySchema {
+
+        private Class<?> type;
+        private BasicAttribute id;
+        private BasicAttribute version;
+        private String tableName;
+        private Map<String, BasicAttribute> dictionary;
+        private transient List<?extends BasicAttribute> primitiveAttributes;
+
+        public EntitySchemaImpl() {
+        }
+
+        public Collection<BasicAttribute> attributes() {
+            return dictionary.values();
+        }
+
+        @Override
+        public BasicAttribute getAttribute(String fieldName) {
+            return dictionary.get(fieldName);
+        }
+
+        @Override
+        public String toString() {
+            return type.getSimpleName();
+        }
+
+        @Override
+        public String name() {
+            return type.getSimpleName();
+        }
+
+        @Override
+        public Schema declareBy() {
+            return null;
+        }
+
+        @Override
+        public List<? extends BasicAttribute> primitiveAttributes() {
+            if (primitiveAttributes == null) {
+                primitiveAttributes = EntitySchema.super.primitiveAttributes();
+            }
+            return primitiveAttributes;
+        }
+    }
+
+    @Getter
+    @Setter
+    @Accessors(fluent = true)
+    public static class SubSelectEntity extends EntityTypeImpl implements SubSelectType {
+        private final String subSelectSql;
+
+        public SubSelectEntity(String subSelectSql) {
+            this.subSelectSql = subSelectSql;
+        }
+    }
+
+    @Getter
+    @Setter
+    @Accessors(fluent = true)
+    public static class AssociationAttributeImpl extends BasicAttributeImpl implements AssociationAttribute {
         private String joinName;
         private String joinColumnName;
         private String referencedColumnName;
-        private Supplier<EntityType> referencedSupplier;
-        @Delegate(excludes = Type.class)
+        private Supplier<EntitySchema> referencedSupplier;
+        @Delegate(excludes = Schema.class)
         @Getter(lazy = true)
-        private final EntityType referenced = referencedSupplier.get();
+        private final EntitySchema referenced = referencedSupplier.get();
 
-        public AnyToOneAttributeImpl(Attribute attribute) {
-            this.attribute = attribute;
+        public AssociationAttributeImpl(Attribute attribute, String columnName) {
+            super(attribute, columnName, false);
         }
+
     }
 
     @Getter
-    @RequiredArgsConstructor
     @Accessors(fluent = true)
-    static final class ProjectionAttributeImpl implements ProjectionAttribute {
-        @Delegate
-        private final Attribute attribute;
-        private final Attribute entityAttribute;
+    static class ProjectionAttributeImpl extends AttributeImpl<ProjectionType> implements ProjectionBasicAttribute {
+        private final BasicAttribute entityAttribute;
+
+        ProjectionAttributeImpl(Attribute attribute, BasicAttribute entityAttribute) {
+            super(attribute, (ProjectionType) attribute.declareBy());
+            this.entityAttribute = entityAttribute;
+        }
+
     }
 
     @Getter
-    @RequiredArgsConstructor
     @Accessors(fluent = true)
-    static final class AnyToOneProjectionAttributeImpl implements AnyToOneProjectionAttribute {
-        @Delegate
-        private final Attribute attribute;
-        private final Attribute entityAttribute;
+    static final class ProjectionAssociationAttributeImpl extends ProjectionAttributeImpl implements ProjectionAssociationAttribute {
+
+        private final Function<ProjectionAssociationAttribute, Collection<? extends ProjectionBasicAttribute>> attributesSupplier;
+        @Getter(lazy = true)
+        private final Map<String, ? extends ProjectionBasicAttribute> dictionary = attributesSupplier.apply(this)
+                .stream().collect(Collectors.toMap(Attribute::name, Function.identity()));
+
+
+        ProjectionAssociationAttributeImpl(Attribute attribute,
+                                           AssociationAttribute entityAttribute,
+                                           Function<ProjectionAssociationAttribute, Collection<? extends ProjectionBasicAttribute>> attributesSupplier) {
+            super(attribute, entityAttribute);
+            this.attributesSupplier = attributesSupplier;
+        }
 
         @Override
-        public Collection<? extends Attribute> attributes() {
+        public AssociationAttribute entityAttribute() {
+            return (AssociationAttribute) super.entityAttribute();
+        }
+
+
+        @Override
+        public Collection<? extends ProjectionBasicAttribute> attributes() {
+            return dictionary().values();
+        }
+
+        @Override
+        public SelectedConstruct constructor() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Attribute getAttribute(String name) {
+            return dictionary().get(name);
         }
     }
 
     @Getter
-    @AllArgsConstructor
     @Accessors(fluent = true)
-    static final class RootProjection implements Projection {
-        private final Class<?> javaType;
-        private final List<ProjectionAttribute> attributes;
-        private final EntityType entityType;
+    static final class ProjectionSchemaImpl implements ProjectionType {
+        private final Class<?> type;
+        private final Map<String, ProjectionBasicAttribute> dictionary = new HashMap<>();
+        private final EntitySchema entityType;
+        private volatile SelectedConstruct constructor;
+
+        public ProjectionSchemaImpl(Class<?> type, EntitySchema entityType) {
+            this.type = type;
+            this.entityType = entityType;
+        }
+
+        public void setProperties(List<ProjectionBasicAttribute> properties) {
+            this.dictionary.putAll(properties.stream().collect(Collectors.toMap(Attribute::name, Function.identity())));
+        }
+
+
+        @Override
+        public String toString() {
+            return name();
+        }
+
+        @Override
+        public Collection<? extends ProjectionBasicAttribute> attributes() {
+            return dictionary.values();
+        }
+
+        @Override
+        public SelectedConstruct constructor() {
+            if (constructor == null) {
+                synchronized (this) {
+                    if (constructor == null) {
+                        SelectProjection selected = new SelectProjection()
+                                .entityType(entityType.type())
+                                .type(type());
+                        constructor = SelectedConstruct.of((EntityType) entityType(), selected, false);
+                    }
+                }
+            }
+            return constructor;
+        }
+
+        @Override
+        public ProjectionBasicAttribute getAttribute(String name) {
+            return dictionary.get(name);
+        }
+
+        @Override
+        public String name() {
+            return type.getSimpleName();
+        }
+
+        @Override
+        public Attribute declareBy() {
+            return null;
+        }
     }
 }

@@ -1,8 +1,8 @@
 package io.github.nextentity.example.service;
 
+import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.api.Page;
 import io.github.nextentity.core.api.Pageable;
-import io.github.nextentity.data.common.Access;
 import io.github.nextentity.example.eneity.User;
 import io.github.nextentity.example.projection.IUsernameGender;
 import io.github.nextentity.example.projection.UsernameGender;
@@ -20,31 +20,31 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final Access<User, Long> userAccess;
+    private final Repository<Long, User> userEntities;
 
     public void updateUser(User user) {
-        userAccess.update(user);
+        userEntities.update(user);
     }
 
     public List<User> getByUsername(String username) {
-        return userAccess.where(User::getUsername).eq(username).getList();
+        return userEntities.where(User::getUsername).eq(username).getList();
     }
 
     public User updateRandomNumber(long userId) {
-        User user = userAccess.get(userId);
+        User user = userEntities.get(userId);
         return updateRandomNumber(user);
     }
 
     public User updateRandomNumber(User user) {
         if (user != null) {
             user.setRandomNumber(ThreadLocalRandom.current().nextInt(20));
-            userAccess.update(user);
+            userEntities.update(user);
         }
         return user;
     }
 
     public Page<User> page(String username, Pageable pageable) {
-        return userAccess
+        return userEntities
                 .where(User::getUsername).eqIfNotNull(username)
                 .where(User::getUsername).eqIfNotNull(username)
                 .getPage(pageable);
@@ -54,7 +54,7 @@ public class UserService {
      * 投影查询示例
      */
     public Page<UsernameGender> usernameGenderPage(String username, Pageable pageable) {
-        return userAccess
+        return userEntities
                 .select(UsernameGender.class)
                 .where(User::getUsername).eqIfNotNull(username)
                 .getPage(pageable);
@@ -64,7 +64,7 @@ public class UserService {
      * 接口投影查询示例
      */
     public Page<IUsernameGender> iUsernameGenderPage(String username, Pageable pageable) {
-        return userAccess
+        return userEntities
                 .select(IUsernameGender.class)
                 .where(User::getUsername).eqIfNotNull(username)
                 .getPage(pageable);

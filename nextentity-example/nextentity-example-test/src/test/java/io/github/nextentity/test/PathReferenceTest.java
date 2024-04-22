@@ -9,7 +9,7 @@ public class PathReferenceTest {
     @Test
     void test() {
         PathReference pathReference = PathReference.of(TestLastClass::getName);
-        Assertions.assertEquals(pathReference.getPropertyName(), "name");
+        Assertions.assertEquals(pathReference.getFieldName(), "name");
         Assertions.assertEquals(pathReference.getReturnType(), String.class);
         Assertions.assertEquals(pathReference.getEntityType(), TestLastClass.class);
     }
