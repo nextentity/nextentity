@@ -7,6 +7,7 @@ import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPr
 import io.github.nextentity.core.reflect.SelectedConstruct;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -74,7 +75,7 @@ public class Metamodels {
             this.referencedAttributes = BasicAttribute.super.attributePaths();
             List<String> paths = referencedAttributes.stream()
                     .map(BasicAttribute::name)
-                    .toList();
+                    .collect(ImmutableList.collector(referencedAttributes.size()));
             this.path = BasicExpressions.column(paths);
         }
 

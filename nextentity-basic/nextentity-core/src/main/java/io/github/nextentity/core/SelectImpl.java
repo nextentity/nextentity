@@ -24,14 +24,13 @@ import io.github.nextentity.core.api.tuple.Tuple6;
 import io.github.nextentity.core.api.tuple.Tuple7;
 import io.github.nextentity.core.api.tuple.Tuple8;
 import io.github.nextentity.core.api.tuple.Tuple9;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -113,47 +112,47 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     @Override
     public <A, B> Where0<T, Tuple2<A, B>> select(Path<T, A> a, Path<T, B> b) {
-        return selectTuple(false, Lists.of(a, b));
+        return selectTuple(false, ImmutableList.of(a, b));
     }
 
     @Override
     public <A, B, C> Where0<T, Tuple3<A, B, C>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c) {
-        return selectTuple(false, Lists.of(a, b, c));
+        return selectTuple(false, ImmutableList.of(a, b, c));
     }
 
     @Override
     public <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d) {
-        return selectTuple(false, Lists.of(a, b, c, d));
+        return selectTuple(false, ImmutableList.of(a, b, c, d));
     }
 
     @Override
     public <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e) {
-        return selectTuple(false, Lists.of(a, b, c, d, e));
+        return selectTuple(false, ImmutableList.of(a, b, c, d, e));
     }
 
     @Override
     public <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f) {
-        return selectTuple(false, Lists.of(a, b, c, d, e, f));
+        return selectTuple(false, ImmutableList.of(a, b, c, d, e, f));
     }
 
     @Override
     public <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g) {
-        return selectTuple(false, Lists.of(a, b, c, d, e, f, g));
+        return selectTuple(false, ImmutableList.of(a, b, c, d, e, f, g));
     }
 
     @Override
     public <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h) {
-        return selectTuple(false, Lists.of(a, b, c, d, e, f, g, h));
+        return selectTuple(false, ImmutableList.of(a, b, c, d, e, f, g, h));
     }
 
     @Override
     public <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h, Path<T, I> i) {
-        return selectTuple(false, Lists.of(a, b, c, d, e, f, g, h, i));
+        return selectTuple(false, ImmutableList.of(a, b, c, d, e, f, g, h, i));
     }
 
     @Override
     public <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> select(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h, Path<T, I> i, Path<T, J> j) {
-        return selectTuple(false, Lists.of(a, b, c, d, e, f, g, h, i, j));
+        return selectTuple(false, ImmutableList.of(a, b, c, d, e, f, g, h, i, j));
     }
 
     public Where0<T, Tuple> selectDistinct(List<? extends Expression<T, ?>> expressions) {
@@ -167,47 +166,47 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     @Override
     public <A, B> Where0<T, Tuple2<A, B>> selectDistinct(Path<T, A> a, Path<T, B> b) {
-        return selectTuple(true, Lists.of(a, b));
+        return selectTuple(true, ImmutableList.of(a, b));
     }
 
     @Override
     public <A, B, C> Where0<T, Tuple3<A, B, C>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c) {
-        return selectTuple(true, Lists.of(a, b, c));
+        return selectTuple(true, ImmutableList.of(a, b, c));
     }
 
     @Override
     public <A, B, C, D> Where0<T, Tuple4<A, B, C, D>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d) {
-        return selectTuple(true, Lists.of(a, b, c, d));
+        return selectTuple(true, ImmutableList.of(a, b, c, d));
     }
 
     @Override
     public <A, B, C, D, E> Where0<T, Tuple5<A, B, C, D, E>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e) {
-        return selectTuple(true, Lists.of(a, b, c, d, e));
+        return selectTuple(true, ImmutableList.of(a, b, c, d, e));
     }
 
     @Override
     public <A, B, C, D, E, F> Where0<T, Tuple6<A, B, C, D, E, F>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f) {
-        return selectTuple(true, Lists.of(a, b, c, d, e, f));
+        return selectTuple(true, ImmutableList.of(a, b, c, d, e, f));
     }
 
     @Override
     public <A, B, C, D, E, F, G> Where0<T, Tuple7<A, B, C, D, E, F, G>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g) {
-        return selectTuple(true, Lists.of(a, b, c, d, e, f, g));
+        return selectTuple(true, ImmutableList.of(a, b, c, d, e, f, g));
     }
 
     @Override
     public <A, B, C, D, E, F, G, H> Where0<T, Tuple8<A, B, C, D, E, F, G, H>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h) {
-        return selectTuple(true, Lists.of(a, b, c, d, e, f, g, h));
+        return selectTuple(true, ImmutableList.of(a, b, c, d, e, f, g, h));
     }
 
     @Override
     public <A, B, C, D, E, F, G, H, I> Where0<T, Tuple9<A, B, C, D, E, F, G, H, I>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h, Path<T, I> i) {
-        return selectTuple(true, Lists.of(a, b, c, d, e, f, g, h, i));
+        return selectTuple(true, ImmutableList.of(a, b, c, d, e, f, g, h, i));
     }
 
     @Override
     public <A, B, C, D, E, F, G, H, I, J> Where0<T, Tuple10<A, B, C, D, E, F, G, H, I, J>> selectDistinct(Path<T, A> a, Path<T, B> b, Path<T, C> c, Path<T, D> d, Path<T, E> e, Path<T, F> f, Path<T, G> g, Path<T, H> h, Path<T, I> i, Path<T, J> j) {
-        return selectTuple(true, Lists.of(a, b, c, d, e, f, g, h, i, j));
+        return selectTuple(true, ImmutableList.of(a, b, c, d, e, f, g, h, i, j));
     }
 
     public Where0<T, Tuple> select(List<? extends Expression<T, ?>> expressions) {
@@ -217,17 +216,17 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     public Where0<T, Tuple> select(boolean distinct, List<? extends Expression<T, ?>> expressions) {
         QueryStructureImpl structure = queryStructure.copy();
         Stream<? extends Expression<T, ?>> stream = expressions.stream();
-        structure.select = selectTuple(distinct, stream);
+        structure.select = selectTuple(distinct, stream, expressions.size());
         return update(structure);
     }
 
-    private SelectArray selectTuple(boolean distinct, Stream<? extends Expression<T, ?>> stream) {
+    private SelectArray selectTuple(boolean distinct, Stream<? extends Expression<T, ?>> stream, int len) {
         List<Selected> selectItems = stream
                 .map(expression -> new SelectPrimitive()
                         .expression(expression)
                         .distinct(false)
                         .type(Object.class))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(len));
         return new SelectArray()
                 .distinct(distinct)
                 .items(selectItems);
@@ -240,7 +239,7 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
                         .expression(BasicExpressions.of(path))
                         .distinct(false)
                         .type(PathReference.of(path).getReturnType()))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(paths.size()));
         structure.select = new SelectArray()
                 .distinct(distinct)
                 .items(selectItems);
@@ -341,7 +340,7 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     @SafeVarargs
     public final <R extends Tuple> Where0<T, R> selectTupleByExpr(boolean distinct, Expression<T, ?>... expressions) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.select = selectTuple(distinct, Arrays.stream(expressions));
+        structure.select = selectTuple(distinct, Arrays.stream(expressions), expressions.length);
         return update(structure);
     }
 

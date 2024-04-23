@@ -84,7 +84,7 @@ class UserServiceTest {
     @Test
     void updateUser() {
         User first = userEntities.getFirst();
-        first.setTestInteger(new Random().nextInt());
+        first.setTestInteger(new Random().nextInt(100));
         userService.updateUser(first);
     }
 }

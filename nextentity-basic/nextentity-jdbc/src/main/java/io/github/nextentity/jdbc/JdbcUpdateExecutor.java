@@ -9,7 +9,7 @@ import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.jdbc.ConnectionProvider.ConnectionCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
 
     @Override
     public <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityClass) {
-        List<@NotNull T> list = Lists.toArrayList(entities);
+        List<@NotNull T> list = ImmutableList.ofIterable(entities);
         if (list.isEmpty()) {
             return list;
         }
@@ -63,7 +63,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     }
 
     private <T> @NotNull List<@NotNull T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityClass, boolean excludeNull) {
-        List<@NotNull T> list = Lists.toArrayList(entities);
+        List<@NotNull T> list = ImmutableList.ofIterable(entities);
         if (list.isEmpty()) {
             return list;
         }

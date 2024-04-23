@@ -10,10 +10,10 @@ import io.github.nextentity.core.api.tuple.Tuple6;
 import io.github.nextentity.core.api.tuple.Tuple7;
 import io.github.nextentity.core.api.tuple.Tuple8;
 import io.github.nextentity.core.api.tuple.Tuple9;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Iterators;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -88,9 +88,7 @@ public class Tuples {
 
         @Override
         public List<Object> toList() {
-            ArrayList<Object> list = new ArrayList<>(data.length);
-            forEach(list::add);
-            return list;
+            return ImmutableList.of(data);
         }
 
         @Override

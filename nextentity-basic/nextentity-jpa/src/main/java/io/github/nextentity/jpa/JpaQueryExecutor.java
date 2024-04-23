@@ -15,6 +15,7 @@ import io.github.nextentity.core.api.expression.QueryStructure.Selected;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.SubSelectType;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.jdbc.QueryContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -28,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class JpaQueryExecutor implements QueryExecutor {
 
@@ -61,7 +61,7 @@ public class JpaQueryExecutor implements QueryExecutor {
                             objects, null, null, metamodel, entityType);
                     return context.construct(arguments);
                 })
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(objectsList.size()));
         return TypeCastUtil.cast(result);
     }
 
@@ -142,7 +142,8 @@ public class JpaQueryExecutor implements QueryExecutor {
         }
 
         public List<Object[]> getResultList() {
-            return super.getResultList()
+            List<?> resultList = super.getResultList();
+            return resultList
                     .stream()
                     .map(it -> {
                         if (it instanceof Object[]) {
@@ -150,7 +151,7 @@ public class JpaQueryExecutor implements QueryExecutor {
                         }
                         return new Object[]{it};
                     })
-                    .collect(Collectors.toList());
+                    .collect(ImmutableList.collector(resultList.size()));
         }
 
         @Override
@@ -158,7 +159,7 @@ public class JpaQueryExecutor implements QueryExecutor {
             CriteriaQuery<?> select = query.multiselect(
                     selects.stream()
                             .map(this::toExpression)
-                            .collect(Collectors.toList())
+                            .collect(ImmutableList.collector(selects.size()))
             );
 
             return entityManager.createQuery(select);
@@ -194,7 +195,7 @@ public class JpaQueryExecutor implements QueryExecutor {
                         .map(o -> o.order() == SortOrder.DESC
                                 ? cb.desc(toExpression(o.expression()))
                                 : cb.asc(toExpression(o.expression())))
-                        .collect(Collectors.toList());
+                        .collect(ImmutableList.collector(orderBy.size()));
                 query.orderBy(orders);
             }
         }
@@ -207,7 +208,9 @@ public class JpaQueryExecutor implements QueryExecutor {
 
         protected void setGroupBy(List<? extends BaseExpression> groupBy) {
             if (groupBy != null && !groupBy.isEmpty()) {
-                List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream().map(this::toExpression).collect(Collectors.toList());
+                List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream()
+                        .map(this::toExpression)
+                        .collect(ImmutableList.collector(groupBy.size()));
                 query.groupBy(grouping);
             }
         }

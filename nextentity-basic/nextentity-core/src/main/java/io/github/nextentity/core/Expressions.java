@@ -28,8 +28,8 @@ import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.expression.Empty;
 import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Iterators;
-import io.github.nextentity.core.util.Lists;
 import io.github.nextentity.core.util.Paths;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class Expressions {
@@ -54,13 +53,13 @@ public class Expressions {
     public static <T, U> List<Expression<T, U>> ofList(U[] values) {
         return Arrays.stream(values)
                 .map(Expressions::<T, U>of)
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(values.length));
     }
 
-    public static <T, U> List<Expression<T, U>> ofList(Iterable<? extends U> value) {
-        return StreamSupport.stream(value.spliterator(), false)
+    public static <T, U> List<Expression<T, U>> ofList(Iterable<? extends U> values) {
+        return StreamSupport.stream(values.spliterator(), false)
                 .map(Expressions::<T, U>of)
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(values));
     }
 
     public static <T> Predicate<T> ofTrue() {
@@ -170,7 +169,7 @@ public class Expressions {
         default Predicate in(Object[] values) {
             List<Expression<?, ?>> collect = Arrays.stream(values)
                     .map(Expressions::of)
-                    .collect(Collectors.toList());
+                    .collect(ImmutableList.collector(values.length));
             return in(collect);
         }
 
@@ -178,7 +177,7 @@ public class Expressions {
         default Predicate in(@NotNull Collection values) {
             List<Expression<?, ?>> collect = ((Collection<?>) values).stream()
                     .map(Expressions::of)
-                    .collect(Collectors.toList());
+                    .collect(ImmutableList.collector(values.size()));
             return in(collect);
         }
 
@@ -234,7 +233,7 @@ public class Expressions {
 
         @Override
         default Predicate between(Expression l, Expression r) {
-            return operate(Operator.BETWEEN, Lists.of(l, r));
+            return operate(Operator.BETWEEN, ImmutableList.of(l, r));
         }
 
         @Override
@@ -344,7 +343,7 @@ public class Expressions {
 
         @Override
         default StringExpression substring(int offset, int length) {
-            return operate0(Operator.SUBSTRING, Lists.of(BasicExpressions.of(offset), BasicExpressions.of(length)));
+            return operate0(Operator.SUBSTRING, ImmutableList.of(BasicExpressions.of(offset), BasicExpressions.of(length)));
         }
 
         @Override

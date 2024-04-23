@@ -26,7 +26,7 @@ import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectArray;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPrimitive;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
@@ -106,7 +106,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
 
     WhereImpl<T, U> addOrderBy(List<? extends Order<T>> orders) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.orderBy = structure.orderBy == null ? orders : Lists.concat(structure.orderBy, orders);
+        structure.orderBy = structure.orderBy == null ? orders : ImmutableList.concat(structure.orderBy, orders);
         return update(structure);
     }
 
@@ -121,7 +121,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     BasicExpressions.QueryStructureImpl buildCountData() {
         QueryStructureImpl structure = queryStructure.copy();
         structure.lockType = LockModeType.NONE;
-        structure.orderBy = Lists.of();
+        structure.orderBy = ImmutableList.of();
         if (queryStructure.select().distinct()) {
             return new QueryStructureImpl(COUNT_ANY, structure);
         } else if (requiredCountSubQuery(queryStructure.select())) {
@@ -201,7 +201,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
         structure.select = SELECT_ANY;
         structure.offset = offset;
         structure.limit = 1;
-        structure.orderBy = Lists.of();
+        structure.orderBy = ImmutableList.of();
         return structure;
     }
 
@@ -225,7 +225,7 @@ public class WhereImpl<T, U> implements Where0<T, U>, Having<T, U>, AbstractColl
     @Override
     public Having<T, U> groupBy(Path<T, ?> path) {
         QueryStructureImpl structure = queryStructure.copy();
-        structure.groupBy = Lists.of(BasicExpressions.of(path));
+        structure.groupBy = ImmutableList.of(BasicExpressions.of(path));
         return update(structure);
     }
 

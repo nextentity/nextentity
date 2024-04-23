@@ -19,9 +19,11 @@ import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEn
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.EmptyArrays;
 import io.github.nextentity.core.util.Exceptions;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Iterators;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.Paths;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +35,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Slf4j
 @SuppressWarnings("PatternVariableCanBeUsed")
@@ -76,25 +77,20 @@ public class BasicExpressions {
     }
 
     public static EntityPath column(String path) {
-        List<String> paths = new ArrayList<>(1);
-        paths.add(path);
-        return column(paths);
+        return BasicExpressions.newColumn(new String[]{path});
     }
 
     public static EntityPath column(List<String> paths) {
         Objects.requireNonNull(paths);
-        if (paths.getClass() != ArrayList.class) {
-            paths = new ArrayList<>(paths);
-        }
-        return BasicExpressions.newColumn(paths.toArray(String[]::new));
+        return BasicExpressions.newColumn(paths.toArray(EmptyArrays.STRING));
     }
 
     public static BaseExpression operate(BaseExpression l, Operator o, BaseExpression r) {
-        return operate(l, o, Lists.of(r));
+        return operate(l, o, ImmutableList.of(r));
     }
 
     public static BaseExpression operate(BaseExpression l, Operator o) {
-        return operate(l, o, Lists.of());
+        return operate(l, o, ImmutableList.of());
     }
 
     public static BaseExpression operate(BaseExpression l, Operator o, List<? extends BaseExpression> r) {
@@ -115,23 +111,23 @@ public class BasicExpressions {
             log.warn("operator `in` right operands is empty");
             return FALSE;
         }
-        List<BaseExpression> operands;
+        ImmutableList.Builder<BaseExpression> operands;
         if (o.isMultivalued() && l instanceof Operation && ((Operation) l).operator() == o) {
             Operation lo = (Operation) l;
-            operands = new ArrayList<>(lo.operands().size() + r.size());
+            operands = new ImmutableList.Builder<>(lo.operands().size() + r.size());
             operands.addAll(lo.operands());
         } else {
-            operands = new ArrayList<>(r.size() + 1);
+            operands = new ImmutableList.Builder<>(r.size() + 1);
             operands.add(l);
         }
         operands.addAll(r);
-        return BasicExpressions.newOperation(operands, o);
+        return BasicExpressions.newOperation(operands.build(), o);
     }
 
     public static <T> List<PathExpression<T, ?>> toExpressionList(Collection<Path<T, ?>> paths) {
         return paths.stream()
-                .<PathExpression<T, ?>>map(io.github.nextentity.core.util.Paths::get)
-                .collect(Collectors.toList());
+                .<PathExpression<T, ?>>map(Paths::get)
+                .collect(ImmutableList.collector(paths.size()));
     }
 
     public static Literal literal(Object value) {
@@ -155,9 +151,9 @@ public class BasicExpressions {
 
         BaseExpression where = BasicExpressions.TRUE;
 
-        List<? extends BaseExpression> groupBy = Lists.of();
+        List<? extends BaseExpression> groupBy = ImmutableList.of();
 
-        List<? extends Order<?>> orderBy = Lists.of();
+        List<? extends Order<?>> orderBy = ImmutableList.of();
 
         BaseExpression having = BasicExpressions.TRUE;
 

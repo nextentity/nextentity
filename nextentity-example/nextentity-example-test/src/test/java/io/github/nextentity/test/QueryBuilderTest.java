@@ -14,9 +14,8 @@ import io.github.nextentity.core.api.Query.Where;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.tuple.Tuple;
 import io.github.nextentity.core.api.tuple.Tuple2;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Paths;
-import io.github.nextentity.jdbc.QueryContext;
 import io.github.nextentity.test.db.UserRepository;
 import io.github.nextentity.test.domain.Page;
 import io.github.nextentity.test.domain.Pageable;
@@ -25,7 +24,6 @@ import io.github.nextentity.test.projection.IUser;
 import io.github.nextentity.test.projection.UserInterface;
 import io.github.nextentity.test.projection.UserModel;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -37,7 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -120,7 +117,7 @@ class QueryBuilderTest {
         Long count = userQuery.select(get(User::getId).count()).getSingle();
         assertEquals(count, userQuery.users().size());
 
-        Tuple aggArray = userQuery.select(Lists.of(
+        Tuple aggArray = userQuery.select(ImmutableList.of(
                 get(User::getId).count(),
                 get(User::getRandomNumber).max(),
                 get(User::getRandomNumber).min(),
@@ -257,7 +254,7 @@ class QueryBuilderTest {
 
         assertEquals(
                 userQuery
-                        .select(Lists.<Path<User, ?>>of(User::getId, User::getRandomNumber, User::getTime, User::getPid,
+                        .select(ImmutableList.<Path<User, ?>>of(User::getId, User::getRandomNumber, User::getTime, User::getPid,
                                 User::getTimestamp, User::isValid, User::getGender, User::getInstant,
                                 User::getTestLong, User::getTestInteger))
                         .getList(),
@@ -771,7 +768,7 @@ class QueryBuilderTest {
                 .getList();
         assertDistinctEquals(list, collect);
 
-        List<Tuple> tuples = userQuery.selectDistinct(Lists.<Path<User, ?>>of(User::getRandomNumber, User::getUsername))
+        List<Tuple> tuples = userQuery.selectDistinct(ImmutableList.<Path<User, ?>>of(User::getRandomNumber, User::getUsername))
                 .getList();
 
         List<Tuple> collect2 = userQuery.users().stream()
@@ -782,14 +779,14 @@ class QueryBuilderTest {
         assertDistinctEquals(tuples, collect2);
 
         tuples = userQuery.selectDistinct((ExpressionsBuilder<User>) user ->
-                        Lists.of(user.get(User::getRandomNumber), user.get(User::getUsername)))
+                        ImmutableList.of(user.get(User::getRandomNumber), user.get(User::getUsername)))
                 .getList();
 
         assertDistinctEquals(tuples, collect2);
 
 
         tuples = userQuery.select((ExpressionsBuilder<User>) user ->
-                        Lists.of(user.get(User::getRandomNumber), user.get(User::getUsername)))
+                        ImmutableList.of(user.get(User::getRandomNumber), user.get(User::getUsername)))
                 .getList();
         collect2 = userQuery.users().stream()
                 .map(user -> Tuples.of(user.getRandomNumber(), user.getUsername()))
@@ -838,7 +835,7 @@ class QueryBuilderTest {
     @ArgumentsSource(UserQueryProvider.class)
     void groupBy(UserRepository userQuery) {
         List<Tuple> list = userQuery
-                .select(Lists.of(
+                .select(ImmutableList.of(
                         get(User::getRandomNumber),
                         get(User::getId).count()
                 ))
@@ -855,9 +852,9 @@ class QueryBuilderTest {
         }
 
         ExpressionsBuilder<User> expressionsBuilder =
-                (EntityRoot<User> root) -> Lists.of(root.get(User::getRandomNumber));
+                (EntityRoot<User> root) -> ImmutableList.of(root.get(User::getRandomNumber));
         list = userQuery
-                .select(Lists.of(
+                .select(ImmutableList.of(
                         get(User::getRandomNumber),
                         get(User::getId).count()
                 ))
@@ -871,11 +868,11 @@ class QueryBuilderTest {
         }
 
         list = userQuery
-                .select(Lists.of(
+                .select(ImmutableList.of(
                         get(User::getRandomNumber),
                         get(User::getId).count()
                 ))
-                .groupBy(Lists.<Path<User, ?>>of(User::getRandomNumber))
+                .groupBy(ImmutableList.<Path<User, ?>>of(User::getRandomNumber))
                 .getList();
 
         assertEquals(list.size(), count.size());
@@ -885,7 +882,7 @@ class QueryBuilderTest {
         }
 
         list = userQuery
-                .select(Lists.of(
+                .select(ImmutableList.of(
                         get(User::getRandomNumber),
                         get(User::getId).count()
                 ))
@@ -907,7 +904,7 @@ class QueryBuilderTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     void orderBy(UserRepository userQuery) {
-        testOrderBy(Lists.of(new Checker<>(userQuery.users(), userQuery)));
+        testOrderBy(ImmutableList.of(new Checker<>(userQuery.users(), userQuery)));
     }
 
     @ParameterizedTest
@@ -950,7 +947,7 @@ class QueryBuilderTest {
             assertEquals(root, Paths.root());
 
             users = checker.collector
-                    .orderBy((EntityRoot<User> r) -> Lists.of(
+                    .orderBy((EntityRoot<User> r) -> ImmutableList.of(
                             r.get(User::getRandomNumber).asc(),
                             r.get(User::getId).asc()
                     ))
@@ -1161,7 +1158,7 @@ class QueryBuilderTest {
         result.add(new Checker<>(users, collector));
         collector = check.collector.where(get(User::getRandomNumber).eq(1).or(User::getRandomNumber).eq(2));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).eq(1).or(Lists.of(get(User::getRandomNumber).eq(2))));
+        collector = check.collector.where(get(User::getRandomNumber).eq(1).or(ImmutableList.of(get(User::getRandomNumber).eq(2))));
         result.add(new Checker<>(users, collector));
         users = check.expected.stream()
                 .filter(it -> it.getRandomNumber() == 1 && it.isValid())
@@ -1176,7 +1173,7 @@ class QueryBuilderTest {
         collector = check.collector.where(get(User::getRandomNumber).eq(1)
                 .andIf(true, root -> root.get(User::isValid)));
         result.add(new Checker<>(users, collector));
-        collector = check.collector.where(get(User::getRandomNumber).eq(1).and(Lists.of(get(User::isValid))));
+        collector = check.collector.where(get(User::getRandomNumber).eq(1).and(ImmutableList.of(get(User::isValid))));
         result.add(new Checker<>(users, collector));
         collector = check.collector
                 .whereIf(true, root -> root.get(User::getRandomNumber).eq(1))
@@ -1701,13 +1698,5 @@ class QueryBuilderTest {
             assertEquals(expected, actual);
         }
 
-    }
-
-    @AfterAll
-    static void afterAll() {
-        long millis = TimeUnit.NANOSECONDS.toMillis(QueryContext.timer.time().get());
-        System.out.println("----------------------------------------------------------");
-        System.out.println(millis + "ms, count: " + QueryContext.timer.count());
-        System.out.println("----------------------------------------------------------");
     }
 }

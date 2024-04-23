@@ -3,7 +3,7 @@ package io.github.nextentity.test.db;
 import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.jdbc.JdbcQueryExecutor;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcResultCollector;
@@ -49,7 +49,7 @@ public interface DbConfigProvider {
         RepositoryFactory jdbc = new RepositoryFactory(jdbcQueryExecutor, jdbcUpdateExecutor, null, metamodel);
         RepositoryFactory jpaNative = new RepositoryFactory(jpaNativeQueryExecutor, jpaUpdateExecutor, null, metamodel);
 
-        List<RepositoryFactory> list = Lists.of(jdbc, jpa, jpaNative);
+        List<RepositoryFactory> list = ImmutableList.of(jdbc, jpa, jpaNative);
         return new DbConfig(querySqlBuilder,
                 updateSqlBuilder(),
                 dataSource,

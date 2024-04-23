@@ -8,7 +8,7 @@ import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.api.Operator;
 import io.github.nextentity.core.api.Query;
 import io.github.nextentity.core.reflect.ReflectUtil;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceUnitUtil;
 import jakarta.persistence.metamodel.EntityType;
@@ -37,7 +37,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
 
     @Override
     public <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
-        List<T> list = Lists.toArrayList(entities);
+        List<T> list = ImmutableList.ofIterable(entities);
         for (T entity : entities) {
             entityManager.persist(entity);
         }
@@ -61,7 +61,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
             }
         }
         if (size == 0) {
-            return Lists.of();
+            return ImmutableList.of();
         }
         if (!ids.isEmpty()) {
             EntityType<T> entity = entityManager.getMetamodel().entity(entityType);

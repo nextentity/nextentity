@@ -3,10 +3,9 @@ package io.github.nextentity.core.meta;
 import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public interface BasicAttribute extends Schema, Attribute {
@@ -37,8 +36,6 @@ public interface BasicAttribute extends Schema, Attribute {
                 break;
             }
         }
-        // noinspection Java9CollectionFactory
-        return Collections.unmodifiableList(new ArrayList<>(attributes));
+        return new ImmutableList<>(attributes);
     }
-
 }

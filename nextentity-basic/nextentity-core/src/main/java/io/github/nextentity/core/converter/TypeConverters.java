@@ -1,9 +1,9 @@
 package io.github.nextentity.core.converter;
 
 import io.github.nextentity.core.reflect.PrimitiveTypes;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -22,7 +22,7 @@ public class TypeConverters implements TypeConverter {
                         return Stream.of(converter);
                     }
                 })
-                .distinct().collect(Collectors.toList());
+                .distinct().collect(ImmutableList.collector(converters.size()));
     }
 
     @Override

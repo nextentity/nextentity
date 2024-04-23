@@ -14,7 +14,6 @@ import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.reflect.Arguments;
 import io.github.nextentity.core.reflect.ObjectFactory;
 import io.github.nextentity.core.reflect.SelectedConstruct;
-import io.github.nextentity.core.reflect.Timer;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,8 +26,6 @@ import java.util.List;
  */
 @Data
 public class QueryContext {
-
-    public static Timer timer = new Timer();
 
     protected final QueryStructure structure;
     protected final Metamodel metamodel;
@@ -55,7 +52,7 @@ public class QueryContext {
             if (fetch == null || fetch.isEmpty()) {
                 return entityType.constructor();
             }
-        }else if(select instanceof SelectProjection) {
+        } else if (select instanceof SelectProjection) {
             return entityType.getProjection(select.type()).constructor();
         }
         return SelectedConstruct.of(entityType, structure.select(), expandReferencePath);

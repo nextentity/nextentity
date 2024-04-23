@@ -10,7 +10,7 @@ import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.reflect.PrimitiveTypes;
 import io.github.nextentity.core.reflect.schema.Schema;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -22,7 +22,7 @@ import java.util.List;
  */
 public class ExpressionTypeResolver {
 
-    private static final List<Class<? extends Number>> NUMBER_TYPES = Lists.of(
+    private static final List<Class<? extends Number>> NUMBER_TYPES = ImmutableList.of(
             Byte.class,
             Short.class,
             Integer.class,

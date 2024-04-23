@@ -16,14 +16,13 @@ import io.github.nextentity.core.api.tuple.Tuple6;
 import io.github.nextentity.core.api.tuple.Tuple7;
 import io.github.nextentity.core.api.tuple.Tuple8;
 import io.github.nextentity.core.api.tuple.Tuple9;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public interface Query {
 
@@ -134,20 +133,23 @@ public interface Query {
         Where<T, T> fetch(List<PathExpression<T, ?>> expressions);
 
         default Where<T, T> fetch(PathExpression<T, ?> path) {
-            return fetch(Lists.of(path));
+            return fetch(ImmutableList.of(path));
         }
 
         default Where<T, T> fetch(PathExpression<T, ?> p0, PathExpression<T, ?> p1) {
-            return fetch(Lists.of(p0, p1));
+            return fetch(ImmutableList.of(p0, p1));
         }
 
         default Where<T, T> fetch(PathExpression<T, ?> p0, PathExpression<T, ?> p1, PathExpression<T, ?> p3) {
-            return fetch(Lists.of(p0, p1, p3));
+            return fetch(ImmutableList.of(p0, p1, p3));
         }
 
         default Where<T, T> fetch(Collection<Path<T, ?>> paths) {
             EntityRoot<T> root = root();
-            return fetch(paths.stream().map(root::get).collect(Collectors.toList()));
+            ImmutableList<PathExpression<T, ?>> list = paths.stream()
+                    .map(root::get)
+                    .collect(ImmutableList.collector(paths.size()));
+            return fetch(list);
         }
 
         default Where<T, T> fetch(Path<T, ?> path) {
@@ -224,23 +226,23 @@ public interface Query {
         Having<T, U> groupBy(Collection<Path<T, ?>> paths);
 
         default Having<T, U> groupBy(Path<T, ?> p0, Path<T, ?> p1) {
-            return groupBy(Lists.of(p0, p1));
+            return groupBy(ImmutableList.of(p0, p1));
         }
 
         default Having<T, U> groupBy(Path<T, ?> p0, Path<T, ?> p1, Path<T, ?> p2) {
-            return groupBy(Lists.of(p0, p1, p2));
+            return groupBy(ImmutableList.of(p0, p1, p2));
         }
 
         default Having<T, U> groupBy(Path<T, ?> p0, Path<T, ?> p1, Path<T, ?> p2, Path<T, ?> p3) {
-            return groupBy(Lists.of(p0, p1, p2, p3));
+            return groupBy(ImmutableList.of(p0, p1, p2, p3));
         }
 
         default Having<T, U> groupBy(Path<T, ?> p0, Path<T, ?> p1, Path<T, ?> p2, Path<T, ?> p3, Path<T, ?> p4) {
-            return groupBy(Lists.of(p0, p1, p2, p3, p4));
+            return groupBy(ImmutableList.of(p0, p1, p2, p3, p4));
         }
 
         default Having<T, U> groupBy(Path<T, ?> p0, Path<T, ?> p1, Path<T, ?> p2, Path<T, ?> p3, Path<T, ?> p4, Path<T, ?> p5) {
-            return groupBy(Lists.of(p0, p1, p2, p3, p4, p5));
+            return groupBy(ImmutableList.of(p0, p1, p2, p3, p4, p5));
         }
     }
 
@@ -261,29 +263,29 @@ public interface Query {
         Collector<U> orderBy(Function<EntityRoot<T>, List<? extends Order<T>>> ordersBuilder);
 
         default Collector<U> orderBy(Order<T> order) {
-            return orderBy(Lists.of(order));
+            return orderBy(ImmutableList.of(order));
         }
 
         default Collector<U> orderBy(Order<T> p0, Order<T> p1) {
-            return orderBy(Lists.of(p0, p1));
+            return orderBy(ImmutableList.of(p0, p1));
         }
 
         default Collector<U> orderBy(Order<T> order1, Order<T> order2, Order<T> order3) {
-            return orderBy(Lists.of(order1, order2, order3));
+            return orderBy(ImmutableList.of(order1, order2, order3));
         }
 
         OrderOperator<T, U> orderBy(Collection<Path<T, Comparable<?>>> paths);
 
         default OrderOperator<T, U> orderBy(Path<T, Comparable<?>> path) {
-            return orderBy(Lists.of(path));
+            return orderBy(ImmutableList.of(path));
         }
 
         default OrderOperator<T, U> orderBy(Path<T, Comparable<?>> p1, Path<T, Comparable<?>> p2) {
-            return orderBy(Lists.of(p1, p2));
+            return orderBy(ImmutableList.of(p1, p2));
         }
 
         default OrderOperator<T, U> orderBy(Path<T, Comparable<?>> p1, Path<T, Comparable<?>> p2, Path<T, Comparable<?>> p3) {
-            return orderBy(Lists.of(p1, p2, p3));
+            return orderBy(ImmutableList.of(p1, p2, p3));
         }
 
     }
@@ -435,7 +437,7 @@ public interface Query {
         Page<T> getPage(Pageable pageable);
     }
 
-    interface SubQueryBuilder<T, U> extends Expression<T, List<U>>  {
+    interface SubQueryBuilder<T, U> extends Expression<T, List<U>> {
         Expression<T, Long> count();
 
         Expression<T, List<U>> slice(int offset, int maxResult);

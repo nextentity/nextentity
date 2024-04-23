@@ -1,5 +1,7 @@
 package io.github.nextentity.core.reflect.schema;
 
+import io.github.nextentity.core.util.ImmutableList;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -9,7 +11,10 @@ public interface ObjectSchema extends Schema {
     Collection<? extends Attribute> attributes();
 
     default List<? extends Attribute> primitiveAttributes() {
-        return attributes().stream().filter(Schema::isPrimitive).toList();
+        Collection<? extends Attribute> attributes = attributes();
+        return attributes.stream()
+                .filter(Schema::isPrimitive)
+                .collect(ImmutableList.collector(attributes.size()));
     }
 
     default Attribute getAttribute(String name) {

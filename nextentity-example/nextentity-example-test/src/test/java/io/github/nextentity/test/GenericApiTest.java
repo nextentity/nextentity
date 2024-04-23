@@ -14,7 +14,7 @@ import io.github.nextentity.core.api.tuple.Tuple3;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.ProjectionType;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
 import io.github.nextentity.test.db.UserRepository;
@@ -290,7 +290,7 @@ public class GenericApiTest {
             assertEquals(u0.getTestUser(), u1.getTestUser());
         }
 
-        users = userQuery.fetch(Lists.<Path<User, ?>>of(
+        users = userQuery.fetch(ImmutableList.<Path<User, ?>>of(
                         User::getParentUser,
                         User::getRandomUser,
                         User::getTestUser))

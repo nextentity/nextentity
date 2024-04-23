@@ -16,6 +16,7 @@ import io.github.nextentity.core.meta.Metamodels.SubSelectEntity;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class AbstractMetamodel implements Metamodel {
@@ -98,7 +98,7 @@ public abstract class AbstractMetamodel implements Metamodel {
         RecordComponent[] components = projectionType.getRecordComponents();
         return Arrays.stream(components)
                 .map(it -> newAttribute(null, it.getAccessor(), null, owner))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(components.length));
     }
 
     protected BasicAttribute getEntityAttribute(Attribute attribute, EntitySchema entity) {
@@ -135,9 +135,10 @@ public abstract class AbstractMetamodel implements Metamodel {
 
     @NotNull
     private List<Attribute> getInterfaceAttributes(Class<?> clazz, Schema owner) {
-        return Arrays.stream(clazz.getMethods())
+        Method[] methods = clazz.getMethods();
+        return Arrays.stream(methods)
                 .map(it -> newAttribute(null, it, null, owner))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(methods.length));
     }
 
     protected abstract String getTableName(Class<?> javaType);
@@ -255,9 +256,10 @@ public abstract class AbstractMetamodel implements Metamodel {
         } catch (IntrospectionException e) {
             throw new BeanReflectiveException(e);
         }
-        List<Attribute> attributes = getDeclaredFields(type).stream()
+        Collection<Field> declaredFields = getDeclaredFields(type);
+        List<Attribute> attributes = declaredFields.stream()
                 .map(field -> newAttribute(owner, field, map.remove(field.getName())))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(declaredFields.size()));
         map.values().stream()
                 .map(descriptor -> newAttribute(owner, null, descriptor))
                 .forEach(attributes::add);
