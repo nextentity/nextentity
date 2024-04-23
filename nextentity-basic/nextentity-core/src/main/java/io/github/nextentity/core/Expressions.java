@@ -26,7 +26,6 @@ import io.github.nextentity.core.api.Path.StringPath;
 import io.github.nextentity.core.api.Query.PredicateBuilder;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.Empty;
 import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Iterators;
@@ -343,7 +342,7 @@ public class Expressions {
 
         @Override
         default StringExpression substring(int offset, int length) {
-            return operate0(Operator.SUBSTRING, ImmutableList.of(BasicExpressions.of(offset), BasicExpressions.of(length)));
+            return operate(Operator.SUBSTRING, ImmutableList.of(BasicExpressions.of(offset), BasicExpressions.of(length)));
         }
 
         @Override
@@ -372,7 +371,7 @@ public class Expressions {
         }
 
         @NotNull
-        static AbstractTypeExpression of(Path path) {
+        default AbstractTypeExpression of(Path path) {
             return toTypedExpression(BasicExpressions.of(path));
         }
 
@@ -507,20 +506,12 @@ public class Expressions {
 
         @NotNull
         default AbstractTypeExpression operate(Operator operator, BaseExpression expression) {
-            if (this instanceof Empty) {
-                return toTypedExpression(expression);
-            }
             return toTypedExpression(BasicExpressions.operate(this, operator, expression));
         }
 
         @NotNull
         default AbstractTypeExpression operate(Operator operator, List<? extends BaseExpression> expressions) {
-            return operate0(operator, expressions);
-        }
-
-        @NotNull
-        default AbstractTypeExpression operate0(Operator operator, List<? extends BaseExpression> list) {
-            return toTypedExpression(BasicExpressions.operate(this, operator, list));
+            return toTypedExpression(BasicExpressions.operate(this, operator, expressions));
         }
 
         @NotNull
@@ -566,6 +557,9 @@ public class Expressions {
             return value == null || value.isEmpty() ? operateNull() : eq(value);
         }
 
+        default <T extends Expression<?, ?>> T toTypedExpression(BaseExpression expression) {
+            return TypeCastUtil.unsafeCast(expression);
+        }
 
     }
 }

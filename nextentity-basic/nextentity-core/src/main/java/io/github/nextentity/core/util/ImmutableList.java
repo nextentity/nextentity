@@ -348,6 +348,10 @@ public class ImmutableList<E> extends AbstractList<E> implements List<E>, Random
                 return new ImmutableList<>(element);
             }
         }
+
+        public boolean isEmpty() {
+            return size == 0;
+        }
     }
 
 }

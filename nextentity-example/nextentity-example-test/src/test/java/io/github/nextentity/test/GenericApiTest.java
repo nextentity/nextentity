@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
+import io.github.nextentity.core.api.Expression.NumberPathExpression;
 import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
 import io.github.nextentity.core.api.Path;
@@ -56,6 +57,31 @@ public class GenericApiTest {
 
     protected static final String username = "Jeremy Keynes";
 
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    public void testIfNull(UserRepository userQuery) {
+        List<User> list = userQuery
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getId).geIfNotNull(null)
+                .where(User::getId).eq(10)
+                .getList();
+
+        NumberPathExpression<User, Integer> id = Paths.get(User::getId);
+
+        System.out.println(list.size());
+        ImmutableList<Predicate<User>> predicates = ImmutableList.of(id.geIfNotNull(null), id.eqIfNotNull(null));
+        Predicate<User> predicate = id.eqIfNotNull(null)
+                .and(predicates);
+        List<User> list1 = userQuery.where(predicate).getList();
+        System.out.println(list1.size());
+        list1 = userQuery.where(predicate.and(User::getId).eq(1)).getList();
+        System.out.println(list1.size());
+        list1 = userQuery.where(predicate.and(id.eq(1))).getList();
+        System.out.println(list1.size());
+
+    }
+
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     public void testAndOr(UserRepository userQuery) {
@@ -65,10 +91,8 @@ public class GenericApiTest {
                 .getSingle(10);
         System.out.println(single);
         List<User> dbList = userQuery
-                .where(User::getRandomNumber)
-                .ne(1)
-                .where(User::getRandomNumber)
-                .gt(100)
+                .where(User::getRandomNumber).ne(1)
+                .where(User::getRandomNumber).gt(100)
                 .where(User::getRandomNumber).ne(125)
                 .where(User::getRandomNumber).le(666)
                 .where(get(User::getRandomNumber).lt(106)
@@ -80,13 +104,13 @@ public class GenericApiTest {
 
         List<User> ftList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 1
-                                && user.getRandomNumber() > 100
-                                && user.getRandomNumber() != 125
-                                && user.getRandomNumber() <= 666
-                                && (user.getRandomNumber() < 106
-                                    || user.getRandomNumber() > 120
-                                    || user.getRandomNumber() == 109)
-                                && user.getRandomNumber() != 128
+                        && user.getRandomNumber() > 100
+                        && user.getRandomNumber() != 125
+                        && user.getRandomNumber() <= 666
+                        && (user.getRandomNumber() < 106
+                        || user.getRandomNumber() > 120
+                        || user.getRandomNumber() == 109)
+                        && user.getRandomNumber() != 128
                 )
                 .collect(Collectors.toList());
 
@@ -114,13 +138,13 @@ public class GenericApiTest {
 
         List<User> ftList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 1
-                                && user.getRandomNumber() > 100
-                                && user.getRandomNumber() != 125
-                                && user.getRandomNumber() <= 666
-                                && (user.getRandomNumber() < 106
-                                    || user.getRandomNumber() > 120
-                                    || user.getRandomNumber() == 109)
-                                && user.getRandomNumber() != 128
+                        && user.getRandomNumber() > 100
+                        && user.getRandomNumber() != 125
+                        && user.getRandomNumber() <= 666
+                        && (user.getRandomNumber() < 106
+                        || user.getRandomNumber() > 120
+                        || user.getRandomNumber() == 109)
+                        && user.getRandomNumber() != 128
                 )
                 .collect(Collectors.toList());
 
@@ -147,13 +171,13 @@ public class GenericApiTest {
 
         List<User> ftList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 1
-                                && user.getRandomNumber() > 100
-                                && user.getRandomNumber() != 125
-                                && user.getRandomNumber() <= 666
-                                && (user.getRandomNumber() < 106
-                                    || user.getRandomNumber() > 120
-                                    || user.getRandomNumber() == 109)
-                                && user.getRandomNumber() != 128
+                        && user.getRandomNumber() > 100
+                        && user.getRandomNumber() != 125
+                        && user.getRandomNumber() <= 666
+                        && (user.getRandomNumber() < 106
+                        || user.getRandomNumber() > 120
+                        || user.getRandomNumber() == 109)
+                        && user.getRandomNumber() != 128
                 )
                 .collect(Collectors.toList());
 
@@ -183,13 +207,13 @@ public class GenericApiTest {
 
         List<User> ftList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 1
-                                && user.getRandomNumber() > 100
-                                && user.getRandomNumber() != 125
-                                && user.getRandomNumber() <= 666
-                                && (user.getRandomNumber() < 106
-                                    || user.getRandomNumber() > 120
-                                    || user.getRandomNumber() == 109)
-                                && user.getRandomNumber() != 128
+                        && user.getRandomNumber() > 100
+                        && user.getRandomNumber() != 125
+                        && user.getRandomNumber() <= 666
+                        && (user.getRandomNumber() < 106
+                        || user.getRandomNumber() > 120
+                        || user.getRandomNumber() == 109)
+                        && user.getRandomNumber() != 128
                 )
                 .collect(Collectors.toList());
 
@@ -584,7 +608,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
-                                || it.getId() == 3))
+                        || it.getId() == 3))
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -595,7 +619,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
-                                && it.getId() == 3))
+                        && it.getId() == 3))
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -636,7 +660,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
-                                || it.getId() == 3))
+                        || it.getId() == 3))
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -648,7 +672,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(it -> !(it.getUsername().equalsIgnoreCase("Jeremy Keynes")
-                                && it.getId() == 3))
+                        && it.getId() == 3))
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -989,7 +1013,7 @@ public class GenericApiTest {
                 .getList();
         fList = validUsers.stream().filter(user ->
                         !(user.getRandomNumber() >= 10 && user.getRandomNumber() <= 15)
-                        && user.getId() % 3 == 0)
+                                && user.getId() % 3 == 0)
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -1036,8 +1060,8 @@ public class GenericApiTest {
                 .getList();
         List<User> fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                && user.getParentUser() != null
-                                && Objects.equals(user.getParentUser().getUsername(), username))
+                        && user.getParentUser() != null
+                        && Objects.equals(user.getParentUser().getUsername(), username))
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1046,9 +1070,9 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                && user.getParentUser() != null
-                                && user.getParentUser().getParentUser() != null
-                                && Objects.equals(user.getParentUser().getParentUser().getUsername(), username))
+                        && user.getParentUser() != null
+                        && user.getParentUser().getParentUser() != null
+                        && Objects.equals(user.getParentUser().getParentUser().getUsername(), username))
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
@@ -1058,7 +1082,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                && Objects.equals(user.getRandomNumber(), 10))
+                        && Objects.equals(user.getRandomNumber(), 10))
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1068,7 +1092,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                || Objects.equals(user.getRandomNumber(), 10))
+                        || Objects.equals(user.getRandomNumber(), 10))
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1078,7 +1102,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                && !Objects.equals(user.getRandomNumber(), 10))
+                        && !Objects.equals(user.getRandomNumber(), 10))
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1088,7 +1112,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                || !Objects.equals(user.getRandomNumber(), 10))
+                        || !Objects.equals(user.getRandomNumber(), 10))
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1115,9 +1139,9 @@ public class GenericApiTest {
 
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                || (user.getParentUser() != null
-                                    && Objects.equals(user.getParentUser().getUsername(), username)
-                                    && user.getTime().getTime() >= time.getTime()))
+                        || (user.getParentUser() != null
+                        && Objects.equals(user.getParentUser().getUsername(), username)
+                        && user.getTime().getTime() >= time.getTime()))
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1128,7 +1152,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                && user.getRandomNumber() != 5)
+                        && user.getRandomNumber() != 5)
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1138,7 +1162,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.isValid()
-                                || user.getRandomNumber() == 5)
+                        || user.getRandomNumber() == 5)
                 .collect(Collectors.toList());
 
         assertEquals(qList, fList);
@@ -1148,7 +1172,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 6
-                                || !user.isValid())
+                        || !user.isValid())
                 .collect(Collectors.toList());
 
         assertEquals((qList), (fList));
@@ -1158,7 +1182,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 6
-                                && (user.getParentUser() != null && user.getParentUser().isValid()))
+                        && (user.getParentUser() != null && user.getParentUser().isValid()))
                 .collect(Collectors.toList());
 
         assertEquals((qList), (fList));
@@ -1168,7 +1192,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 6
-                                && (user.getParentUser() != null && !user.getParentUser().isValid()))
+                        && (user.getParentUser() != null && !user.getParentUser().isValid()))
                 .collect(Collectors.toList());
 
         assertEquals((qList), (fList));
@@ -1178,7 +1202,7 @@ public class GenericApiTest {
                 .getList();
         fList = userQuery.users().stream()
                 .filter(user -> user.getRandomNumber() != 6
-                                || (user.getParentUser() != null && !user.getParentUser().isValid()))
+                        || (user.getParentUser() != null && !user.getParentUser().isValid()))
                 .collect(Collectors.toList());
 
         assertEquals((qList), (fList));

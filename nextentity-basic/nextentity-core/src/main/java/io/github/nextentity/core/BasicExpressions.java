@@ -9,7 +9,6 @@ import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.SortOrder;
 import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.Empty;
 import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.api.expression.Literal;
 import io.github.nextentity.core.api.expression.Operation;
@@ -22,6 +21,7 @@ import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.EmptyArrays;
 import io.github.nextentity.core.util.Exceptions;
 import io.github.nextentity.core.util.ImmutableList;
+import io.github.nextentity.core.util.ImmutableList.Builder;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Paths;
 import lombok.EqualsAndHashCode;
@@ -30,32 +30,29 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
-@SuppressWarnings("PatternVariableCanBeUsed")
 public class BasicExpressions {
 
-    public static final Empty EMPTY = new EmptyExpression();
+    public static final BaseExpression EMPTY = new EmptyExpression();
     public static final Literal TRUE = literal(true);
     public static final Literal FALSE = literal(false);
 
     public static boolean isNullOrTrue(BaseExpression expression) {
-        return expression == null || expression instanceof Empty || BasicExpressions.isTrue(expression);
+        return expression == null || expression == EMPTY || BasicExpressions.isTrue(expression);
     }
 
     public static boolean isTrue(BaseExpression expression) {
         return expression instanceof Literal
-               && Boolean.TRUE.equals(((Literal) expression).value());
+                && Boolean.TRUE.equals(((Literal) expression).value());
     }
 
     public static boolean isFalse(BaseExpression expression) {
         return expression instanceof Literal
-               && Boolean.FALSE.equals(((Literal) expression).value());
+                && Boolean.FALSE.equals(((Literal) expression).value());
     }
 
     public static BaseExpression of(Object value) {
@@ -81,7 +78,6 @@ public class BasicExpressions {
     }
 
     public static EntityPath column(List<String> paths) {
-        Objects.requireNonNull(paths);
         return BasicExpressions.newColumn(paths.toArray(EmptyArrays.STRING));
     }
 
@@ -95,8 +91,9 @@ public class BasicExpressions {
 
     public static BaseExpression operate(BaseExpression l, Operator o, List<? extends BaseExpression> r) {
         if (o == Operator.NOT
-            && l instanceof Operation
-            && ((Operation) l).operator() == Operator.NOT) {
+                && l instanceof Operation
+                && ((Operation) l).operator() == Operator.NOT) {
+            //noinspection PatternVariableCanBeUsed
             Operation operation = (Operation) l;
             return operation.firstOperand();
         }
@@ -111,17 +108,32 @@ public class BasicExpressions {
             log.warn("operator `in` right operands is empty");
             return FALSE;
         }
-        ImmutableList.Builder<BaseExpression> operands;
+        Builder<BaseExpression> builder;
         if (o.isMultivalued() && l instanceof Operation && ((Operation) l).operator() == o) {
+            //noinspection PatternVariableCanBeUsed
             Operation lo = (Operation) l;
-            operands = new ImmutableList.Builder<>(lo.operands().size() + r.size());
-            operands.addAll(lo.operands());
+            List<? extends BaseExpression> operands = lo.operands();
+            builder = new Builder<>(operands.size() + r.size());
+            addAll(builder, operands);
         } else {
-            operands = new ImmutableList.Builder<>(r.size() + 1);
-            operands.add(l);
+            builder = new Builder<>(r.size() + 1);
+            if (l != EMPTY) {
+                builder.add(l);
+            }
         }
-        operands.addAll(r);
-        return BasicExpressions.newOperation(operands.build(), o);
+        addAll(builder, r);
+        if (builder.isEmpty()) {
+            return EMPTY;
+        }
+        return BasicExpressions.newOperation(builder.build(), o);
+    }
+
+    private static void addAll(Builder<BaseExpression> builder, List<? extends BaseExpression> expressions) {
+        for (BaseExpression expression : expressions) {
+            if (expression != EMPTY) {
+                builder.add(expression);
+            }
+        }
     }
 
     public static <T> List<PathExpression<T, ?>> toExpressionList(Collection<Path<T, ?>> paths) {
@@ -138,7 +150,7 @@ public class BasicExpressions {
         return new EntityPathExpression(path);
     }
 
-    public static BaseExpression newOperation(List<BaseExpression> operands, Operator operator) {
+    public static BaseExpression newOperation(List<? extends BaseExpression> operands, Operator operator) {
         return new OperationExpression(operands, operator);
     }
 
@@ -263,7 +275,46 @@ public class BasicExpressions {
         private final Operator operator;
     }
 
-    private static final class EmptyExpression implements Empty, AbstractTypeExpression {
+    private static final class EmptyExpression implements Literal, AbstractTypeExpression {
+
+        @Override
+        public @NotNull AbstractTypeExpression operate(Operator operator, BaseExpression expression) {
+            return toTypedExpression(expression);
+        }
+
+        @Override
+        public @NotNull AbstractTypeExpression operate(Operator operator, List<? extends BaseExpression> expressions) {
+            if (operator.isMultivalued()) {
+                int count = (int) expressions.stream()
+                        .filter(EmptyExpression::notEmpty)
+                        .count();
+                if (count == 0) {
+                    return this;
+                }
+                if (count != expressions.size()) {
+                    expressions = expressions.stream()
+                            .filter(EmptyExpression::notEmpty)
+                            .collect(ImmutableList.collector(count));
+                }
+                BaseExpression baseExpression = BasicExpressions.newOperation(expressions, operator);
+                return toTypedExpression(baseExpression);
+            }
+            throw new UnsupportedOperationException();
+        }
+
+        private static boolean notEmpty(BaseExpression e) {
+            return e != EMPTY;
+        }
+
+        @Override
+        public @NotNull AbstractTypeExpression operate(Operator operator) {
+            return this;
+        }
+
+        @Override
+        public Object value() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @lombok.Data
