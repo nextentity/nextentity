@@ -69,7 +69,7 @@ public class JdbcQueryExecutor implements QueryExecutor {
 
     private static void printSql(QuerySqlStatement sql) {
         SqlLogger.debug(sql.sql());
-        if (!sql.parameters().iterator().hasNext()) {
+        if (sql.parameters().iterator().hasNext()) {
             SqlLogger.debug("ARGS: {}", sql.parameters());
         }
     }
