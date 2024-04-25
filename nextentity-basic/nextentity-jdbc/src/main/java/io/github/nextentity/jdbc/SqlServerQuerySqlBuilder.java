@@ -1,6 +1,11 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.api.Operator;
+import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.expression.Literal;
+import io.github.nextentity.core.api.expression.Operation;
 import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
@@ -68,6 +73,16 @@ public class SqlServerQuerySqlBuilder implements QuerySqlBuilder {
         @Override
         protected String rightQuotedIdentifier() {
             return "]";
+        }
+
+        @Override
+        protected void appendNotOperation(Operation operation) {
+            BaseExpression operand = operation.firstOperand();
+            if (operand instanceof EntityPath || operand instanceof Literal) {
+                appendBinaryOperation(operand, Operator.EQ, BasicExpressions.FALSE);
+            } else {
+                super.appendNotOperation(operation);
+            }
         }
     }
 
