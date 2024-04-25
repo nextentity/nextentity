@@ -12,9 +12,9 @@ import io.github.nextentity.core.api.Expression.PathExpression;
 import io.github.nextentity.core.api.Expression.Predicate;
 import io.github.nextentity.core.api.Expression.StringExpression;
 import io.github.nextentity.core.api.Expression.StringPathExpression;
-import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.Conjunction;
 import io.github.nextentity.core.api.ExpressionBuilder.NumberOperator;
-import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.Disjunction;
 import io.github.nextentity.core.api.ExpressionBuilder.PathOperator;
 import io.github.nextentity.core.api.ExpressionBuilder.StringOperator;
 import io.github.nextentity.core.api.Operator;
@@ -386,7 +386,7 @@ public class Expressions {
         }
 
         @Override
-        default AndOperator andIf(boolean predicate, PredicateBuilder predicateBuilder) {
+        default Conjunction andIf(boolean predicate, PredicateBuilder predicateBuilder) {
             return predicate ? and(((PredicateBuilder<?>) predicateBuilder).build(TypeCastUtil.cast(root()))) : this;
         }
 
@@ -407,7 +407,7 @@ public class Expressions {
         }
 
         @Override
-        default OrOperator orIf(boolean predicate, PredicateBuilder predicateBuilder) {
+        default Disjunction orIf(boolean predicate, PredicateBuilder predicateBuilder) {
             return predicate ? or(((PredicateBuilder<?>) predicateBuilder).build(TypeCastUtil.cast(root()))) : this;
         }
 

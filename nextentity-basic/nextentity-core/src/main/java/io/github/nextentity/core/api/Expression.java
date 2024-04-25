@@ -1,7 +1,7 @@
 package io.github.nextentity.core.api;
 
-import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
-import io.github.nextentity.core.api.ExpressionBuilder.OrOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.Conjunction;
+import io.github.nextentity.core.api.ExpressionBuilder.Disjunction;
 import io.github.nextentity.core.api.Path.BooleanPath;
 import io.github.nextentity.core.api.Path.NumberPath;
 import io.github.nextentity.core.api.Path.StringPath;
@@ -222,7 +222,7 @@ public interface Expression<T, U> extends BaseExpression {
 
     }
 
-    interface Predicate<T> extends OperatableExpression<T, Boolean>, AndOperator<T>, OrOperator<T> {
+    interface Predicate<T> extends OperatableExpression<T, Boolean>, Conjunction<T>, Disjunction<T> {
         Predicate<T> not();
 
         Predicate<T> and(Expression<T, Boolean> predicate);

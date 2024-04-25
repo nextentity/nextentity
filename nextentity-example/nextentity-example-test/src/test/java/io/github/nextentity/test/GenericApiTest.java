@@ -6,7 +6,7 @@ import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.NumberPathExpression;
 import io.github.nextentity.core.api.Expression.Predicate;
-import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
+import io.github.nextentity.core.api.ExpressionBuilder.Conjunction;
 import io.github.nextentity.core.api.Path;
 import io.github.nextentity.core.api.Slice;
 import io.github.nextentity.core.api.tuple.Tuple;
@@ -765,7 +765,7 @@ public class GenericApiTest {
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
-        AndOperator<User> predicate = get(User::getRandomNumber).eq(20).and(User::getUsername).eqIfNotNull(null);
+        Conjunction<User> predicate = get(User::getRandomNumber).eq(20).and(User::getUsername).eqIfNotNull(null);
         qList = userQuery.where(predicate).getList();
 
         assertEquals(qList, fList);

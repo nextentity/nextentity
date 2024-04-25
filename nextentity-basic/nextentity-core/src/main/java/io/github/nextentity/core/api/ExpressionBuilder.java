@@ -42,7 +42,6 @@ public interface ExpressionBuilder<T, U, B> {
 
     B isNotNull();
 
-
     B ge(U value);
 
     B gt(U value);
@@ -82,7 +81,6 @@ public interface ExpressionBuilder<T, U, B> {
     B notBetween(Expression<T, U> l, U r);
 
     B notBetween(U l, Expression<T, U> r);
-
 
     interface NumberOperator<T, U extends Number, B> extends ExpressionBuilder<T, U, B> {
         NumberOperator<T, U, B> add(U value);
@@ -244,37 +242,37 @@ public interface ExpressionBuilder<T, U, B> {
 
     }
 
-    interface AndOperator<T> extends Expression<T, Boolean> {
+    interface Conjunction<T> extends Expression<T, Boolean> {
 
-        <R> PathOperator<T, R, AndOperator<T>> and(Path<T, R> path);
+        <R> PathOperator<T, R, Conjunction<T>> and(Path<T, R> path);
 
-        <R extends Number> NumberOperator<T, R, AndOperator<T>> and(NumberPath<T, R> path);
+        <R extends Number> NumberOperator<T, R, Conjunction<T>> and(NumberPath<T, R> path);
 
-        StringOperator<T, AndOperator<T>> and(StringPath<T> path);
+        StringOperator<T, Conjunction<T>> and(StringPath<T> path);
 
-        AndOperator<T> and(Expression<T, Boolean> expression);
+        Conjunction<T> and(Expression<T, Boolean> expression);
 
-        AndOperator<T> andIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
+        Conjunction<T> andIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        AndOperator<T> and(Iterable<? extends Expression<T, Boolean>> expressions);
+        Conjunction<T> and(Iterable<? extends Expression<T, Boolean>> expressions);
 
         Predicate<T> toPredicate();
 
     }
 
-    interface OrOperator<T> extends Expression<T, Boolean> {
+    interface Disjunction<T> extends Expression<T, Boolean> {
 
-        <N> PathOperator<T, N, OrOperator<T>> or(Path<T, N> path);
+        <N> PathOperator<T, N, Disjunction<T>> or(Path<T, N> path);
 
-        <N extends Number> NumberOperator<T, N, OrOperator<T>> or(NumberPath<T, N> path);
+        <N extends Number> NumberOperator<T, N, Disjunction<T>> or(NumberPath<T, N> path);
 
-        StringOperator<T, ? extends OrOperator<T>> or(StringPath<T> path);
+        StringOperator<T, ? extends Disjunction<T>> or(StringPath<T> path);
 
-        OrOperator<T> or(Expression<T, Boolean> predicate);
+        Disjunction<T> or(Expression<T, Boolean> predicate);
 
-        OrOperator<T> orIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
+        Disjunction<T> orIf(boolean predicate, PredicateBuilder<T> predicateBuilder);
 
-        OrOperator<T> or(Iterable<? extends Expression<T, Boolean>> expressions);
+        Disjunction<T> or(Iterable<? extends Expression<T, Boolean>> expressions);
 
         Predicate<T> toPredicate();
 
