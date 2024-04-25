@@ -26,6 +26,10 @@ public interface Attribute extends Schema {
 
     Schema declareBy();
 
+    default boolean isAttribute() {
+        return true;
+    }
+
     default int deep() {
         if (!(declareBy() instanceof Attribute)) {
             return 1;

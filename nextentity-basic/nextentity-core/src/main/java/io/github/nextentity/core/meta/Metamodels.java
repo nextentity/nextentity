@@ -63,10 +63,11 @@ public class Metamodels {
     @Getter
     @Accessors(fluent = true)
     public static class BasicAttributeImpl extends AttributeImpl<EntitySchema> implements BasicAttribute {
-        private final String columnName;
+        protected String columnName;
         private final boolean isVersion;
         private final List<? extends BasicAttribute> referencedAttributes;
         private final EntityPath path;
+        private DatabaseType databaseType;
 
         public BasicAttributeImpl(Attribute attribute, String columnName, boolean isVersion) {
             super(attribute, (EntitySchema) attribute.declareBy());
@@ -77,6 +78,28 @@ public class Metamodels {
                     .map(BasicAttribute::name)
                     .collect(ImmutableList.collector(referencedAttributes.size()));
             this.path = BasicExpressions.column(paths);
+        }
+
+        public void databaseType(DatabaseType converter) {
+            this.databaseType = converter == null ? new IdentityDatabaseType() : converter;
+        }
+
+        class IdentityDatabaseType implements DatabaseType {
+            @Override
+            public Class<?> databaseType() {
+                return type();
+            }
+
+            @Override
+            public Object toDatabaseType(Object value) {
+                return value;
+            }
+
+            @Override
+            public Object toAttributeType(Object value) {
+                return value;
+            }
+
         }
 
     }
@@ -124,7 +147,7 @@ public class Metamodels {
         private BasicAttribute version;
         private String tableName;
         private Map<String, BasicAttribute> dictionary;
-        private transient List<?extends BasicAttribute> primitiveAttributes;
+        private transient List<? extends BasicAttribute> primitiveAttributes;
 
         public EntitySchemaImpl() {
         }
@@ -178,7 +201,6 @@ public class Metamodels {
     @Accessors(fluent = true)
     public static class AssociationAttributeImpl extends BasicAttributeImpl implements AssociationAttribute {
         private String joinName;
-        private String joinColumnName;
         private String referencedColumnName;
         private Supplier<EntitySchema> referencedSupplier;
         @Delegate(excludes = Schema.class)
@@ -187,6 +209,11 @@ public class Metamodels {
 
         public AssociationAttributeImpl(Attribute attribute, String columnName) {
             super(attribute, columnName, false);
+            databaseType(new IdentityDatabaseType());
+        }
+
+        public void columnName(String columnName) {
+            this.columnName = columnName;
         }
 
     }

@@ -3,7 +3,6 @@ package io.github.nextentity.jdbc;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.meta.EntityType;
-import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.util.Iterators;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +18,7 @@ public abstract class AbstractUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
         BasicAttribute idAttribute = entityType.id();
         boolean hasNullId = false;
         for (Object entity : entities) {
-            Object id = idAttribute.get(entity);
+            Object id = idAttribute.getJdbcValue(entity);
             if (id == null) {
                 hasNullId = true;
             }
@@ -57,14 +56,9 @@ public abstract class AbstractUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
         return new InsertSqlStatement(entities, sql.toString(), parameters, generateKey);
     }
 
-    private static Iterable<? extends Iterable<?>> getParameters(Iterable<?> entities, Collection<? extends Attribute> attributes) {
-        return Iterators.map(entities, entity -> Iterators.map(attributes, attr -> {
-            Object o = attr.get(entity);
-            if (o instanceof Enum<?>) {
-                o = ((Enum<?>) o).ordinal();
-            }
-            return o;
-        }));
+    private static Iterable<? extends Iterable<?>> getParameters(Iterable<?> entities,
+                                                                 Collection<? extends BasicAttribute> attributes) {
+        return Iterators.map(entities, entity -> Iterators.map(attributes, attr -> attr.getJdbcValue(entity)));
     }
 
     @NotNull

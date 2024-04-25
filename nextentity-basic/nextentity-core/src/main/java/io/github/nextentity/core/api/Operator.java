@@ -29,10 +29,10 @@ public enum Operator {
     LENGTH("length", 0),
 
     ADD("+", 4, true),
-    SUBTRACT("-", 4),
+    SUBTRACT("-", 4, true),
     MULTIPLY("*", 3, true),
-    DIVIDE("/", 3),
-    MOD("%", 3),
+    DIVIDE("/", 3, true),
+    MOD("%", 3, true),
     NULLIF("nullif", 0),
     IF_NULL("ifnull", 0),
 

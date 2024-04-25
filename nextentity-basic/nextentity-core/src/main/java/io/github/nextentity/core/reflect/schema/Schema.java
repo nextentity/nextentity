@@ -24,4 +24,8 @@ public interface Schema {
         return !isObject() && !isArray();
     }
 
+    default boolean isAttribute() {
+        return false;
+    }
+
 }

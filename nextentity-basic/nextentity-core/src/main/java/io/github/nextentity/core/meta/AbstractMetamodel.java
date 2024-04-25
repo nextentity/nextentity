@@ -4,14 +4,14 @@ import io.github.nextentity.core.PathReference;
 import io.github.nextentity.core.annotaion.EntityAttribute;
 import io.github.nextentity.core.annotaion.SubSelect;
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.AssociationAttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.AttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.EntitySchemaImpl;
 import io.github.nextentity.core.meta.Metamodels.EntityTypeImpl;
-import io.github.nextentity.core.meta.Metamodels.ProjectionAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.ProjectionAssociationAttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.ProjectionAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.ProjectionSchemaImpl;
-import io.github.nextentity.core.meta.Metamodels.AttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.SubSelectEntity;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.core.reflect.schema.Attribute;
@@ -161,6 +161,13 @@ public abstract class AbstractMetamodel implements Metamodel {
 
     protected abstract Field[] getSuperClassField(Class<?> baseClass, Class<?> superClass);
 
+    protected DatabaseType databaseType(Attribute attribute) {
+        if (attribute.type().isEnum()) {
+            return new OrdinalOfEnumType(attribute.type());
+        }
+        return null;
+    }
+
     protected EntityType createEntityType(Class<?> entityType) {
         EntityTypeImpl result;
         SubSelect[] type = entityType.getAnnotationsByType(SubSelect.class);
@@ -199,7 +206,9 @@ public abstract class AbstractMetamodel implements Metamodel {
                         versionColumn = hasVersion = true;
                     }
                 }
-                attribute = new BasicAttributeImpl(attr, getColumnName(attr), versionColumn);
+                BasicAttributeImpl impl = new BasicAttributeImpl(attr, getColumnName(attr), versionColumn);
+                impl.databaseType(databaseType(attr));
+                attribute = impl;
                 if (versionColumn) {
                     result.version(attribute);
                 }
@@ -229,7 +238,7 @@ public abstract class AbstractMetamodel implements Metamodel {
             BasicAttribute value = entry.getValue();
             if (value instanceof AssociationAttributeImpl attr) {
                 String joinColumnName = getJoinColumnName(map, attr);
-                attr.joinColumnName(joinColumnName);
+                attr.columnName(joinColumnName);
             }
         }
     }

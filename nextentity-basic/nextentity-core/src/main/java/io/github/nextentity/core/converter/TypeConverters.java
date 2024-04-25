@@ -27,7 +27,7 @@ public class TypeConverters implements TypeConverter {
 
     @Override
     public Object convert(Object value, Class<?> targetType) {
-        if (targetType.isInstance(value)) {
+        if (value == null || targetType.isInstance(value)) {
             return value;
         }
         if (targetType.isPrimitive() && PrimitiveTypes.getWrapper(targetType).isInstance(value)) {

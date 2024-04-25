@@ -6,10 +6,9 @@ import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.api.expression.Literal;
 import io.github.nextentity.core.api.expression.Operation;
 import io.github.nextentity.core.api.expression.QueryStructure;
-import io.github.nextentity.core.meta.EntitySchema;
+import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.reflect.PrimitiveTypes;
-import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.ImmutableList;
 
 import java.math.BigDecimal;
@@ -128,11 +127,8 @@ public class ExpressionTypeResolver {
     }
 
     public static Class<?> getColumnType(EntityPath column, EntityType entityType) {
-        Schema t = entityType;
-        for (String s : column) {
-            t = ((EntitySchema) t).getAttribute(s);
-        }
-        return t.type();
+        BasicAttribute attribute = entityType.getAttribute(column);
+        return attribute.databaseType().databaseType();
     }
 
 }

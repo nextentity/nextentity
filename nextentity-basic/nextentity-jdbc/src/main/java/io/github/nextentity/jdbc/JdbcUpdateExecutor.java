@@ -122,8 +122,8 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         return update(Collections.singletonList(entity), entityClass, true).get(0);
     }
 
-    private static void setNewVersion(Object entity, BasicAttribute column) {
-        Object version = column.get(entity);
+    private static void setNewVersion(Object entity, BasicAttribute attribute) {
+        Object version = attribute.getJdbcValue(entity);
         if (version instanceof Integer) {
             version = (Integer) version + 1;
         } else if (version instanceof Long) {
@@ -131,7 +131,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         } else {
             throw new IllegalStateException();
         }
-        column.set(entity, version);
+        attribute.setByJdbcValue(entity, version);
     }
 
     private void doInsert(EntitySchema entityType,
@@ -158,7 +158,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
                         Object entity = iterator.next();
                         BasicAttribute idField = entityType.id();
                         Object key = JdbcUtil.getValue(keys, 1, idField.type());
-                        idField.set(entity, key);
+                        idField.setByJdbcValue(entity, key);
                     }
                 } catch (Exception e) {
                     log.warn("", e);

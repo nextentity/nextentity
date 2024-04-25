@@ -3,11 +3,14 @@ package io.github.nextentity.core.reflect;
 import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.api.tuple.Tuple;
 import io.github.nextentity.core.exception.BeanReflectiveException;
+import io.github.nextentity.core.meta.BasicAttribute;
+import io.github.nextentity.core.meta.ProjectionBasicAttribute;
 import io.github.nextentity.core.reflect.schema.ArraySchema;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.ObjectSchema;
 import io.github.nextentity.core.reflect.schema.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.lang.reflect.Field;
@@ -18,16 +21,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public interface ObjectFactory {
+public interface ObjectFactory extends Schema {
     Object get(Arguments arguments);
 
     @Data
+    @EqualsAndHashCode(callSuper = true)
     @Accessors(fluent = true, chain = true)
-    class ObjectResult implements AttributeConstructor, ObjectSchema {
+    class ObjectAttribute extends ObjectResult implements ObjectAttributeFaced {
+        private Attribute attribute;
+    }
+
+    @Data
+    @Accessors(fluent = true, chain = true)
+    class ObjectResult implements ObjectFactory, ObjectSchema {
 
         private Class<?> type;
-        private List<AttributeConstructor> attributes;
-        private Attribute attribute;
+        private List<ObjectAttributeFaced> attributes;
 
         @Override
         public String name() {
@@ -47,7 +56,7 @@ public interface ObjectFactory {
 
         public Object constructObject(Arguments arguments) {
             Object result = null;
-            for (AttributeConstructor attr : attributes) {
+            for (ObjectAttributeFaced attr : attributes) {
                 Object value = attr.get(arguments);
                 if (value != null) {
                     if (result == null) {
@@ -61,13 +70,13 @@ public interface ObjectFactory {
 
         public Object constructInterface(Arguments arguments) {
             Map<Method, Object> map = new HashMap<>();
-            boolean hasNonnullProperty = false;
-            for (AttributeConstructor property : attributes) {
-                Object extract = property.get(arguments);
-                hasNonnullProperty = hasNonnullProperty || extract != null;
-                map.put(property.getter(), extract);
+            boolean notNull = false;
+            for (ObjectAttributeFaced attribute : attributes) {
+                Object value = attribute.get(arguments);
+                notNull = notNull || value != null;
+                map.put(attribute.getter(), value);
             }
-            if (hasNonnullProperty) {
+            if (notNull) {
                 return ReflectUtil.newProxyInstance(type, map);
             } else {
                 return null;
@@ -86,16 +95,16 @@ public interface ObjectFactory {
             }
             try {
                 Object[] args = new Object[components.length];
-                boolean hasNonnullProperty = false;
-                for (AttributeConstructor property : attributes) {
-                    Object extract = property.get(arguments);
-                    hasNonnullProperty = hasNonnullProperty || extract != null;
-                    Integer i = index.get(property.name());
+                boolean notNull = false;
+                for (ObjectAttributeFaced attribute : attributes) {
+                    Object arg = attribute.get(arguments);
+                    notNull = notNull || arg != null;
+                    Integer i = index.get(attribute.name());
                     if (i != null) {
-                        args[i] = extract;
+                        args[i] = arg;
                     }
                 }
-                if (!hasNonnullProperty) {
+                if (!notNull) {
                     return null;
                 }
                 java.lang.reflect.Constructor<?> constructor = type.getDeclaredConstructor(parameterTypes);
@@ -105,7 +114,7 @@ public interface ObjectFactory {
             }
         }
 
-        public void addProperty(AttributeConstructor schema) {
+        public void addAttribute(ObjectAttributeFaced schema) {
             if (attributes == null) {
                 attributes = new ArrayList<>();
             }
@@ -115,8 +124,8 @@ public interface ObjectFactory {
 
     @Data
     @Accessors(fluent = true)
-    class ArrayResult implements AttributeConstructor, ArraySchema {
-        private List<? extends AttributeConstructor> items;
+    class ArrayResult implements ObjectFactory, ArraySchema {
+        private List<? extends ObjectFactory> items;
         private Attribute attribute;
 
         @Override
@@ -134,35 +143,51 @@ public interface ObjectFactory {
             Object[] array = items().stream().map(item -> item.get(arguments)).toArray();
             return Tuples.of(array);
         }
-
-
     }
 
     @Data
-    @Accessors(fluent = true)
-    class IndexableProperty implements AttributeConstructor {
-
+    @Accessors(fluent = true, chain = true)
+    class Indexable implements ObjectFactory {
         private int index;
-        private Attribute attribute;
+        private Class<?> type;
 
         @Override
         public Object get(Arguments arguments) {
             return arguments.get(index);
         }
 
-        @Override
-        public Class<?> type() {
-            return attribute.type();
-        }
-
-        @Override
-        public String name() {
-            return attribute.name();
-        }
-
     }
 
-    interface AttributeConstructor extends Attribute, ObjectFactory {
+    @Data
+    @Accessors(fluent = true, chain = true)
+    class IndexableBasicAttribute implements ObjectAttributeFaced {
+        private int index;
+        private BasicAttribute attribute;
+
+        @Override
+        public Object get(Arguments arguments) {
+            Object result = arguments.get(index);
+            result = attribute.databaseType().toAttributeType(result);
+            return result;
+        }
+    }
+
+    @Data
+    @Accessors(fluent = true, chain = true)
+    class IndexableProjectionAttribute implements ObjectAttributeFaced {
+        private int index;
+        private ProjectionBasicAttribute attribute;
+
+        @Override
+        public Object get(Arguments arguments) {
+            Object result = arguments.get(index);
+            result = attribute.entityAttribute().databaseType().toAttributeType(result);
+            return result;
+        }
+    }
+
+
+    interface ObjectAttributeFaced extends Attribute, ObjectFactory {
 
         Attribute attribute();
 
@@ -195,5 +220,6 @@ public interface ObjectFactory {
         default Class<?> type() {
             return attribute().type();
         }
+
     }
 }
