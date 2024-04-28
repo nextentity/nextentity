@@ -293,6 +293,9 @@ abstract class AbstractQuerySqlBuilder {
                 appendNullAssertion(operation);
                 break;
             }
+            case DISTINCT:
+                appendPrepositionOperation(operation);
+                break;
             default:
                 throw new UnsupportedOperationException("unknown operator " + operator);
         }
@@ -302,6 +305,13 @@ abstract class AbstractQuerySqlBuilder {
         appendFirstOperation(operation);
         appendBlank();
         appendOperator(operation.operator());
+    }
+
+    protected void appendPrepositionOperation(Operation operation) {
+        BaseExpression operand = operation.firstOperand();
+        Operator operator = operation.operator();
+        appendOperator(operator);
+        appendExpressionPriority(operand, operator);
     }
 
     protected void appendFirstOperation(Operation operation) {

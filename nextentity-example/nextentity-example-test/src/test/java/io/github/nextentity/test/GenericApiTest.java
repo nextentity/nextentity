@@ -389,6 +389,15 @@ public class GenericApiTest {
                 .orderBy(get(User::getId).desc())
                 .getFirst();
         assertEquals(first, userQuery.users().get(userQuery.users().size() - 1).getId());
+
+        Long count = userQuery
+                .select(get(User::getRandomNumber).countDistinct())
+                .getSingle();
+        long count1 = userQuery.users()
+                .stream().mapToInt(User::getRandomNumber)
+                .distinct()
+                .count();
+        assertEquals(count1, count);
     }
 
     @ParameterizedTest
