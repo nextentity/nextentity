@@ -434,7 +434,13 @@ public interface Query {
 
         <X> SubQueryBuilder<X, T> asSubQuery();
 
+        <R> Collector<R> map(Function<? super T, ? extends R> mapper);
+
         Page<T> getPage(Pageable pageable);
+
+        default <R> R getPage(PageCollector<T, R> collector) {
+            return slice(collector);
+        }
     }
 
     interface SubQueryBuilder<T, U> extends Expression<T, List<U>> {

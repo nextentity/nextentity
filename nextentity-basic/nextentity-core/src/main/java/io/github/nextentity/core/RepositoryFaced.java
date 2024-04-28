@@ -669,6 +669,11 @@ public class RepositoryFaced<ID extends Serializable, T> implements Repository<I
     }
 
     @Override
+    public <R> Collector<R> map(Function<? super T, ? extends R> mapper) {
+        return target.map(mapper);
+    }
+
+    @Override
     public Page<T> getPage(Pageable pageable) {
         return target.getPage(pageable);
     }

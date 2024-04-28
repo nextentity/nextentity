@@ -94,6 +94,11 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     }
 
     @Override
+    public <R> Collector<R> map(Function<? super U, ? extends R> mapper) {
+        return asc().map(mapper);
+    }
+
+    @Override
     public EntityRoot<T> root() {
         return Paths.root();
     }
