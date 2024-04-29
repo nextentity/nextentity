@@ -478,7 +478,7 @@ abstract class AbstractQuerySqlBuilder {
             EntityPath k = entry.getKey();
             Integer v = entry.getValue();
             BasicAttribute attribute = getAttribute(k);
-            EntitySchema entityTypeInfo = context.getEntityType();
+            EntitySchema entityTypeInfo = (EntitySchema) context.getEntityType().getAttribute(k);
             StringBuilder append = sql.append(LEFT_JOIN);
             appendTable(append, entityTypeInfo);
 

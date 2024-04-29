@@ -145,12 +145,8 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
                 ? connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
                 : connection.prepareStatement(sql)) {
             Iterable<? extends Iterable<?>> parameters = insertStatement.parameters();
-            int size = setParameters(parameters, statement);
-            if (size > 1) {
-                statement.executeBatch();
-            } else {
-                statement.executeUpdate();
-            }
+            setParameters(parameters, statement);
+            statement.executeBatch();
             if (generateKey) {
                 try (ResultSet keys = statement.getGeneratedKeys()) {
                     Iterator<?> iterator = insertStatement.entities().iterator();
@@ -167,17 +163,14 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         }
     }
 
-    private static int setParameters(Iterable<? extends Iterable<?>> parameters, PreparedStatement statement) throws SQLException {
-        int entitiesSize = 0;
+    private static void setParameters(Iterable<? extends Iterable<?>> parameters, PreparedStatement statement) throws SQLException {
         for (Iterable<?> parameter : parameters) {
-            entitiesSize++;
             int i = 0;
             for (Object o : parameter) {
                 statement.setObject(++i, o);
             }
             statement.addBatch();
         }
-        return entitiesSize;
     }
 
     private <T> void execute(ConnectionCallback<T> action) {
