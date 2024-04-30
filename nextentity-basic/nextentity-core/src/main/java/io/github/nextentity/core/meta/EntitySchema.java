@@ -1,5 +1,6 @@
 package io.github.nextentity.core.meta;
 
+import io.github.nextentity.core.reflect.schema.InstanceFactory;
 import io.github.nextentity.core.reflect.schema.ObjectSchema;
 import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.ImmutableList;
@@ -29,6 +30,8 @@ public interface EntitySchema extends ObjectSchema {
     }
 
     BasicAttribute version();
+
+    InstanceFactory.ObjectFactory getInstanceFactory();
 
     @Override
     Collection<? extends BasicAttribute> attributes();

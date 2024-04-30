@@ -4,8 +4,14 @@ import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.api.expression.EntityPath;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
+import io.github.nextentity.core.reflect.InstanceFactories.ObjectFactoryImpl;
+import io.github.nextentity.core.reflect.InstanceFactories.PrimitiveAttribute;
+import io.github.nextentity.core.reflect.InstanceFactories.ProjectionObjectAttribute;
+import io.github.nextentity.core.reflect.InstanceFactories.ProjectionPrimitiveAttribute;
 import io.github.nextentity.core.reflect.SelectedConstruct;
 import io.github.nextentity.core.reflect.schema.Attribute;
+import io.github.nextentity.core.reflect.schema.InstanceFactory;
+import io.github.nextentity.core.reflect.schema.InstanceFactory.AttributeFactory;
 import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.ImmutableList;
 import lombok.Getter;
@@ -148,8 +154,20 @@ public class Metamodels {
         private String tableName;
         private Map<String, BasicAttribute> dictionary;
         private transient List<? extends BasicAttribute> primitiveAttributes;
+        private transient InstanceFactory.ObjectFactory instanceFactory;
 
         public EntitySchemaImpl() {
+        }
+
+        @Override
+        public InstanceFactory.ObjectFactory getInstanceFactory() {
+            if (instanceFactory == null) {
+                ImmutableList<PrimitiveAttribute> primitives = primitiveAttributes.stream()
+                        .map(PrimitiveAttribute::new)
+                        .collect(ImmutableList.collector(primitiveAttributes.size()));
+                instanceFactory = new ObjectFactoryImpl(primitives, type());
+            }
+            return instanceFactory;
         }
 
         public Collection<BasicAttribute> attributes() {
@@ -238,7 +256,7 @@ public class Metamodels {
         @Getter(lazy = true)
         private final Map<String, ? extends ProjectionBasicAttribute> dictionary = attributesSupplier.apply(this)
                 .stream().collect(Collectors.toMap(Attribute::name, Function.identity()));
-
+        private InstanceFactory.AttributeFactory instanceFactory;
 
         ProjectionAssociationAttributeImpl(Attribute attribute,
                                            AssociationAttribute entityAttribute,
@@ -267,6 +285,24 @@ public class Metamodels {
         public Attribute getAttribute(String name) {
             return dictionary().get(name);
         }
+
+        public InstanceFactory.AttributeFactory getInstanceFactory() {
+            if (instanceFactory == null) {
+                boolean primitiveOnly = deep() >= 8 || circularReferenced();
+                ImmutableList<AttributeFactory> primitives = dictionary.values().stream()
+                        .filter(it -> !primitiveOnly || it.isPrimitive())
+                        .map(it -> {
+                            if (it instanceof ProjectionAssociationAttribute paa) {
+                                return ((ProjectionAssociationAttributeImpl) paa).getInstanceFactory();
+                            } else {
+                                return new ProjectionPrimitiveAttribute(it);
+                            }
+                        })
+                        .collect(ImmutableList.collector(dictionary.size()));
+                this.instanceFactory = new ProjectionObjectAttribute(primitives, this);
+            }
+            return instanceFactory;
+        }
     }
 
     @Getter
@@ -276,6 +312,7 @@ public class Metamodels {
         private final Map<String, ProjectionBasicAttribute> dictionary = new HashMap<>();
         private final EntitySchema entityType;
         private volatile SelectedConstruct constructor;
+        private InstanceFactory.ObjectFactory instanceFactory;
 
         public ProjectionSchemaImpl(Class<?> type, EntitySchema entityType) {
             this.type = type;
@@ -326,5 +363,22 @@ public class Metamodels {
         public Attribute declareBy() {
             return null;
         }
+
+        public InstanceFactory.ObjectFactory getInstanceFactory() {
+            if (instanceFactory == null) {
+                ImmutableList<AttributeFactory> primitives = dictionary.values().stream()
+                        .map(it -> {
+                            if (it instanceof ProjectionAssociationAttribute paa) {
+                                return ((ProjectionAssociationAttributeImpl) paa).getInstanceFactory();
+                            } else {
+                                return new ProjectionPrimitiveAttribute(it);
+                            }
+                        })
+                        .collect(ImmutableList.collector(dictionary.size()));
+                this.instanceFactory = new ObjectFactoryImpl(primitives, type());
+            }
+            return instanceFactory;
+        }
+
     }
 }
