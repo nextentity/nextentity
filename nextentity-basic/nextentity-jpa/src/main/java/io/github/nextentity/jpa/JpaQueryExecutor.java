@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.List;
 
+import static io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory;
+
 public class JpaQueryExecutor implements QueryExecutor {
 
     private final EntityManager entityManager;
@@ -48,17 +50,16 @@ public class JpaQueryExecutor implements QueryExecutor {
             return nativeQueryExecutor.getList(queryStructure);
         }
         Selected selected = queryStructure.select();
-        Class<?> entityType = queryStructure.from().type();
         if (selected instanceof SelectEntity) {
             List<?> resultList = getEntityResultList(queryStructure);
             return TypeCastUtil.cast(resultList);
         }
         QueryContext context = new QueryContext(queryStructure, metamodel, false);
-        List<Object[]> objectsList = getObjectsList(queryStructure, context.getSelects());
+        List<Object[]> objectsList = getObjectsList(queryStructure, context.getConstructor().primitives());
         List<Object> result = objectsList.stream()
                 .map(objects -> {
                     JpaArguments arguments = new JpaArguments(
-                            objects, null, null, metamodel, entityType);
+                            objects, null, null);
                     return context.construct(arguments);
                 })
                 .collect(ImmutableList.collector(objectsList.size()));
@@ -121,7 +122,7 @@ public class JpaQueryExecutor implements QueryExecutor {
         return new EntityBuilder(root, cb, query, structure).getResultList();
     }
 
-    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends BaseExpression> columns) {
+    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends PrimitiveFactory> columns) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<?> query = cb.createQuery(Object[].class);
         Root<?> root = query.from(structure.from().type());
@@ -130,13 +131,13 @@ public class JpaQueryExecutor implements QueryExecutor {
 
     class ObjectArrayBuilder extends Builder {
 
-        private final List<? extends BaseExpression> selects;
+        private final List<? extends PrimitiveFactory> selects;
 
         public ObjectArrayBuilder(Root<?> root,
                                   CriteriaBuilder cb,
                                   CriteriaQuery<?> query,
                                   QueryStructure structure,
-                                  List<? extends BaseExpression> selects) {
+                                  List<? extends PrimitiveFactory> selects) {
             super(root, cb, query, structure);
             this.selects = selects;
         }
@@ -158,6 +159,7 @@ public class JpaQueryExecutor implements QueryExecutor {
         protected TypedQuery<?> getTypedQuery() {
             CriteriaQuery<?> select = query.multiselect(
                     selects.stream()
+                            .map(PrimitiveFactory::expression)
                             .map(this::toExpression)
                             .collect(ImmutableList.collector(selects.size()))
             );

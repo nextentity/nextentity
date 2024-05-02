@@ -1,7 +1,9 @@
 package io.github.nextentity.core.reflect.schema;
 
 import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.core.api.tuple.Tuple;
 
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 
@@ -10,8 +12,6 @@ import java.util.List;
  * @since 2024-04-30 15:45
  */
 public interface InstanceFactory {
-
-    Class<?> type();
 
     Object getInstance(Iterator<?> arguments);
 
@@ -29,16 +29,20 @@ public interface InstanceFactory {
         }
 
         @Override
-        Object[] getInstance(Iterator<?> arguments);
+        Tuple getInstance(Iterator<?> arguments);
     }
 
     interface AttributeFactory extends InstanceFactory {
         Object get(Object instance);
 
         void set(Object instance, Object value);
+
+        Method getter();
+
+        String name();
     }
 
-    interface PrimitiveFactory extends InstanceFactory, Schema {
+    interface PrimitiveFactory extends InstanceFactory, Typed {
         BaseExpression expression();
 
         @Override

@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 public class BasicExpressions {
@@ -363,6 +364,11 @@ public class BasicExpressions {
                 type = ((EntitySchema) type).getAttribute(s);
             }
             return (BasicAttribute) type;
+        }
+
+        @Override
+        public Stream<String> stream() {
+            return Stream.of(paths);
         }
 
         @Nullable

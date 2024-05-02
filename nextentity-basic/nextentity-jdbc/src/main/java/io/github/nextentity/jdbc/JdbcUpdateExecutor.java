@@ -74,8 +74,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             SqlLogger.debug(sql);
             //noinspection SqlSourceToSinkFlow
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                setParameters(preparedSql.parameters(), statement);
-                int[] updateRowCounts = statement.executeBatch();
+                int[] updateRowCounts = executeUpdate(statement, preparedSql.parameters());
                 BasicAttribute version = entityType.version();
                 boolean hasVersion = version != null;
                 for (int rowCount : updateRowCounts) {
@@ -109,8 +108,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             SqlLogger.debug(sql);
             //noinspection SqlSourceToSinkFlow
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                setParameters(preparedSql.parameters(), statement);
-                int[] result = statement.executeBatch();
+                int[] result = executeUpdate(statement, preparedSql.parameters());
                 log.trace("executeBatch result: {}", Arrays.toString(result));
                 return null;
             }
@@ -123,7 +121,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     }
 
     private static void setNewVersion(Object entity, BasicAttribute attribute) {
-        Object version = attribute.getJdbcValue(entity);
+        Object version = attribute.getDatabaseValue(entity);
         if (version instanceof Integer) {
             version = (Integer) version + 1;
         } else if (version instanceof Long) {
@@ -131,7 +129,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         } else {
             throw new IllegalStateException();
         }
-        attribute.setByJdbcValue(entity, version);
+        attribute.setByDatabaseValue(entity, version);
     }
 
     private void doInsert(EntitySchema entityType,
@@ -144,9 +142,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         try (PreparedStatement statement = generateKey
                 ? connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
                 : connection.prepareStatement(sql)) {
-            Iterable<? extends Iterable<?>> parameters = insertStatement.parameters();
-            setParameters(parameters, statement);
-            statement.executeBatch();
+            executeUpdate(statement, insertStatement.parameters());
             if (generateKey) {
                 try (ResultSet keys = statement.getGeneratedKeys()) {
                     Iterator<?> iterator = insertStatement.entities().iterator();
@@ -154,7 +150,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
                         Object entity = iterator.next();
                         BasicAttribute idField = entityType.id();
                         Object key = JdbcUtil.getValue(keys, 1, idField.type());
-                        idField.setByJdbcValue(entity, key);
+                        idField.setByDatabaseValue(entity, key);
                     }
                 } catch (Exception e) {
                     log.warn("", e);
@@ -163,13 +159,28 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         }
     }
 
-    private static void setParameters(Iterable<? extends Iterable<?>> parameters, PreparedStatement statement) throws SQLException {
-        for (Iterable<?> parameter : parameters) {
-            int i = 0;
-            for (Object o : parameter) {
-                statement.setObject(++i, o);
-            }
+    private int[] executeUpdate(PreparedStatement statement, Iterable<? extends Iterable<?>> parameters) throws SQLException {
+        Iterator<? extends Iterable<?>> iterator = parameters.iterator();
+        if (iterator.hasNext()) {
+            setParameters(statement, iterator.next());
+        }
+        boolean batch = iterator.hasNext();
+        while (iterator.hasNext()) {
             statement.addBatch();
+            setParameters(statement, iterator.next());
+        }
+        if (batch) {
+            statement.addBatch();
+            return statement.executeBatch();
+        } else {
+            return new int[]{statement.executeUpdate()};
+        }
+    }
+
+    private static void setParameters(PreparedStatement statement, Iterable<?> parameters) throws SQLException {
+        int parameterIndex = 0;
+        for (Object o : parameters) {
+            statement.setObject(++parameterIndex, o);
         }
     }
 

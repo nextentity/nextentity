@@ -1,7 +1,6 @@
 package io.github.nextentity.core;
 
 import io.github.nextentity.core.BasicExpressions.QueryStructureImpl;
-import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.EntityRoot;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.OperatableExpression;
@@ -21,6 +20,7 @@ import io.github.nextentity.core.api.Query.OrderBy;
 import io.github.nextentity.core.api.Query.OrderOperator;
 import io.github.nextentity.core.api.Query.SubQueryBuilder;
 import io.github.nextentity.core.api.Query.Where0;
+import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.expression.Operation;
 import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected;

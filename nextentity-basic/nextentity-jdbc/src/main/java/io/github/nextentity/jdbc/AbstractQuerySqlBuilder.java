@@ -18,6 +18,7 @@ import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.SubSelectType;
+import io.github.nextentity.core.reflect.schema.InstanceFactory;
 import io.github.nextentity.core.reflect.schema.Schema;
 import org.jetbrains.annotations.NotNull;
 
@@ -113,7 +114,8 @@ abstract class AbstractQuerySqlBuilder {
             sql.append(DISTINCT);
         }
         String join = NONE_DELIMITER;
-        for (BaseExpression expression : context.getSelects()) {
+        for (InstanceFactory.PrimitiveFactory factory : context.getConstructor().primitives()) {
+            BaseExpression expression = factory.expression();
             sql.append(join);
             appendExpression(expression);
             appendSelectAlias(expression);
@@ -226,13 +228,8 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendLiteral(Literal literal) {
-        Object value = literal.value();
-        if (value instanceof Boolean) {
-            appendBlank().append((Boolean) value ? 1 : 0);
-        } else {
-            appendBlank().append('?');
-            this.args.add(value);
-        }
+        appendBlank().append('?');
+        this.args.add(literal.value());
     }
 
     protected void appendOperation(Operation operation) {
@@ -510,7 +507,7 @@ abstract class AbstractQuerySqlBuilder {
 
     private void initJoinColumnIndex() {
         QueryStructure structure = context.getStructure();
-        addJoin(context.selects);
+        addJoinPrimitive(context.getConstructor().primitives());
         addJoin(structure.where());
         addJoin(structure.groupBy());
         for (Order<?> order : structure.orderBy()) {
@@ -529,6 +526,14 @@ abstract class AbstractQuerySqlBuilder {
             }
         } else if (select instanceof Operation) {
             addJoin(((Operation) select).operands());
+        }
+    }
+
+    private void addJoinPrimitive(List<? extends InstanceFactory.PrimitiveFactory> operands) {
+        if (operands != null && !operands.isEmpty()) {
+            for (InstanceFactory.PrimitiveFactory operand : operands) {
+                addJoin(operand.expression());
+            }
         }
     }
 
@@ -601,7 +606,7 @@ abstract class AbstractQuerySqlBuilder {
             for (Order<?> order : orders) {
                 sql.append(delimiter);
                 delimiter = ",";
-                int selectIndex = context.getSelects().indexOf(order.expression());
+                int selectIndex = getSelectIndex(order);
                 if (selectIndex > 0) {
                     sql.append(selectIndex + 1);
                 } else {
@@ -611,6 +616,17 @@ abstract class AbstractQuerySqlBuilder {
             }
 
         }
+    }
+
+    private int getSelectIndex(Order<?> order) {
+        List<? extends InstanceFactory.PrimitiveFactory> primitives = context.getConstructor().primitives();
+        for (int i = 0; i < primitives.size(); i++) {
+            InstanceFactory.PrimitiveFactory primitive = primitives.get(i);
+            if (primitive.expression().equals(order.expression())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
 }

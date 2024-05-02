@@ -18,12 +18,12 @@ public interface BasicAttribute extends Schema, Attribute {
 
     DatabaseType databaseType();
 
-    default Object getJdbcValue(Object entity) {
+    default Object getDatabaseValue(Object entity) {
         Object o = get(entity);
         return databaseType().toDatabaseType(o);
     }
 
-    default void setByJdbcValue(Object entity, Object value) {
+    default void setByDatabaseValue(Object entity, Object value) {
         value = databaseType().toAttributeType(value);
         set(entity, value);
     }

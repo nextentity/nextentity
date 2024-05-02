@@ -2,9 +2,9 @@ package io.github.nextentity.core.util;
 
 import io.github.nextentity.core.BasicExpressions;
 import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.Expression;
 import io.github.nextentity.core.api.Expression.Predicate;
+import io.github.nextentity.core.api.expression.BaseExpression;
 
 import static io.github.nextentity.core.api.Operator.NOT;
 

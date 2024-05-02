@@ -18,7 +18,7 @@ public abstract class AbstractUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
         BasicAttribute idAttribute = entityType.id();
         boolean hasNullId = false;
         for (Object entity : entities) {
-            Object id = idAttribute.getJdbcValue(entity);
+            Object id = idAttribute.getDatabaseValue(entity);
             if (id == null) {
                 hasNullId = true;
             }
@@ -58,7 +58,7 @@ public abstract class AbstractUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
 
     private static Iterable<? extends Iterable<?>> getParameters(Iterable<?> entities,
                                                                  Collection<? extends BasicAttribute> attributes) {
-        return Iterators.map(entities, entity -> Iterators.map(attributes, attr -> attr.getJdbcValue(entity)));
+        return Iterators.map(entities, entity -> Iterators.map(attributes, attr -> attr.getDatabaseValue(entity)));
     }
 
     @NotNull

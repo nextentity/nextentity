@@ -166,6 +166,8 @@ public class UpdateTest {
             List<AutoGenId> list = Arrays.asList(new AutoGenId(), new AutoGenId());
             entities.insert(list);
             checkId(list, entities);
+            entities.update(list);
+            entities.update(list.get(0));
         });
     }
 

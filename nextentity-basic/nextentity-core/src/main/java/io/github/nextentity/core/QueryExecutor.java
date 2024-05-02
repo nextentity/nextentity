@@ -1,7 +1,7 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.api.Query;
+import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.meta.Metamodel;
 import org.jetbrains.annotations.NotNull;
 

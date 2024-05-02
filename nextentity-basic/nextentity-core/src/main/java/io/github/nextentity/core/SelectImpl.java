@@ -9,7 +9,6 @@ import io.github.nextentity.core.api.Query.Fetch;
 import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.core.api.Query.Where0;
 import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectArray;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
 import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectPrimitive;
@@ -24,16 +23,20 @@ import io.github.nextentity.core.api.tuple.Tuple6;
 import io.github.nextentity.core.api.tuple.Tuple7;
 import io.github.nextentity.core.api.tuple.Tuple8;
 import io.github.nextentity.core.api.tuple.Tuple9;
+import io.github.nextentity.core.meta.BasicAttribute;
+import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.util.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+@Slf4j
 public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T> {
 
     SelectImpl() {
@@ -47,11 +50,23 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
         if (expressions == null || expressions.isEmpty()) {
             return this;
         }
-        QueryStructureImpl structure = queryStructure.copy();
         Set<EntityPath> fetchPaths = new HashSet<>(expressions.size() << 1);
+        EntityType entityType = queryExecutor.metamodel().getEntity(fromType());
         for (PathExpression<T, ?> expression : expressions) {
-            fetchPaths.add((EntityPath) expression);
+            EntityPath entityPath = (EntityPath) expression;
+            BasicAttribute attribute = entityType.getAttribute(entityPath);
+            if (!attribute.isObject()) {
+                log.warn("ignoring fetch a non-entity attribute `{}` of {}",
+                        entityPath.stream().collect(Collectors.joining(".")),
+                        entityType.type().getName());
+            } else {
+                fetchPaths.add(entityPath);
+            }
         }
+        if (fetchPaths.isEmpty()) {
+            return this;
+        }
+        QueryStructureImpl structure = queryStructure.copy();
         SelectEntity select = (SelectEntity) structure.select;
         structure.select = new SelectEntity(select).fetch(fetchPaths);
         return update(structure);
@@ -221,7 +236,7 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
     }
 
     private SelectArray selectTuple(boolean distinct, Stream<? extends Expression<T, ?>> stream, int len) {
-        List<Selected> selectItems = stream
+        List<SelectPrimitive> selectItems = stream
                 .map(expression -> new SelectPrimitive()
                         .expression(expression)
                         .distinct(false)
@@ -234,7 +249,7 @@ public class SelectImpl<T> extends WhereImpl<T, T> implements Select<T>, Fetch<T
 
     public <R extends Tuple> Where0<T, R> selectTuple(boolean distinct, List<? extends Path<T, ?>> paths) {
         QueryStructureImpl structure = queryStructure.copy();
-        List<Selected> selectItems = paths.stream()
+        List<SelectPrimitive> selectItems = paths.stream()
                 .map(path -> new SelectPrimitive()
                         .expression(BasicExpressions.of(path))
                         .distinct(false)

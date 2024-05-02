@@ -238,6 +238,12 @@ public class GenericApiTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     void te(UserRepository userQuery) {
+
+        userQuery.fetch(Paths.get(User::getParentUser).get(User::getId))
+                .where(User::getId).eq(0)
+                .orderBy(User::getId)
+                .getList();
+
         // UserRepository userQuery = DbConfigs.MYSQL.getJdbc();
         List<User> users = userQuery.fetch(
                         User::getParentUser,

@@ -71,7 +71,7 @@ public interface QueryStructure extends BaseExpression {
         @Accessors(fluent = true, chain = true)
         class SelectArray implements Selected, ArraySchema {
             private boolean distinct;
-            private Collection<? extends Selected> items;
+            private Collection<? extends SelectPrimitive> items;
 
             @Override
             public Class<?> type() {

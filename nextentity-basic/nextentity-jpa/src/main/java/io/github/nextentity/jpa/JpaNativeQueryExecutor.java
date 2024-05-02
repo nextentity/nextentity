@@ -1,14 +1,14 @@
 package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.QueryExecutor;
-import io.github.nextentity.jdbc.QuerySqlStatement;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
-import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
+import io.github.nextentity.jdbc.QueryContext;
+import io.github.nextentity.jdbc.QuerySqlStatement;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -66,21 +66,14 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
         }
         Object first = resultSet.get(0);
         int columnsCount = asArray(first).length;
-        List<BaseExpression> expressions = context.getSelects();
+        List<? extends PrimitiveFactory> expressions = context.getConstructor().primitives();
         if (expressions.size() != columnsCount) {
             throw new IllegalStateException("column count error");
         }
 
-        QueryStructure structure = context.getStructure();
-        Class<?>[] types = expressions.stream()
-                .map(context::getExpressionType)
-                .toArray(Class<?>[]::new);
-        if (expressions.size() != columnsCount) {
-            throw new IllegalStateException();
-        }
         for (Object o : resultSet) {
             Object[] array = asArray(o);
-            JpaArguments arguments = new JpaArguments(array, types, typeConverter, metamodel, structure.from().type());
+            JpaArguments arguments = new JpaArguments(array, expressions, typeConverter);
             Object row = context.construct(arguments);
             result.add(row);
         }

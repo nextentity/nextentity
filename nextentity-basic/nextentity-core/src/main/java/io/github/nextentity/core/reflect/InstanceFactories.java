@@ -1,7 +1,9 @@
 package io.github.nextentity.core.reflect;
 
+import io.github.nextentity.core.Tuples;
 import io.github.nextentity.core.api.expression.BaseExpression;
 import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.api.tuple.Tuple;
 import io.github.nextentity.core.exception.UncheckedReflectiveException;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
@@ -13,45 +15,53 @@ import io.github.nextentity.core.reflect.schema.InstanceFactory;
 import io.github.nextentity.core.reflect.schema.InstanceFactory.AttributeFactory;
 import io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory;
 import io.github.nextentity.core.util.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * @author HuangChengwei
  * @since 2024-04-30 16:12
  */
+@Slf4j
 public class InstanceFactories {
 
-    public static InstanceFactory.ObjectFactory fetch(EntityType entityType, List<EntityPath> fetchPaths) {
-        ObjectBuilder builder = new ObjectBuilder(entityType);
+    public static InstanceFactory.ObjectFactory fetch(EntityType entityType, Iterable<? extends EntityPath> fetchPaths) {
+        ObjectFactoryBuilder builder = new ObjectFactoryBuilder(entityType);
         for (EntityPath fetchPath : fetchPaths) {
             builder.fetch(fetchPath);
         }
         return builder.build();
     }
 
-    private static class AttributeBuilder extends AbstractObjectFactoryBuilder<AttributeFactory> {
+    private static class AttributeFactoryBuilder extends AbstractInstanceFactoryBuilder<AttributeFactory> {
 
-        private AttributeBuilder(EntitySchema schema) {
+        private AttributeFactoryBuilder(EntitySchema schema) {
             super(schema);
         }
 
         @Override
         protected AttributeFactory build(ImmutableList<AttributeFactory> attrs) {
-            return new ObjectAttribute(attrs, (BasicAttribute) schema);
+            return new ObjectAttributeFactory(attrs, (BasicAttribute) schema);
         }
 
     }
 
-    private static class ObjectBuilder extends AbstractObjectFactoryBuilder<InstanceFactory.ObjectFactory> {
+    private static class ObjectFactoryBuilder extends AbstractInstanceFactoryBuilder<InstanceFactory.ObjectFactory> {
 
-        private ObjectBuilder(EntitySchema schema) {
+        private ObjectFactoryBuilder(EntitySchema schema) {
             super(schema);
         }
 
@@ -61,34 +71,40 @@ public class InstanceFactories {
         }
     }
 
-    private static abstract class AbstractObjectFactoryBuilder<T> {
+    private static abstract class AbstractInstanceFactoryBuilder<T> {
         protected final EntitySchema schema;
-        Map<String, AttributeBuilder> attributes = new LinkedHashMap<>();
+        Map<String, AttributeFactoryBuilder> attributes = new LinkedHashMap<>();
 
-        private AbstractObjectFactoryBuilder(EntitySchema schema) {
+        private AbstractInstanceFactoryBuilder(EntitySchema schema) {
             this.schema = schema;
         }
 
         public void fetch(EntityPath path) {
-            AbstractObjectFactoryBuilder<?> cur = this;
+            AbstractInstanceFactoryBuilder<?> cur = this;
             for (String s : path) {
                 cur = cur.fetch(s);
+                if (cur == null) {
+                    log.warn("attempted to fetch a none-entity attribute `{}` of {}",
+                            path.stream().collect(Collectors.joining(".")),
+                            schema.type().getName());
+                    return;
+                }
             }
         }
 
-        public AbstractObjectFactoryBuilder<?> fetch(String attribute) {
+        public AbstractInstanceFactoryBuilder<?> fetch(String attribute) {
             BasicAttribute attr = schema.getAttribute(attribute);
             if (attr.isPrimitive()) {
-                throw new IllegalArgumentException();
+                return null;
             }
-            return attributes.computeIfAbsent(attribute, k -> new AttributeBuilder((EntitySchema) attr));
+            return attributes.computeIfAbsent(attribute, k -> new AttributeFactoryBuilder((EntitySchema) attr));
         }
 
         public T build() {
             InstanceFactory.ObjectFactory factory = schema.getInstanceFactory();
             Stream<? extends AttributeFactory> stream = factory.attributes().stream();
             ImmutableList<InstanceFactory.AttributeFactory> attrs = Stream
-                    .concat(stream, attributes.values().stream().map(AttributeBuilder::build))
+                    .concat(stream, attributes.values().stream().map(AttributeFactoryBuilder::build))
                     .collect(ImmutableList.collector(factory.attributes().size() + attributes.size()));
             return build(attrs);
         }
@@ -100,7 +116,7 @@ public class InstanceFactories {
         try {
             return type.getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new UncheckedReflectiveException("unable to get parameterless constructor", e);
+            throw new UncheckedReflectiveException("no parameterless constructor found for " + type.getName(), e);
         }
     }
 
@@ -118,25 +134,138 @@ public class InstanceFactories {
     }
 
     static abstract class AbstractObjectFactory implements InstanceFactory.ObjectFactory {
-        public Object getInstance(Iterator<?> arguments) {
-            Object object = null;
-            for (AttributeFactory attribute : attributes()) {
-                Object value = attribute.getInstance(arguments);
-                if (value != null) {
-                    if (object == null) {
-                        try {
-                            object = constructor().newInstance();
-                        } catch (ReflectiveOperationException e) {
-                            throw new UncheckedReflectiveException("new instance error", e);
-                        }
-                    }
-                    attribute.set(object, value);
-                }
+        private Function<Iterator<?>, Object> factory;
+        private final Class<?> type;
+
+        public AbstractObjectFactory(Class<?> type) {
+            this.type = type;
+            if (type.isRecord()) {
+                factory = new RecordFactoryInitializer();
+            } else if (type.isInterface()) {
+                factory = new InterfaceFactory();
+            } else {
+                factory = new ObjectFactory();
             }
-            return object;
         }
 
-        protected abstract Constructor<?> constructor();
+        public Object getInstance(Iterator<?> arguments) {
+            return factory.apply(arguments);
+        }
+
+        public Class<?> type() {
+            return type;
+        }
+
+        class ObjectFactory implements Function<Iterator<?>, Object> {
+            private final Constructor<?> constructor;
+
+            ObjectFactory() {
+                this.constructor = getConstructor(type());
+            }
+
+            public Object apply(Iterator<?> arguments) {
+                Object object = null;
+                for (AttributeFactory attribute : attributes()) {
+                    Object value = attribute.getInstance(arguments);
+                    if (value != null) {
+                        if (object == null) {
+                            try {
+                                object = constructor.newInstance();
+                            } catch (ReflectiveOperationException e) {
+                                throw new UncheckedReflectiveException("new instance error", e);
+                            }
+                        }
+                        attribute.set(object, value);
+                    }
+                }
+                return object;
+            }
+        }
+
+        class InterfaceFactory implements Function<Iterator<?>, Object> {
+            public Object apply(Iterator<?> arguments) {
+                Map<Method, Object> map = new HashMap<>();
+                boolean notNull = false;
+                for (AttributeFactory attribute : attributes()) {
+                    Object value = attribute.getInstance(arguments);
+                    notNull = notNull || value != null;
+                    map.put(attribute.getter(), value);
+                }
+                if (notNull) {
+                    return ReflectUtil.newProxyInstance(type(), map);
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        class RecordFactoryInitializer implements Function<Iterator<?>, Object> {
+            @Override
+            public synchronized Object apply(Iterator<?> iterator) {
+                if (factory == this) {
+                    factory = new RecordFactory();
+                }
+                return factory.apply(iterator);
+            }
+        }
+
+        class RecordFactory implements Function<Iterator<?>, Object> {
+            private final int[] attributePositions;
+            private final Constructor<?> constructor;
+            private final int constructorArgumentsLength;
+
+            public RecordFactory() {
+                RecordComponent[] components = type().getRecordComponents();
+                constructorArgumentsLength = components.length;
+                Class<?>[] parameterTypes = new Class[constructorArgumentsLength];
+                Map<String, Integer> positionMap = new HashMap<>();
+                for (int i = 0; i < components.length; i++) {
+                    RecordComponent component = components[i];
+                    parameterTypes[i] = component.getType();
+                    positionMap.put(component.getName(), i);
+                }
+                try {
+                    constructor = type().getDeclaredConstructor(parameterTypes);
+                } catch (NoSuchMethodException e) {
+                    throw new UncheckedReflectiveException("no such constructor", e);
+                }
+                int cur = 0;
+                attributePositions = new int[attributes().size()];
+                Arrays.fill(attributePositions, -1);
+                for (AttributeFactory attribute : attributes()) {
+                    Integer i = positionMap.get(attribute.name());
+                    if (i != null) {
+                        attributePositions[cur++] = i;
+                    }
+                }
+            }
+
+            public Object apply(Iterator<?> arguments) {
+                Object[] args = new Object[constructorArgumentsLength];
+                boolean notNull = false;
+                List<? extends AttributeFactory> attributes = attributes();
+                for (int i = 0; i < attributes.size(); i++) {
+                    AttributeFactory attribute = attributes.get(i);
+                    Object arg = attribute.getInstance(arguments);
+                    if (arg != null) {
+                        notNull = true;
+                        int position = attributePositions[i];
+                        if (position >= 0) {
+                            args[position] = arg;
+                        }
+                    }
+                }
+                if (!notNull) {
+                    return null;
+                }
+                try {
+                    return constructor.newInstance(args);
+                } catch (ReflectiveOperationException e) {
+                    throw new UncheckedReflectiveException("new instance error", e);
+                }
+            }
+        }
+
 
     }
 
@@ -154,38 +283,31 @@ public class InstanceFactories {
         }
 
         @Override
-        default Class<?> type() {
-            return attribute().type();
+        default Method getter() {
+            return attribute().getter();
+        }
+
+        @Override
+        default String name() {
+            return attribute().name();
         }
 
     }
 
+
     public static class ObjectFactoryImpl extends AbstractObjectFactory {
         private final ImmutableList<? extends AttributeFactory> attributes;
-        private final Class<?> type;
-        private final Constructor<?> constructor;
         private final ImmutableList<? extends PrimitiveFactory> primitives;
 
         public ObjectFactoryImpl(ImmutableList<? extends AttributeFactory> attributes, Class<?> type) {
+            super(type);
             this.attributes = attributes;
-            this.type = type;
-            this.constructor = getConstructor(type);
             this.primitives = toPrimitives(attributes);
-        }
-
-        @Override
-        protected Constructor<?> constructor() {
-            return constructor;
         }
 
         @Override
         public List<? extends AttributeFactory> attributes() {
             return attributes;
-        }
-
-        @Override
-        public Class<?> type() {
-            return type;
         }
 
         @Override
@@ -209,142 +331,18 @@ public class InstanceFactories {
         }
 
         @Override
-        public Object[] getInstance(Iterator<?> arguments) {
+        public Tuple getInstance(Iterator<?> arguments) {
             Object[] result = new Object[items().size()];
             for (int i = 0; i < items().size(); i++) {
                 InstanceFactory factory = items.get(i);
                 result[i] = factory.getInstance(arguments);
             }
-            return result;
+            return Tuples.of(result);
         }
 
         @Override
         public List<? extends PrimitiveFactory> primitives() {
             return primitives;
-        }
-    }
-
-    public static class PrimitiveAttribute implements AbstractAttribute, PrimitiveFactory {
-        private final ImmutableList<? extends PrimitiveFactory> primitives = ImmutableList.of(this);
-        private final BasicAttribute attribute;
-
-        public PrimitiveAttribute(BasicAttribute attribute) {
-            this.attribute = attribute;
-        }
-
-        @Override
-        public Attribute attribute() {
-            return attribute;
-        }
-
-        @Override
-        public EntityPath expression() {
-            return attribute.path();
-        }
-
-        @Override
-        public Object getInstance(Iterator<?> arguments) {
-            Object result = arguments.next();
-            result = attribute.databaseType().toAttributeType(result);
-            return result;
-        }
-
-        @Override
-        public List<? extends PrimitiveFactory> primitives() {
-            return primitives;
-        }
-    }
-
-    public static class ObjectAttribute extends AbstractObjectFactory implements AbstractAttribute {
-        private final ImmutableList<? extends AttributeFactory> attributes;
-        private final BasicAttribute attribute;
-        private final Constructor<?> constructor;
-        private final ImmutableList<? extends PrimitiveFactory> primitives;
-
-        public ObjectAttribute(ImmutableList<? extends AttributeFactory> attributes, BasicAttribute attribute) {
-            this.attributes = attributes;
-            this.attribute = attribute;
-            this.constructor = getConstructor(attribute.type());
-            this.primitives = toPrimitives(attributes);
-        }
-
-        @Override
-        protected Constructor<?> constructor() {
-            return constructor;
-        }
-
-        @Override
-        public List<? extends AttributeFactory> attributes() {
-            return attributes;
-        }
-
-        @Override
-        public List<? extends PrimitiveFactory> primitives() {
-            return primitives;
-        }
-
-        @Override
-        public Attribute attribute() {
-            return attribute;
-        }
-    }
-
-    public static class ProjectionPrimitiveAttribute implements AbstractAttribute, PrimitiveFactory {
-        private final ImmutableList<? extends PrimitiveFactory> primitives = ImmutableList.of(this);
-        private final ProjectionBasicAttribute attribute;
-
-        public ProjectionPrimitiveAttribute(ProjectionBasicAttribute attribute) {
-            this.attribute = attribute;
-        }
-
-        @Override
-        public BaseExpression expression() {
-            return attribute.entityAttribute().path();
-        }
-
-        @Override
-        public List<? extends PrimitiveFactory> primitives() {
-            return primitives;
-        }
-
-        @Override
-        public Attribute attribute() {
-            return attribute;
-        }
-    }
-
-    public static class ProjectionObjectAttribute extends AbstractObjectFactory implements AbstractAttribute {
-        private final ImmutableList<? extends AttributeFactory> attributes;
-        private final ProjectionAssociationAttribute attribute;
-        private final Constructor<?> constructor;
-        private final ImmutableList<? extends PrimitiveFactory> primitives;
-
-        public ProjectionObjectAttribute(ImmutableList<? extends AttributeFactory> attributes,
-                                         ProjectionAssociationAttribute attribute) {
-            this.attributes = attributes;
-            this.attribute = attribute;
-            this.constructor = getConstructor(attribute.type());
-            this.primitives = toPrimitives(attributes);
-        }
-
-        @Override
-        protected Constructor<?> constructor() {
-            return constructor;
-        }
-
-        @Override
-        public List<? extends AttributeFactory> attributes() {
-            return attributes;
-        }
-
-        @Override
-        public List<? extends PrimitiveFactory> primitives() {
-            return primitives;
-        }
-
-        @Override
-        public Attribute attribute() {
-            return attribute;
         }
     }
 
@@ -368,9 +366,132 @@ public class InstanceFactories {
             return type;
         }
 
+
         @Override
         public List<? extends PrimitiveFactory> primitives() {
             return primitives;
+        }
+    }
+
+    public static class AttributeFactoryImpl implements AbstractAttribute, PrimitiveFactory {
+        private final ImmutableList<? extends PrimitiveFactory> primitives = ImmutableList.of(this);
+        private final BasicAttribute attribute;
+
+        public AttributeFactoryImpl(BasicAttribute attribute) {
+            this.attribute = attribute;
+        }
+
+        @Override
+        public Attribute attribute() {
+            return attribute;
+        }
+
+        @Override
+        public EntityPath expression() {
+            return attribute.path();
+        }
+
+        @Override
+        public Class<?> type() {
+            return attribute().type();
+        }
+
+        @Override
+        public Object getInstance(Iterator<?> arguments) {
+            Object instance = PrimitiveFactory.super.getInstance(arguments);
+            return attribute.databaseType().toAttributeType(instance);
+        }
+
+        @Override
+        public List<? extends PrimitiveFactory> primitives() {
+            return primitives;
+        }
+    }
+
+
+    public static class ObjectAttributeFactory extends AbstractObjectFactory implements AbstractAttribute {
+        private final ImmutableList<? extends AttributeFactory> attributes;
+        private final BasicAttribute attribute;
+        private final ImmutableList<? extends PrimitiveFactory> primitives;
+
+        public ObjectAttributeFactory(ImmutableList<? extends AttributeFactory> attributes, BasicAttribute attribute) {
+            super(attribute.type());
+            this.attributes = attributes;
+            this.attribute = attribute;
+            this.primitives = toPrimitives(attributes);
+        }
+
+        @Override
+        public List<? extends AttributeFactory> attributes() {
+            return attributes;
+        }
+
+        @Override
+        public List<? extends PrimitiveFactory> primitives() {
+            return primitives;
+        }
+
+        @Override
+        public Attribute attribute() {
+            return attribute;
+        }
+    }
+
+    public static class ProjectionAttributeFactory implements AbstractAttribute, PrimitiveFactory {
+        private final ImmutableList<? extends PrimitiveFactory> primitives = ImmutableList.of(this);
+        private final ProjectionBasicAttribute attribute;
+
+        public ProjectionAttributeFactory(ProjectionBasicAttribute attribute) {
+            this.attribute = attribute;
+        }
+
+        @Override
+        public BaseExpression expression() {
+            return attribute.entityAttribute().path();
+        }
+
+        @Override
+        public Class<?> type() {
+            return attribute().type();
+        }
+
+        @Override
+        public List<? extends PrimitiveFactory> primitives() {
+            return primitives;
+        }
+
+        @Override
+        public Attribute attribute() {
+            return attribute;
+        }
+    }
+
+    public static class ProjectionObjectAttributeFactory extends AbstractObjectFactory implements AbstractAttribute {
+        private final ImmutableList<? extends AttributeFactory> attributes;
+        private final ProjectionAssociationAttribute attribute;
+        private final ImmutableList<? extends PrimitiveFactory> primitives;
+
+        public ProjectionObjectAttributeFactory(ImmutableList<? extends AttributeFactory> attributes,
+                                                ProjectionAssociationAttribute attribute) {
+            super(attribute.type());
+            this.attributes = attributes;
+            this.attribute = attribute;
+            this.primitives = toPrimitives(attributes);
+        }
+
+        @Override
+        public List<? extends AttributeFactory> attributes() {
+            return attributes;
+        }
+
+        @Override
+        public List<? extends PrimitiveFactory> primitives() {
+            return primitives;
+        }
+
+        @Override
+        public Attribute attribute() {
+            return attribute;
         }
     }
 
