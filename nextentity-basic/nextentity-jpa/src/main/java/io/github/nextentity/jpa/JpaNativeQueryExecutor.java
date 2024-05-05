@@ -2,8 +2,8 @@ package io.github.nextentity.jpa;
 
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.converter.TypeConverter;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
@@ -38,13 +38,8 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
         return queryByNativeSql(queryStructure);
     }
 
-    @Override
-    public Metamodel metamodel() {
-        return metamodel;
-    }
-
     private <T> List<T> queryByNativeSql(@NotNull QueryStructure queryStructure) {
-        QueryContext context = new QueryContext(queryStructure, metamodel(), true);
+        QueryContext context = new QueryContext(queryStructure, metamodel, true);
         QuerySqlStatement preparedSql = sqlBuilder.build(context);
         // noinspection SqlSourceToSinkFlow
         jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());

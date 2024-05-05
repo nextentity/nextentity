@@ -1,6 +1,6 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.api.LockModeType;
+import io.github.nextentity.api.model.LockModeType;
 
 public class LockModeTypeAdapter {
 

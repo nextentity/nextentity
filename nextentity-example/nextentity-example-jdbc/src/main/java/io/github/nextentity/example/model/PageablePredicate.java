@@ -1,8 +1,8 @@
 package io.github.nextentity.example.model;
 
+import io.github.nextentity.api.TypedExpression;
+import io.github.nextentity.api.model.Pageable;
 import io.github.nextentity.core.Pages;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Pageable;
 
 /**
  * @author HuangChengwei
@@ -17,7 +17,7 @@ public interface PageablePredicate<T> {
 
     Integer getSize();
 
-    Expression<T, Boolean> predicate();
+    TypedExpression<T, Boolean> predicate();
 
     default Pageable pageable() {
         return Pages.pageable(nonNullElse(getPage(), DEFAULT_PAGE), nonNullElse(getSize(), DEFAULT_SIZE));

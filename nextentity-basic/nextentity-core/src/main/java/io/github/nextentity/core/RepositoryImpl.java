@@ -1,9 +1,12 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.EntityRoot;
-import io.github.nextentity.core.api.Expression.OperatableExpression;
-import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Update;
+import io.github.nextentity.api.Path;
+import io.github.nextentity.api.Repository;
+import io.github.nextentity.api.TypedExpression.OperatableExpression;
+import io.github.nextentity.api.Update;
+import io.github.nextentity.api.model.EntityRoot;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
+import io.github.nextentity.core.expression.Expressions;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.util.Iterators;
 import io.github.nextentity.core.util.Paths;
@@ -29,31 +32,30 @@ public class RepositoryImpl<ID extends Serializable, T> extends SelectImpl<T> im
     protected OperatableExpression<T, ID> idExpression;
     protected Function<T, ID> getId;
 
-    public RepositoryImpl(RepositoryFactory entitiesFactory, Class<T> entityType, Path<T, ID> idPath) {
-        init(entitiesFactory, entityType, idPath);
+    public RepositoryImpl() {
     }
 
-
-    public RepositoryImpl(RepositoryFactory entitiesFactory, Class<T> type) {
-        init(entitiesFactory, type);
+    public RepositoryImpl(RepositoryFactory repositoryFactory, Class<T> type) {
+        init(repositoryFactory, type);
     }
 
-    protected RepositoryImpl() {
+    public RepositoryImpl(RepositoryFactory repositoryFactory, Class<T> entityType, Path<T, ID> idPath) {
+        init(repositoryFactory, entityType, idPath);
     }
 
     private void init(RepositoryFactory entitiesFactory, Class<T> entityType, Path<T, ID> idPath) {
-        super.init(entityType, entitiesFactory.getQueryExecutor(), entitiesFactory.getQueryPostProcessor());
+        super.init(entitiesFactory, entityType);
         this.update = Updaters.create(entitiesFactory.getUpdateExecutor(), entityType);
         this.idExpression = entityRoot.get(idPath);
         this.getId = idPath::apply;
     }
 
     protected void init(RepositoryFactory entitiesFactory, Class<T> entityType) {
-        super.init(entityType, entitiesFactory.getQueryExecutor(), entitiesFactory.getQueryPostProcessor());
+        super.init(entitiesFactory, entityType);
         update = Updaters.create(entitiesFactory.getUpdateExecutor(), entityType);
         BasicAttribute idAttribute = entitiesFactory.getMetamodel().getEntity(entityType).id();
         getId = entity -> TypeCastUtil.unsafeCast(idAttribute.get(entity));
-        idExpression = Expressions.of(BasicExpressions.column(idAttribute.name()));
+        idExpression = Expressions.of(ExpressionImpls.column(idAttribute.name()));
     }
 
     public T get(ID id) {

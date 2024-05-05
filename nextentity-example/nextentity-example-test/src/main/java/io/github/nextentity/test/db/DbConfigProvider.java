@@ -1,6 +1,7 @@
 package io.github.nextentity.test.db;
 
 import io.github.nextentity.core.RepositoryFactory;
+import io.github.nextentity.core.SimpleQueryConfig;
 import io.github.nextentity.core.converter.TypeConverter;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.util.ImmutableList;
@@ -43,7 +44,12 @@ public interface DbConfigProvider {
         JpaQueryExecutor jpaQueryExecutor = new JpaQueryExecutor(manager, metamodel, jdbcQueryExecutor);
         TypeConverter typeConverter = TypeConverter.ofDefault();
         JpaNativeQueryExecutor jpaNativeQueryExecutor = new JpaNativeQueryExecutor(querySqlBuilder, manager, metamodel, typeConverter);
-        JpaUpdateExecutor jpaUpdateExecutor = new JpaUpdateExecutor(manager, jpaQueryExecutor);
+
+        SimpleQueryConfig queryConfig = new SimpleQueryConfig()
+                .queryExecutor(jpaQueryExecutor)
+                .metamodel(metamodel);
+
+        JpaUpdateExecutor jpaUpdateExecutor = new JpaUpdateExecutor(manager, queryConfig);
         JdbcUpdateExecutor jdbcUpdateExecutor = new JdbcUpdateExecutor(updateSqlBuilder(), connectionProvider, metamodel);
         RepositoryFactory jpa = new RepositoryFactory(jpaQueryExecutor, jpaUpdateExecutor, null, metamodel);
         RepositoryFactory jdbc = new RepositoryFactory(jdbcQueryExecutor, jdbcUpdateExecutor, null, metamodel);

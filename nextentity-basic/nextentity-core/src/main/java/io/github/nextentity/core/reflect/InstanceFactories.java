@@ -1,10 +1,10 @@
 package io.github.nextentity.core.reflect;
 
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.api.model.Tuple;
 import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.tuple.Tuple;
 import io.github.nextentity.core.exception.UncheckedReflectiveException;
+import io.github.nextentity.core.expression.EntityPath;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.meta.EntityType;
@@ -241,21 +241,22 @@ public class InstanceFactories {
             }
 
             public Object apply(Iterator<?> arguments) {
-                Object[] args = new Object[constructorArgumentsLength];
-                boolean notNull = false;
+                Object[] args = null;
                 List<? extends AttributeFactory> attributes = attributes();
                 for (int i = 0; i < attributes.size(); i++) {
                     AttributeFactory attribute = attributes.get(i);
                     Object arg = attribute.getInstance(arguments);
                     if (arg != null) {
-                        notNull = true;
                         int position = attributePositions[i];
                         if (position >= 0) {
+                            if (args == null) {
+                                args = new Object[constructorArgumentsLength];
+                            }
                             args[position] = arg;
                         }
                     }
                 }
-                if (!notNull) {
+                if (args == null) {
                     return null;
                 }
                 try {
@@ -348,16 +349,16 @@ public class InstanceFactories {
 
     public static class PrimitiveFactoryImpl implements PrimitiveFactory {
         private final ImmutableList<? extends PrimitiveFactory> primitives = ImmutableList.of(this);
-        private final BaseExpression expression;
+        private final Expression expression;
         private final Class<?> type;
 
-        public PrimitiveFactoryImpl(BaseExpression expression, Class<?> type) {
+        public PrimitiveFactoryImpl(Expression expression, Class<?> type) {
             this.expression = expression;
             this.type = type;
         }
 
         @Override
-        public BaseExpression expression() {
+        public Expression expression() {
             return expression;
         }
 
@@ -446,7 +447,7 @@ public class InstanceFactories {
         }
 
         @Override
-        public BaseExpression expression() {
+        public Expression expression() {
             return attribute.entityAttribute().path();
         }
 

@@ -1,6 +1,6 @@
 package io.github.nextentity.example.dao;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.example.eneity.Company;
 import io.github.nextentity.example.eneity.Employee;
 import lombok.extern.slf4j.Slf4j;

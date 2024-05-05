@@ -1,13 +1,12 @@
 package io.github.nextentity.jpa;
 
+import io.github.nextentity.api.Expression;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Literal;
-import io.github.nextentity.core.api.expression.Operation;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.FetchParent;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
@@ -34,7 +33,7 @@ public class JpaExpressionBuilder {
         this.cb = cb;
     }
 
-    public jakarta.persistence.criteria.Expression<?> toExpression(BaseExpression expression) {
+    public jakarta.persistence.criteria.Expression<?> toExpression(Expression expression) {
         if (expression instanceof Literal) {
             Literal literal = (Literal) expression;
             return cb.literal(literal.value());
@@ -46,8 +45,8 @@ public class JpaExpressionBuilder {
         if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
             Operator operator = operation.operator();
-            BaseExpression e1 = operation.secondOperand();
-            BaseExpression e2 = operation.thirdOperand();
+            Expression e1 = operation.secondOperand();
+            Expression e2 = operation.thirdOperand();
             switch (operator) {
                 case NOT:
                     return toPredicate(firstExpression(operation)).not();
@@ -85,13 +84,13 @@ public class JpaExpressionBuilder {
                 case IS_NOT_NULL:
                     return cb.isNotNull(firstExpression(operation));
                 case IN: {
-                    List<? extends BaseExpression> operands = operation.operands();
+                    List<? extends Expression> operands = operation.operands();
                     if (operands.size() <= 1) {
                         return cb.literal(false);
                     } else {
                         CriteriaBuilder.In<Object> in = cb.in(firstExpression(operation));
                         for (int i = 1; i < operands.size(); i++) {
-                            BaseExpression arg = operands.get(i);
+                            Expression arg = operands.get(i);
                             in = in.value(toExpression(arg));
                         }
                         return in;
@@ -105,8 +104,8 @@ public class JpaExpressionBuilder {
                 case UPPER:
                     return cb.upper(firstExpression(operation));
                 case SUBSTRING: {
-                    List<? extends BaseExpression> operands = operation.operands();
-                    Expression<?> operand0 = firstExpression(operation);
+                    List<? extends Expression> operands = operation.operands();
+                    jakarta.persistence.criteria.Expression<?> operand0 = firstExpression(operation);
                     if (operands.size() == 2) {
                         return cb.substring(cast(operand0), cast(toExpression(e1)));
                     } else if (operands.size() == 3) {
@@ -135,7 +134,7 @@ public class JpaExpressionBuilder {
                     return cb.mod(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case NULLIF: {
-                    Expression<?> e0 = firstExpression(operation);
+                    jakarta.persistence.criteria.Expression<?> e0 = firstExpression(operation);
                     return cb.nullif(e0, toExpression(e1));
                 }
                 case IF_NULL: {
@@ -146,7 +145,7 @@ public class JpaExpressionBuilder {
                 case MAX:
                     return cb.max(firstExpression(operation));
                 case COUNT:
-                    BaseExpression operand = operation.firstOperand();
+                    Expression operand = operation.firstOperand();
                     if (operand instanceof Operation opt && opt.operator() == Operator.DISTINCT) {
                         return cb.countDistinct(toExpression(opt.firstOperand()));
                     } else {
@@ -164,11 +163,11 @@ public class JpaExpressionBuilder {
         }
     }
 
-    private <X> Expression<X> firstExpression(Operation ov) {
+    private <X> jakarta.persistence.criteria.Expression<X> firstExpression(Operation ov) {
         return cast(toExpression(ov.firstOperand()));
     }
 
-    public Predicate toPredicate(BaseExpression expression) {
+    public Predicate toPredicate(Expression expression) {
         return toPredicate(toExpression(expression));
     }
 
@@ -180,7 +179,7 @@ public class JpaExpressionBuilder {
     }
 
     @NotNull
-    private Predicate[] toPredicateArray(List<? extends BaseExpression> operands) {
+    private Predicate[] toPredicateArray(List<? extends Expression> operands) {
         return operands.stream()
                 .map(this::toPredicate)
                 .toArray(Predicate[]::new);

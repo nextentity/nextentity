@@ -1,11 +1,11 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.BasicExpressions;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.reflect.InstanceFactories.ObjectFactoryImpl;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
 import io.github.nextentity.core.reflect.InstanceFactories.AttributeFactoryImpl;
-import io.github.nextentity.core.reflect.InstanceFactories.ProjectionObjectAttributeFactory;
+import io.github.nextentity.core.reflect.InstanceFactories.ObjectFactoryImpl;
 import io.github.nextentity.core.reflect.InstanceFactories.ProjectionAttributeFactory;
+import io.github.nextentity.core.reflect.InstanceFactories.ProjectionObjectAttributeFactory;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.InstanceFactory;
 import io.github.nextentity.core.reflect.schema.InstanceFactory.AttributeFactory;
@@ -19,7 +19,7 @@ import lombok.experimental.Delegate;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -79,7 +79,7 @@ public class Metamodels {
             List<String> paths = referencedAttributes.stream()
                     .map(BasicAttribute::name)
                     .collect(ImmutableList.collector(referencedAttributes.size()));
-            this.path = BasicExpressions.column(paths);
+            this.path = ExpressionImpls.column(paths);
         }
 
         public void databaseType(DatabaseType converter) {
@@ -236,7 +236,9 @@ public class Metamodels {
         private final Function<ProjectionAssociationAttribute, Collection<? extends ProjectionBasicAttribute>> attributesSupplier;
         @Getter(lazy = true)
         private final Map<String, ? extends ProjectionBasicAttribute> dictionary = attributesSupplier.apply(this)
-                .stream().collect(Collectors.toMap(Attribute::name, Function.identity()));
+                .stream().collect(Collectors.toMap(Attribute::name, Function.identity(), (a, b) -> {
+                    throw new IllegalStateException("duplicate key");
+                }, LinkedHashMap::new));
         private InstanceFactory.AttributeFactory instanceFactory;
 
         ProjectionAssociationAttributeImpl(Attribute attribute,
@@ -285,7 +287,7 @@ public class Metamodels {
     @Accessors(fluent = true)
     static final class ProjectionSchemaImpl implements ProjectionType {
         private final Class<?> type;
-        private final Map<String, ProjectionBasicAttribute> dictionary = new HashMap<>();
+        private final Map<String, ProjectionBasicAttribute> dictionary = new LinkedHashMap<>();
         private final EntitySchema entityType;
         private InstanceFactory.ObjectFactory instanceFactory;
 

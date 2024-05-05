@@ -6,10 +6,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
@@ -36,15 +36,7 @@ public class ImmutableList<E> extends AbstractList<E> implements List<E>, Random
     }
 
     public static <T> ImmutableList<T> ofIterable(Iterable<T> iterable) {
-        if (iterable instanceof Collection) {
-            return ofCollection((Collection<T>) iterable);
-        } else {
-            Builder<T> builder = new Builder<>();
-            for (T t : iterable) {
-                builder.add(t);
-            }
-            return builder.build();
-        }
+        return iterable instanceof Collection ? ofCollection((Collection<T>) iterable) : new ImmutableList<T>(Iterators.toArray(iterable));
     }
 
     private static <T> @NotNull ImmutableList<T> ofCollection(Collection<T> collection) {
@@ -56,11 +48,11 @@ public class ImmutableList<E> extends AbstractList<E> implements List<E>, Random
         return new ImmutableList<>(collection);
     }
 
-    public static <T> List<T> concat(Collection<? extends T> collection, Collection<? extends T> value) {
-        ArrayList<T> list = new ArrayList<>(collection.size() + 1);
-        list.addAll(collection);
-        list.addAll(value);
-        return list;
+    public static <T> ImmutableList<T> concat(Collection<? extends T> a, Collection<? extends T> b) {
+        Builder<T> list = new Builder<>(a.size() + b.size());
+        list.addAll(a);
+        list.addAll(b);
+        return list.build();
     }
 
     public static <T> @NotNull ImmutableList<T> empty() {
@@ -82,7 +74,7 @@ public class ImmutableList<E> extends AbstractList<E> implements List<E>, Random
 
     @NotNull
     @Override
-    public java.util.Iterator<E> iterator() {
+    public Iterator<E> iterator() {
         return new Itr();
     }
 
@@ -139,7 +131,6 @@ public class ImmutableList<E> extends AbstractList<E> implements List<E>, Random
             throw new UnsupportedOperationException();
         }
     }
-
 
     @NotNull
     @Override
@@ -278,73 +269,70 @@ public class ImmutableList<E> extends AbstractList<E> implements List<E>, Random
                 Builder::addAll, Builder::build);
     }
 
-
-    public static <T> @NotNull Collector<T, ?, ImmutableList<T>> collector(Iterable<?> iterable) {
-        int initialCapacity = iterable instanceof Collection
-                ? ((Collection<?>) iterable).size()
-                : Builder.DEFAULT_INITIAL_CAPACITY;
-        return Collector.of(
-                () -> new Builder<T>(initialCapacity), Builder::add,
-                Builder::addAll, Builder::build);
-    }
-
-
     public static class Builder<E> {
         public static final int DEFAULT_INITIAL_CAPACITY = 8;
+        public static final int MAX_LENGTH = Integer.MAX_VALUE - 8;
+        public static final int HALF_MAX_LENGTH = MAX_LENGTH >> 1;
 
-        Object[] array;
+        Object[] elements;
         int size;
 
         public Builder(int initialCapacity) {
-            this.array = new Object[initialCapacity];
+            this.elements = initialCapacity <= 0 ? EmptyArrays.OBJECT : new Object[initialCapacity];
         }
 
         public Builder() {
-            this.array = new Object[8];
+            this.elements = EmptyArrays.OBJECT;
         }
 
         public void add(Object o) {
-            if (size == array.length) {
-                array = Arrays.copyOf(array, array.length << 1);
-            }
-            array[size++] = o;
+            ensureCapacity(size + 1);
+            elements[size++] = o;
         }
 
-        public Builder<E> addAll(Builder<? extends E> c) {
-            if (array.length >= size + c.array.length) {
-                array = Arrays.copyOf(array, Math.max(array.length, c.array.length) << 1);
-            }
-            System.arraycopy(c.array, 0, array, size, c.size);
-            size += c.size;
+        public Builder<E> addAll(Builder<? extends E> builder) {
+            ensureCapacity(size + builder.elements.length);
+            System.arraycopy(builder.elements, 0, elements, size, builder.size);
+            size += builder.size;
             return this;
         }
 
-        public void addAll(Collection<? extends E> c) {
-            int addSize = c.size();
-            if (addSize == 0) {
+
+        void ensureCapacity(int minCapacity) {
+            if (elements.length >= minCapacity) {
                 return;
             }
-            int newSize = size + addSize;
-            if (array.length >= newSize) {
-                int newCapacity = array.length;
-                do {
+            int newCapacity = Math.max(elements.length, DEFAULT_INITIAL_CAPACITY);
+            while (newCapacity < minCapacity) {
+                if (newCapacity >= HALF_MAX_LENGTH) {
+                    newCapacity = MAX_LENGTH;
+                    break;
+                } else {
                     newCapacity <<= 1;
-                } while (newCapacity < newSize);
-                array = Arrays.copyOf(array, newCapacity);
+                }
             }
+            elements = Arrays.copyOf(elements, newCapacity);
+        }
+
+
+        public void addAll(Collection<? extends E> c) {
+            if (c.isEmpty()) {
+                return;
+            }
+            ensureCapacity(size + c.size());
             for (E e : c) {
-                array[size++] = e;
+                elements[size++] = e;
             }
         }
 
         public ImmutableList<E> build() {
-            if (array.length == size) {
-                return new ImmutableList<>(array);
+            if (elements.length == size) {
+                return new ImmutableList<>(elements);
             } else if (size == 0) {
                 return empty();
             } else {
                 Object[] element = new Object[size];
-                System.arraycopy(array, 0, element, 0, size);
+                System.arraycopy(elements, 0, element, 0, size);
                 return new ImmutableList<>(element);
             }
         }

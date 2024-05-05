@@ -91,7 +91,7 @@ public abstract class AbstractUpdateSqlBuilder implements JdbcUpdateSqlBuilder {
             if (excludeNull) {
                 sql.append("case when ? is null then")
                         .append(leftTicks()).append(attribute.columnName()).append(rightTicks())
-                        .append("ELSE ? END");
+                        .append("else ? end");
                 paramAttr.add(attribute);
                 paramAttr.add(attribute);
             } else {

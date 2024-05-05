@@ -1,6 +1,6 @@
 package io.github.nextentity.data;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.core.RepositoryImpl;
 import io.github.nextentity.core.TypeCastUtil;

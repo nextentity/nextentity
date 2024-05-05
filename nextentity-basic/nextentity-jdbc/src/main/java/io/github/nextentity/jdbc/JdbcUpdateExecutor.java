@@ -1,7 +1,6 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.SqlLogger;
-import io.github.nextentity.core.Updaters.UpdateExecutor;
+import io.github.nextentity.core.UpdateExecutor;
 import io.github.nextentity.core.exception.OptimisticLockException;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
@@ -31,9 +30,7 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
     private final ConnectionProvider connectionProvider;
     private final Metamodel metamodel;
 
-    public JdbcUpdateExecutor(JdbcUpdateSqlBuilder sqlBuilder,
-                              ConnectionProvider connectionProvider,
-                              Metamodel metamodel) {
+    public JdbcUpdateExecutor(JdbcUpdateSqlBuilder sqlBuilder, ConnectionProvider connectionProvider, Metamodel metamodel) {
         this.sqlBuilder = sqlBuilder;
         this.connectionProvider = connectionProvider;
         this.metamodel = metamodel;
@@ -68,13 +65,12 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
             return list;
         }
         EntityType entityType = metamodel.getEntity(entityClass);
-        BatchSqlStatement preparedSql = sqlBuilder.buildUpdateStatement(entities, entityType, excludeNull);
+        BatchSqlStatement sql = sqlBuilder.buildUpdateStatement(entities, entityType, excludeNull);
         execute(connection -> {
-            String sql = preparedSql.sql();
-            SqlLogger.debug(sql);
+            sql.print();
             //noinspection SqlSourceToSinkFlow
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                int[] updateRowCounts = executeUpdate(statement, preparedSql.parameters());
+            try (PreparedStatement statement = connection.prepareStatement(sql.sql())) {
+                int[] updateRowCounts = executeUpdate(statement, sql.parameters());
                 BasicAttribute version = entityType.version();
                 boolean hasVersion = version != null;
                 for (int rowCount : updateRowCounts) {
@@ -102,13 +98,12 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         if (!entities.iterator().hasNext()) {
             return;
         }
-        BatchSqlStatement preparedSql = sqlBuilder.buildDeleteStatement(entities, metamodel.getEntity(entityType));
+        BatchSqlStatement sql = sqlBuilder.buildDeleteStatement(entities, metamodel.getEntity(entityType));
         execute(connection -> {
-            String sql = preparedSql.sql();
-            SqlLogger.debug(sql);
+            sql.print();
             //noinspection SqlSourceToSinkFlow
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                int[] result = executeUpdate(statement, preparedSql.parameters());
+            try (PreparedStatement statement = connection.prepareStatement(sql.sql())) {
+                int[] result = executeUpdate(statement, sql.parameters());
                 log.trace("executeBatch result: {}", Arrays.toString(result));
                 return null;
             }
@@ -132,16 +127,10 @@ public class JdbcUpdateExecutor implements UpdateExecutor {
         attribute.setByDatabaseValue(entity, version);
     }
 
-    private void doInsert(EntitySchema entityType,
-                          Connection connection,
-                          InsertSqlStatement insertStatement)
-            throws SQLException {
-        String sql = insertStatement.sql();
-        SqlLogger.debug(sql);
+    private void doInsert(EntitySchema entityType, Connection connection, InsertSqlStatement insertStatement) throws SQLException {
+        insertStatement.print();
         boolean generateKey = insertStatement.returnGeneratedKeys();
-        try (PreparedStatement statement = generateKey
-                ? connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-                : connection.prepareStatement(sql)) {
+        try (PreparedStatement statement = generateKey ? connection.prepareStatement(insertStatement.sql(), Statement.RETURN_GENERATED_KEYS) : connection.prepareStatement(insertStatement.sql())) {
             executeUpdate(statement, insertStatement.parameters());
             if (generateKey) {
                 try (ResultSet keys = statement.getGeneratedKeys()) {

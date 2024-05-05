@@ -1,6 +1,6 @@
 package io.github.nextentity.test.db;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.core.RepositoryFaced;
 import io.github.nextentity.test.entity.User;
 import lombok.SneakyThrows;

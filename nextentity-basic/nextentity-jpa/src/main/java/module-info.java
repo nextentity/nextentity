@@ -6,6 +6,7 @@ module nextentity.jpa {
     requires nextentity.jdbc;
     requires static lombok;
     requires static org.slf4j;
+    requires nextentity.api;
 
     exports io.github.nextentity.jpa;
 }

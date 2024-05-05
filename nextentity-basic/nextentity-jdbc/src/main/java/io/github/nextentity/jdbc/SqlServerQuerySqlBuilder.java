@@ -1,12 +1,12 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.BasicExpressions;
-import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Literal;
-import io.github.nextentity.core.api.expression.Operation;
-import io.github.nextentity.core.api.expression.QueryStructure;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.Operator;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
 import java.util.List;
@@ -77,9 +77,9 @@ public class SqlServerQuerySqlBuilder implements QuerySqlBuilder {
 
         @Override
         protected void appendNotOperation(Operation operation) {
-            BaseExpression operand = operation.firstOperand();
+            Expression operand = operation.firstOperand();
             if (operand instanceof EntityPath || operand instanceof Literal) {
-                appendBinaryOperation(operand, Operator.EQ, BasicExpressions.FALSE);
+                appendBinaryOperation(operand, Operator.EQ, ExpressionImpls.FALSE);
             } else {
                 super.appendNotOperation(operation);
             }

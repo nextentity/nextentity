@@ -1,10 +1,10 @@
 package io.github.nextentity.data.jpa;
 
-import io.github.nextentity.core.Persistable;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.core.QueryPostProcessor;
-import io.github.nextentity.core.Repository;
 import io.github.nextentity.core.RepositoryFactory;
-import io.github.nextentity.core.Updaters.UpdateExecutor;
+import io.github.nextentity.core.SimpleQueryConfig;
+import io.github.nextentity.core.UpdateExecutor;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.data.EntityTypeUtil;
 import io.github.nextentity.data.TransactionalUpdateExecutor;
@@ -31,7 +31,7 @@ public class JpaRepositoryConfiguration {
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     @Primary
-    protected <T extends Persistable<ID>, ID extends Serializable>
+    protected <T, ID extends Serializable>
     Repository<ID, T> jpaRepository(DependencyDescriptor descriptor,
                                     @Qualifier("jpaRepositoryFactory")
                                     RepositoryFactory factory) {
@@ -60,8 +60,17 @@ public class JpaRepositoryConfiguration {
 
     @Bean("jpaUpdate")
     @Primary
-    protected UpdateExecutor jpaUpdateExecutor(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
-        JpaUpdateExecutor jpaUpdate = new JpaUpdateExecutor(entityManager, jpaQueryExecutor);
+    protected UpdateExecutor jpaUpdateExecutor(EntityManager entityManager,
+                                               JpaQueryExecutor jpaQueryExecutor,
+                                               Metamodel metamodel,
+                                               @Autowired(required = false)
+                                               QueryPostProcessor postProcessor) {
+
+        SimpleQueryConfig config = new SimpleQueryConfig()
+                .metamodel(metamodel)
+                .queryExecutor(jpaQueryExecutor)
+                .queryPostProcessor(postProcessor);
+        JpaUpdateExecutor jpaUpdate = new JpaUpdateExecutor(entityManager, config);
         return new TransactionalUpdateExecutor(jpaUpdate);
     }
 

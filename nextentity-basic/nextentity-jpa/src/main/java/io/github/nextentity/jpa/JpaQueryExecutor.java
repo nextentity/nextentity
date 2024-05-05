@@ -1,18 +1,18 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.BasicExpressions;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.api.model.Order;
+import io.github.nextentity.api.SortOrder;
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Operation;
-import io.github.nextentity.core.api.expression.QueryStructure;
-import io.github.nextentity.core.api.expression.QueryStructure.From;
-import io.github.nextentity.core.api.expression.QueryStructure.From.FromSubQuery;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure.From;
+import io.github.nextentity.core.expression.QueryStructure.From.FromSubQuery;
+import io.github.nextentity.core.expression.QueryStructure.Selected;
+import io.github.nextentity.core.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.SubSelectType;
 import io.github.nextentity.core.util.ImmutableList;
@@ -66,11 +66,6 @@ public class JpaQueryExecutor implements QueryExecutor {
         return TypeCastUtil.cast(result);
     }
 
-    @Override
-    public Metamodel metamodel() {
-        return metamodel;
-    }
-
     private boolean requiredNativeQuery(@NotNull QueryStructure queryStructure) {
         From from = queryStructure.from();
         return from instanceof FromSubQuery
@@ -94,8 +89,8 @@ public class JpaQueryExecutor implements QueryExecutor {
         return false;
     }
 
-    private boolean hasSubQuery(Collection<? extends BaseExpression> expressions) {
-        for (BaseExpression operand : expressions) {
+    private boolean hasSubQuery(Collection<? extends Expression> expressions) {
+        for (Expression operand : expressions) {
             if (hasSubQuery(operand)) {
                 return true;
             }
@@ -103,12 +98,12 @@ public class JpaQueryExecutor implements QueryExecutor {
         return false;
     }
 
-    private boolean hasSubQuery(BaseExpression expression) {
+    private boolean hasSubQuery(Expression expression) {
         if (expression instanceof QueryStructure) {
             return true;
         }
         if (expression instanceof Operation) {
-            List<? extends BaseExpression> expressions = ((Operation) expression).operands();
+            List<? extends Expression> expressions = ((Operation) expression).operands();
             return hasSubQuery(expressions);
         }
         return false;
@@ -202,13 +197,13 @@ public class JpaQueryExecutor implements QueryExecutor {
             }
         }
 
-        protected void setWhere(BaseExpression where) {
-            if (!BasicExpressions.isNullOrTrue(where)) {
+        protected void setWhere(Expression where) {
+            if (!ExpressionImpls.isNullOrTrue(where)) {
                 query.where(toPredicate(where));
             }
         }
 
-        protected void setGroupBy(List<? extends BaseExpression> groupBy) {
+        protected void setGroupBy(List<? extends Expression> groupBy) {
             if (groupBy != null && !groupBy.isEmpty()) {
                 List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream()
                         .map(this::toExpression)
@@ -217,8 +212,8 @@ public class JpaQueryExecutor implements QueryExecutor {
             }
         }
 
-        protected void setHaving(BaseExpression having) {
-            if (!BasicExpressions.isNullOrTrue(having)) {
+        protected void setHaving(Expression having) {
+            if (!ExpressionImpls.isNullOrTrue(having)) {
                 query.having(toPredicate(having));
             }
         }

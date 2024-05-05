@@ -1,11 +1,10 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.api.model.LockModeType;
 import io.github.nextentity.core.QueryExecutor;
-import io.github.nextentity.core.SqlLogger;
-import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.expression.QueryStructure;
 import io.github.nextentity.core.exception.TransactionRequiredException;
 import io.github.nextentity.core.exception.UncheckedSQLException;
+import io.github.nextentity.core.expression.QueryStructure;
 import io.github.nextentity.core.meta.Metamodel;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,7 @@ public class JdbcQueryExecutor implements QueryExecutor {
     public <R> List<R> getList(@NotNull QueryStructure queryStructure) {
         QueryContext context = new QueryContext(queryStructure, metamodel, true);
         QuerySqlStatement sql = sqlBuilder.build(context);
-        printSql(sql);
+        sql.print();
         try {
             return connectionProvider.execute(connection -> {
                 LockModeType locked = queryStructure.lockType();
@@ -59,18 +58,6 @@ public class JdbcQueryExecutor implements QueryExecutor {
             });
         } catch (SQLException e) {
             throw new UncheckedSQLException(e);
-        }
-    }
-
-    @Override
-    public Metamodel metamodel() {
-        return metamodel;
-    }
-
-    private static void printSql(QuerySqlStatement sql) {
-        SqlLogger.debug(sql.sql());
-        if (sql.parameters().iterator().hasNext()) {
-            SqlLogger.debug("ARGS: {}", sql.parameters());
         }
     }
 

@@ -1,6 +1,6 @@
 package io.github.nextentity.example.service;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.example.dao.CompanyRepository;
 import io.github.nextentity.example.eneity.Company;
 import io.github.nextentity.example.eneity.Employee;
@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 数据库初始化器
+ *
  * @author HuangChengwei
  * @since 2024-04-29 11:22
  */

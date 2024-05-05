@@ -1,6 +1,6 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.expression.EntityPath;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
 import io.github.nextentity.core.util.ImmutableList;

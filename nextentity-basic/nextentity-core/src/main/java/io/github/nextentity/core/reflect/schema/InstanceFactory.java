@@ -1,7 +1,7 @@
 package io.github.nextentity.core.reflect.schema;
 
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.tuple.Tuple;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.api.model.Tuple;
 
 import java.lang.reflect.Method;
 import java.util.Iterator;
@@ -43,7 +43,7 @@ public interface InstanceFactory {
     }
 
     interface PrimitiveFactory extends InstanceFactory, Typed {
-        BaseExpression expression();
+        Expression expression();
 
         @Override
         default Object getInstance(Iterator<?> arguments) {

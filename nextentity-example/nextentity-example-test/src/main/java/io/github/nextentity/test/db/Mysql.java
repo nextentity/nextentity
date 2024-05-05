@@ -25,7 +25,7 @@ public class Mysql implements DbConfigProvider {
 
     private final String user = "root";
     private final String password = "root";
-    private final String url = "jdbc:mysql:///sql-dsl";
+    private final String url = "jdbc:mysql:///nextentity";
 
 
     @Override

@@ -19,6 +19,7 @@
     <module>nextentity-jdbc</module>
     <module>nextentity-jpa</module>
     <module>nextentity-metamodel-jpa</module>
+    <module>nextentity-api</module>
   </modules>
 
 </project>

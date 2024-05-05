@@ -1,7 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Update;
-import io.github.nextentity.core.util.ImmutableList;
+import io.github.nextentity.api.Update;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -17,47 +16,47 @@ public class Updaters {
     }
 
     public static class UpdateImpl<T> implements Update<T> {
-        private final UpdateExecutor update;
+        private final UpdateExecutor updateExecutor;
         private final Class<T> entityType;
 
-        public UpdateImpl(UpdateExecutor update, Class<T> entityType) {
+        public UpdateImpl(UpdateExecutor updateExecutor, Class<T> entityType) {
             this.entityType = entityType;
-            this.update = update;
+            this.updateExecutor = updateExecutor;
         }
 
         @Override
         public T insert(@NotNull T entity) {
-            return update.insert(entity, entityType);
+            return updateExecutor.insert(entity, entityType);
         }
 
         @Override
         public List<T> insert(@NotNull Iterable<T> entities) {
-            return update.insert(entities, entityType);
+            return updateExecutor.insert(entities, entityType);
         }
 
         @Override
         public List<T> update(@NotNull Iterable<T> entities) {
-            return update.update(entities, entityType);
+            return updateExecutor.update(entities, entityType);
         }
 
         @Override
         public T update(@NotNull T entity) {
-            return update.update(entity, entityType);
+            return updateExecutor.update(entity, entityType);
         }
 
         @Override
         public void delete(@NotNull Iterable<T> entities) {
-            update.delete(entities, entityType);
+            updateExecutor.delete(entities, entityType);
         }
 
         @Override
         public void delete(@NotNull T entity) {
-            update.delete(entity, entityType);
+            updateExecutor.delete(entity, entityType);
         }
 
         @Override
         public T updateNonNullColumn(@NotNull T entity) {
-            return update.updateExcludeNullColumn(entity, entityType);
+            return updateExecutor.updateExcludeNullColumn(entity, entityType);
         }
 
         @Override
@@ -66,27 +65,4 @@ public class Updaters {
         }
     }
 
-    public interface UpdateExecutor {
-
-        default <T> T insert(@NotNull T entity, @NotNull Class<T> entityType) {
-            return insert(ImmutableList.of(entity), entityType).get(0);
-        }
-
-        <T> List<T> insert(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
-
-        <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
-
-        default <T> T update(@NotNull T entity, Class<T> entityType) {
-            return update(ImmutableList.of(entity), entityType).get(0);
-        }
-
-        <T> void delete(@NotNull Iterable<T> entities, @NotNull Class<T> entityType);
-
-        default <T> void delete(@NotNull T entity, @NotNull Class<T> entityType) {
-            delete(ImmutableList.of(entity), entityType);
-        }
-
-        <T> T updateExcludeNullColumn(@NotNull T entity, @NotNull Class<T> entityType);
-
-    }
 }

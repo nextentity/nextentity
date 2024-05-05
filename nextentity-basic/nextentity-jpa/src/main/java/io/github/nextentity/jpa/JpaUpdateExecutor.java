@@ -1,12 +1,13 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.BasicExpressions;
-import io.github.nextentity.core.Expressions;
-import io.github.nextentity.core.Updaters.UpdateExecutor;
-import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.Query;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.core.QueryConfig;
+import io.github.nextentity.core.SelectImpl;
+import io.github.nextentity.core.UpdateExecutor;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Operator;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
+import io.github.nextentity.core.expression.Expressions;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.core.util.ImmutableList;
 import jakarta.persistence.EntityManager;
@@ -26,12 +27,12 @@ import java.util.Set;
 public class JpaUpdateExecutor implements UpdateExecutor {
 
     private final EntityManager entityManager;
-    private final Query query;
+    private final QueryConfig queryConfig;
     private final PersistenceUnitUtil util;
 
-    public JpaUpdateExecutor(EntityManager entityManager, JpaQueryExecutor jpaQueryExecutor) {
+    public JpaUpdateExecutor(EntityManager entityManager, QueryConfig queryConfig) {
         this.entityManager = entityManager;
-        this.query = jpaQueryExecutor.createQuery();
+        this.queryConfig = queryConfig;
         this.util = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
     }
 
@@ -46,7 +47,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
 
     @Override
     public <T> List<T> update(@NotNull Iterable<T> entities, @NotNull Class<T> entityType) {
-        List<BaseExpression> ids = new ArrayList<>();
+        List<Expression> ids = new ArrayList<>();
         Set<Object> uniqueValues = new HashSet<>();
         int size = 0;
         for (T entity : entities) {
@@ -54,7 +55,7 @@ public class JpaUpdateExecutor implements UpdateExecutor {
             Object id = requireId(entity);
             if (uniqueValues.add(id)) {
                 if (!util.isLoaded(entity)) {
-                    ids.add(BasicExpressions.of(id));
+                    ids.add(ExpressionImpls.of(id));
                 }
             } else {
                 throw new IllegalArgumentException("duplicate id");
@@ -67,9 +68,9 @@ public class JpaUpdateExecutor implements UpdateExecutor {
             EntityType<T> entity = entityManager.getMetamodel().entity(entityType);
             SingularAttribute<? super T, ?> id = entity.getId(entity.getIdType().getJavaType());
             String name = id.getName();
-            EntityPath idPath = BasicExpressions.column(name);
-            BaseExpression operate = BasicExpressions.operate(idPath, Operator.IN, ids);
-            List<T> dbList = query.from(entityType)
+            EntityPath idPath = ExpressionImpls.column(name);
+            Expression operate = ExpressionImpls.operate(idPath, Operator.IN, ids);
+            List<T> dbList = new SelectImpl<>(queryConfig, entityType)
                     .where(Expressions.of(operate))
                     .getList();
             if (dbList.size() != size) {
