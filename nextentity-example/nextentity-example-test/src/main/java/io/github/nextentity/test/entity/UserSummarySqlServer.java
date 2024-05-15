@@ -1,7 +1,7 @@
 package io.github.nextentity.test.entity;
 
 import io.github.nextentity.core.annotaion.SubSelect;
-import jakarta.persistence.Id;
+import javax.persistence.Id;
 import lombok.Data;
 
 @Data

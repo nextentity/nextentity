@@ -14,8 +14,8 @@ import io.github.nextentity.jpa.JpaNativeQueryExecutor;
 import io.github.nextentity.jpa.JpaQueryExecutor;
 import io.github.nextentity.jpa.JpaUpdateExecutor;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import lombok.SneakyThrows;
 
 import javax.sql.DataSource;

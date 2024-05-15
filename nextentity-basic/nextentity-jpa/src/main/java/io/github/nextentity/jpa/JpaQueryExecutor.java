@@ -17,14 +17,14 @@ import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.SubSelectType;
 import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.jdbc.QueryContext;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Fetch;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Root;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Fetch;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Root;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -188,7 +188,7 @@ public class JpaQueryExecutor implements QueryExecutor {
 
         protected void setOrderBy(List<? extends Order<?>> orderBy) {
             if (orderBy != null && !orderBy.isEmpty()) {
-                List<jakarta.persistence.criteria.Order> orders = orderBy.stream()
+                List<javax.persistence.criteria.Order> orders = orderBy.stream()
                         .map(o -> o.order() == SortOrder.DESC
                                 ? cb.desc(toExpression(o.expression()))
                                 : cb.asc(toExpression(o.expression())))
@@ -205,7 +205,7 @@ public class JpaQueryExecutor implements QueryExecutor {
 
         protected void setGroupBy(List<? extends Expression> groupBy) {
             if (groupBy != null && !groupBy.isEmpty()) {
-                List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream()
+                List<javax.persistence.criteria.Expression<?>> grouping = groupBy.stream()
                         .map(this::toExpression)
                         .collect(ImmutableList.collector(groupBy.size()));
                 query.groupBy(grouping);

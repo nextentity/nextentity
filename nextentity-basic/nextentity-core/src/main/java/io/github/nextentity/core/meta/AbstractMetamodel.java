@@ -4,15 +4,7 @@ import io.github.nextentity.core.PathReference;
 import io.github.nextentity.core.annotaion.EntityAttribute;
 import io.github.nextentity.core.annotaion.SubSelect;
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.Metamodels.AssociationAttributeImpl;
-import io.github.nextentity.core.meta.Metamodels.AttributeImpl;
-import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
-import io.github.nextentity.core.meta.Metamodels.EntitySchemaImpl;
-import io.github.nextentity.core.meta.Metamodels.EntityTypeImpl;
-import io.github.nextentity.core.meta.Metamodels.ProjectionAssociationAttributeImpl;
-import io.github.nextentity.core.meta.Metamodels.ProjectionAttributeImpl;
-import io.github.nextentity.core.meta.Metamodels.ProjectionSchemaImpl;
-import io.github.nextentity.core.meta.Metamodels.SubSelectEntity;
+import io.github.nextentity.core.meta.Metamodels.*;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
@@ -28,15 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.RecordComponent;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -88,17 +72,9 @@ public abstract class AbstractMetamodel implements Metamodel {
     private List<Attribute> getProjectionAttributes(Class<?> projectionType, Schema owner) {
         if (projectionType.isInterface()) {
             return getInterfaceAttributes(projectionType, owner);
-        } else if (projectionType.isRecord()) {
-            return getRecordAttributes(projectionType, owner);
+        } else {
+            return getBeanAttributes(projectionType, owner);
         }
-        return getBeanAttributes(projectionType, owner);
-    }
-
-    private List<Attribute> getRecordAttributes(Class<?> projectionType, Schema owner) {
-        RecordComponent[] components = projectionType.getRecordComponents();
-        return Arrays.stream(components)
-                .map(it -> newAttribute(null, it.getAccessor(), null, owner))
-                .collect(ImmutableList.collector(components.length));
     }
 
     protected BasicAttribute getEntityAttribute(Attribute attribute, EntitySchema entity) {
@@ -236,7 +212,8 @@ public abstract class AbstractMetamodel implements Metamodel {
     protected void setAnyToOneAttributeColumnName(Map<String, BasicAttribute> map) {
         for (Entry<String, BasicAttribute> entry : map.entrySet()) {
             BasicAttribute value = entry.getValue();
-            if (value instanceof AssociationAttributeImpl attr) {
+            if (value instanceof AssociationAttributeImpl) {
+                AssociationAttributeImpl attr = (AssociationAttributeImpl) value;
                 String joinColumnName = getJoinColumnName(map, attr);
                 attr.columnName(joinColumnName);
             }

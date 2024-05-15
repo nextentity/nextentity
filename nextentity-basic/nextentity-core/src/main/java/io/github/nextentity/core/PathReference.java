@@ -111,7 +111,7 @@ public class PathReference {
         }
         expr = matcher.group(1);
         return Arrays.stream(expr.split(";"))
-                .filter(s -> !s.isBlank())
+                .filter(s -> !s.isEmpty())
                 .map(s -> {
                     try {
                         String className = s
@@ -123,7 +123,7 @@ public class PathReference {
                     }
                 })
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(()-> new IllegalStateException("Failed to get Lambda information"));
     }
 
 }

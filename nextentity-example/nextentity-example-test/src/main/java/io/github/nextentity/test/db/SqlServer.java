@@ -6,7 +6,7 @@ import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.JdbcUpdateSqlBuilder;
 import io.github.nextentity.jdbc.SqlServerQuerySqlBuilder;
 import io.github.nextentity.jdbc.SqlServerUpdateSqlBuilder;
-import jakarta.persistence.EntityManagerFactory;
+import javax.persistence.EntityManagerFactory;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
 import org.hibernate.engine.jdbc.dialect.internal.StandardDialectResolver;
 import org.hibernate.jpa.HibernatePersistenceProvider;
@@ -33,8 +33,8 @@ public class SqlServer implements DbConfigProvider {
 
     public EntityManagerFactory getEntityManagerFactory() {
         Map<String, Object> properties = Maps.<String, Object>hashmap()
-                .put(JAKARTA_JDBC_DRIVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver")
-                .put(JAKARTA_JDBC_URL, url)
+                .put(DRIVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver")
+                .put(URL, url)
                 .put(USER, username)
                 .put(PASS, password)
                 .put(DIALECT_RESOLVERS, StandardDialectResolver.class.getName())

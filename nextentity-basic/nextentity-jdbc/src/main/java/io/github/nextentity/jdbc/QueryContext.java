@@ -55,9 +55,11 @@ public class QueryContext {
             }
         } else if (select instanceof SelectProjection) {
             return entityType.getProjection(select.type()).getInstanceFactory();
-        } else if (select instanceof Selected.SelectPrimitive selectPrimitive) {
+        } else if (select instanceof Selected.SelectPrimitive) {
+            Selected.SelectPrimitive selectPrimitive = (Selected.SelectPrimitive) select;
             return newPrimitiveFactory(selectPrimitive);
-        } else if (select instanceof Selected.SelectArray selectArray) {
+        } else if (select instanceof Selected.SelectArray) {
+            Selected.SelectArray selectArray = (Selected.SelectArray) select;
             ImmutableList<InstanceFactory> factories = selectArray.items().stream()
                     .map(this::newPrimitiveFactory)
                     .collect(ImmutableList.collector(selectArray.items().size()));
@@ -68,7 +70,8 @@ public class QueryContext {
 
     private InstanceFactory newPrimitiveFactory(Selected.SelectPrimitive select) {
         Expression expression = select.expression();
-        if (expression instanceof EntityPath entityPath) {
+        if (expression instanceof EntityPath) {
+            EntityPath entityPath = (EntityPath) expression;
             BasicAttribute attribute = entityType.getAttribute(entityPath);
             if (expandReferencePath && attribute.isObject()) {
                 return ((AssociationAttribute) attribute).getInstanceFactory();

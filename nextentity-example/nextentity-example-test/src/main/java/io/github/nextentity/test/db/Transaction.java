@@ -2,7 +2,7 @@ package io.github.nextentity.test.db;
 
 import io.github.nextentity.core.exception.UncheckedSQLException;
 import io.github.nextentity.core.util.Exceptions;
-import jakarta.persistence.EntityTransaction;
+import javax.persistence.EntityTransaction;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 

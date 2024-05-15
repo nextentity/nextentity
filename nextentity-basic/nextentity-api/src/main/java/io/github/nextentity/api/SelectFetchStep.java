@@ -3,10 +3,7 @@ package io.github.nextentity.api;
 import io.github.nextentity.api.TypedExpression.PathExpression;
 import io.github.nextentity.api.model.EntityRoot;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author HuangChengwei
@@ -18,15 +15,15 @@ interface SelectFetchStep<T> extends SelectWhereStep<T, T> {
     SelectWhereStep<T, T> fetch(List<PathExpression<T, ?>> expressions);
 
     default SelectWhereStep<T, T> fetch(PathExpression<T, ?> path) {
-        return fetch(List.of(path));
+        return fetch(Collections.singletonList(path));
     }
 
     default SelectWhereStep<T, T> fetch(PathExpression<T, ?> p0, PathExpression<T, ?> p1) {
-        return fetch(List.of(p0, p1));
+        return fetch(Arrays.asList(p0, p1));
     }
 
     default SelectWhereStep<T, T> fetch(PathExpression<T, ?> p0, PathExpression<T, ?> p1, PathExpression<T, ?> p3) {
-        return fetch(List.of(p0, p1, p3));
+        return fetch(Arrays.asList(p0, p1, p3));
     }
 
     default SelectWhereStep<T, T> fetch(Collection<Path<T, ?>> paths) {

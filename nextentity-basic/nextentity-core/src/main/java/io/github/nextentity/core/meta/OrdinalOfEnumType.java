@@ -31,6 +31,6 @@ public class OrdinalOfEnumType implements DatabaseType {
 
     @Override
     public Object toAttributeType(Object value) {
-        return value instanceof Integer index ? values[index] : value;
+        return value instanceof Integer ? values[(Integer) value] : value;
     }
 }

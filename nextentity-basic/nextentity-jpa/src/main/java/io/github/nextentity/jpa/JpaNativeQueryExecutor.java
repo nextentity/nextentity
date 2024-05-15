@@ -9,7 +9,7 @@ import io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 import io.github.nextentity.jdbc.QueryContext;
 import io.github.nextentity.jdbc.QuerySqlStatement;
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +42,7 @@ public class JpaNativeQueryExecutor implements QueryExecutor {
         QueryContext context = new QueryContext(queryStructure, metamodel, true);
         QuerySqlStatement preparedSql = sqlBuilder.build(context);
         // noinspection SqlSourceToSinkFlow
-        jakarta.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
+        javax.persistence.Query query = entityManager.createNativeQuery(preparedSql.sql());
         int position = 0;
         for (Object arg : preparedSql.parameters()) {
             query.setParameter(++position, arg);

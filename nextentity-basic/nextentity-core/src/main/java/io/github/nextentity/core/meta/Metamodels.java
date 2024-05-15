@@ -270,7 +270,8 @@ public class Metamodels {
                 ImmutableList<AttributeFactory> primitives = dictionary().values().stream()
                         .filter(it -> !primitiveOnly || it.isPrimitive())
                         .map(it -> {
-                            if (it instanceof ProjectionAssociationAttribute paa) {
+                            if (it instanceof ProjectionAssociationAttribute) {
+                                ProjectionAssociationAttribute paa = (ProjectionAssociationAttribute) it;
                                 return ((ProjectionAssociationAttributeImpl) paa).getInstanceFactory();
                             } else {
                                 return new ProjectionAttributeFactory(it);
@@ -330,7 +331,8 @@ public class Metamodels {
             if (instanceFactory == null) {
                 ImmutableList<AttributeFactory> primitives = dictionary.values().stream()
                         .map(it -> {
-                            if (it instanceof ProjectionAssociationAttribute paa) {
+                            if (it instanceof ProjectionAssociationAttribute) {
+                                ProjectionAssociationAttribute paa = (ProjectionAssociationAttribute) it;
                                 return ((ProjectionAssociationAttributeImpl) paa).getInstanceFactory();
                             } else {
                                 return new ProjectionAttributeFactory(it);
