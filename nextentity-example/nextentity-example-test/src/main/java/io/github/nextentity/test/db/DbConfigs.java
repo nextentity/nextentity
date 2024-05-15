@@ -11,7 +11,7 @@ import java.util.List;
 public interface DbConfigs {
 
     DbConfig MYSQL = new Mysql().getConfig();
-    DbConfig SQLSERVER = MYSQL;
-    List<DbConfig> CONFIGS = ImmutableList.of(MYSQL);
+    DbConfig SQLSERVER = new SqlServer().getConfig();
+    List<DbConfig> CONFIGS = ImmutableList.of(MYSQL, SQLSERVER);
 
 }

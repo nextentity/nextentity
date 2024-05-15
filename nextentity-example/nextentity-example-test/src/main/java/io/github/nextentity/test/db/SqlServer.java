@@ -60,6 +60,11 @@ public class SqlServer implements DbConfigProvider {
         return "update [user] set pid = null";
     }
 
+    @Override
+    public String name() {
+        return "sqlserver";
+    }
+
     public DataSource getDataSource() {
         SQLServerDataSource source = new SQLServerDataSource();
         source.setURL(url);

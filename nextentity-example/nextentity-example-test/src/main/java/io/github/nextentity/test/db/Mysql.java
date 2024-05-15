@@ -75,4 +75,9 @@ public class Mysql implements DbConfigProvider {
     public String setPidNullSql() {
         return "update `user` set pid = null";
     }
+
+    @Override
+    public String name() {
+        return "mysql";
+    }
 }

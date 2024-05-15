@@ -150,3 +150,19 @@ CREATE TABLE `employee` (
   CONSTRAINT `FK5v50ed2bjh60n1gc7ifuxmgf4` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+create table author
+(
+    id         integer primary key,
+    first_name varchar(255),
+    last_name  varchar(255),
+    age        integer
+);
+
+create table article
+(
+    id          integer primary key,
+    title       varchar(255) not null,
+    description varchar(255),
+    author_id   integer
+);
+
