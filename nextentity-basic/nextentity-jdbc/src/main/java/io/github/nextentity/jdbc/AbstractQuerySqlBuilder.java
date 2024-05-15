@@ -1,23 +1,24 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.BasicExpressions;
-import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Literal;
-import io.github.nextentity.core.api.expression.Operation;
-import io.github.nextentity.core.api.expression.QueryStructure;
-import io.github.nextentity.core.api.expression.QueryStructure.From;
-import io.github.nextentity.core.api.expression.QueryStructure.From.Entity;
-import io.github.nextentity.core.api.expression.QueryStructure.From.FromSubQuery;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.api.model.LockModeType;
+import io.github.nextentity.api.model.Order;
+import io.github.nextentity.api.SortOrder;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.Operator;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure.From;
+import io.github.nextentity.core.expression.QueryStructure.From.FromEntity;
+import io.github.nextentity.core.expression.QueryStructure.From.FromSubQuery;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
 import io.github.nextentity.core.meta.AssociationAttribute;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntitySchema;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.SubSelectType;
+import io.github.nextentity.core.reflect.schema.InstanceFactory;
 import io.github.nextentity.core.reflect.schema.Schema;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -46,6 +48,7 @@ abstract class AbstractQuerySqlBuilder {
     protected static final String ORDER_BY = " order by ";
     protected static final String DESC = "desc";
     protected static final String ASC = "asc";
+    protected static final String LEFT_JOIN = " left join ";
     protected static final String ON = " on ";
 
     protected final StringBuilder sql;
@@ -70,8 +73,8 @@ abstract class AbstractQuerySqlBuilder {
         this.context = context;
         String prefix;
         From from = context.getStructure().from();
-        if (from instanceof Entity) {
-            prefix = sortAlias(from.type().getSimpleName());
+        if (from instanceof FromEntity) {
+            prefix = shortAlias(from.type().getSimpleName());
         } else {
             prefix = "t";
         }
@@ -93,14 +96,14 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void doBuilder() {
+        initJoinColumnIndex();
         appendSelect();
         appendFrom();
-        int joinIndex = sql.length();
+        appendJoin();
         appendWhere();
         appendGroupBy();
         appendOrderBy();
         appendHaving();
-        insertJoin(joinIndex);
         appendOffsetAndLimit();
         appendLockModeType(context.getStructure().lockType());
     }
@@ -111,7 +114,8 @@ abstract class AbstractQuerySqlBuilder {
             sql.append(DISTINCT);
         }
         String join = NONE_DELIMITER;
-        for (BaseExpression expression : context.getSelects()) {
+        for (InstanceFactory.PrimitiveFactory factory : context.getConstructor().primitives()) {
+            Expression expression = factory.expression();
             sql.append(join);
             appendExpression(expression);
             appendSelectAlias(expression);
@@ -119,7 +123,7 @@ abstract class AbstractQuerySqlBuilder {
         }
     }
 
-    protected void appendSelectAlias(BaseExpression expression) {
+    protected void appendSelectAlias(Expression expression) {
         if (selectIndex.get() != 0 || !(expression instanceof EntityPath) || ((EntityPath) expression).deep() != 1) {
             int index = selectIndex.getAndIncrement();
             String alias = Integer.toString(index, Character.MAX_RADIX);
@@ -140,7 +144,7 @@ abstract class AbstractQuerySqlBuilder {
     protected void appendFrom() {
         appendBlank().append(FROM);
         From from = context.getStructure().from();
-        if (from instanceof Entity) {
+        if (from instanceof FromEntity) {
             appendFromTable();
         } else if (from instanceof FromSubQuery) {
             appendExpression((FromSubQuery) from);
@@ -171,7 +175,7 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     @NotNull
-    protected String sortAlias(String symbol) {
+    protected String shortAlias(String symbol) {
         return symbol.toLowerCase().substring(0, 1);
     }
 
@@ -185,32 +189,31 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendWhere() {
-        BaseExpression where = context.getStructure().where();
-        if (BasicExpressions.isNullOrTrue(where)) {
+        Expression where = context.getStructure().where();
+        if (ExpressionImpls.isNullOrTrue(where)) {
             return;
         }
         sql.append(WHERE);
         appendPredicate(where);
     }
 
-    protected void appendPredicate(BaseExpression node) {
+    protected void appendPredicate(Expression node) {
         if (node instanceof EntityPath || node instanceof Literal) {
-            node = BasicExpressions.operate(node, Operator.EQ, BasicExpressions.TRUE);
+            node = ExpressionImpls.operate(node, Operator.EQ, ExpressionImpls.TRUE);
         }
         appendExpression(node);
     }
 
-
     protected void appendHaving() {
-        BaseExpression having = context.getStructure().having();
-        if (BasicExpressions.isNullOrTrue(having)) {
+        Expression having = context.getStructure().having();
+        if (ExpressionImpls.isNullOrTrue(having)) {
             return;
         }
         sql.append(HAVING);
         appendPredicate(having);
     }
 
-    protected void appendExpression(BaseExpression expression) {
+    protected void appendExpression(Expression expression) {
         if (expression instanceof Literal) {
             appendLiteral((Literal) expression);
         } else if (expression instanceof EntityPath) {
@@ -225,13 +228,8 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendLiteral(Literal literal) {
-        Object value = literal.value();
-        if (value instanceof Boolean) {
-            appendBlank().append((Boolean) value ? 1 : 0);
-        } else {
-            appendBlank().append('?');
-            this.args.add(value);
-        }
+        appendBlank().append('?');
+        this.args.add(literal.value());
     }
 
     protected void appendOperation(Operation operation) {
@@ -247,18 +245,21 @@ abstract class AbstractQuerySqlBuilder {
                 break;
             }
             case LIKE:
-            case MOD:
             case GT:
             case EQ:
             case NE:
             case GE:
             case LT:
-            case LE:
+            case LE: {
+                appendBinaryOperation(operation);
+                break;
+            }
             case ADD:
             case SUBTRACT:
             case MULTIPLY:
-            case DIVIDE: {
-                appendBinaryOperation(operation);
+            case DIVIDE:
+            case MOD: {
+                appendMultiOperation(operation);
                 break;
             }
             case LENGTH:
@@ -289,6 +290,9 @@ abstract class AbstractQuerySqlBuilder {
                 appendNullAssertion(operation);
                 break;
             }
+            case DISTINCT:
+                appendPrepositionOperation(operation);
+                break;
             default:
                 throw new UnsupportedOperationException("unknown operator " + operator);
         }
@@ -300,22 +304,21 @@ abstract class AbstractQuerySqlBuilder {
         appendOperator(operation.operator());
     }
 
-    protected void appendFirstOperation(Operation operation) {
-        BaseExpression leftOperand = operation.firstOperand();
+    protected void appendPrepositionOperation(Operation operation) {
+        Expression operand = operation.firstOperand();
         Operator operator = operation.operator();
-        Operator operator0 = getOperator(leftOperand);
-        appendBlank();
-        if (operator0 != null && operator0.priority() > operator.priority()) {
-            sql.append('(');
-            appendExpression(leftOperand);
-            sql.append(')');
-        } else {
-            appendExpression(leftOperand);
-        }
+        appendOperator(operator);
+        appendExpressionPriority(operand, operator);
+    }
+
+    protected void appendFirstOperation(Operation operation) {
+        Expression leftOperand = operation.firstOperand();
+        Operator operator = operation.operator();
+        appendExpressionPriority(leftOperand, operator);
     }
 
     protected void appendIn(Operation operation) {
-        BaseExpression leftOperand = operation.firstOperand();
+        Expression leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         if (operation.operands().size() <= 1) {
             appendBlank().append(0);
@@ -323,11 +326,11 @@ abstract class AbstractQuerySqlBuilder {
             appendBlank();
             appendExpression(leftOperand);
             appendOperator(operator);
-            List<? extends BaseExpression> operands = operation.operands();
+            List<? extends Expression> operands = operation.operands();
             boolean notSingleSubQuery = operands.size() != 2 || !(operands.get(1) instanceof QueryStructure);
             char join = notSingleSubQuery ? '(' : ' ';
             for (int i = 1; i < operands.size(); i++) {
-                BaseExpression expression = operands.get(i);
+                Expression expression = operands.get(i);
                 sql.append(join);
                 appendExpression(expression);
                 join = ',';
@@ -339,16 +342,16 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendFunctionOperation(Operation operation) {
-        BaseExpression leftOperand = operation.firstOperand();
+        Expression leftOperand = operation.firstOperand();
         appendOperator(operation.operator());
-        List<? extends BaseExpression> operands = operation.operands();
+        List<? extends Expression> operands = operation.operands();
         boolean notSingleSubQuery = !(leftOperand instanceof QueryStructure) || operands.size() != 1;
         if (notSingleSubQuery) {
             sql.append('(');
         }
         appendExpression(leftOperand);
         for (int i = 1; i < operands.size(); i++) {
-            BaseExpression expression = operands.get(i);
+            Expression expression = operands.get(i);
             sql.append(',');
             appendExpression(expression);
         }
@@ -358,40 +361,41 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendNotOperation(Operation operation) {
-        BaseExpression leftOperand = operation.firstOperand();
-        Operator operator = operation.operator();
-        Operator operator0 = getOperator(leftOperand);
-        appendOperator(operator);
-        sql.append(' ');
-        if (operator0 != null && operator0.priority() > operator.priority()) {
-            sql.append('(');
-            appendExpression(leftOperand);
-            sql.append(')');
-        } else {
-            appendExpression(leftOperand);
-        }
+        Expression leftOperand = operation.firstOperand();
+        Operator not = operation.operator();
+        appendBlank();
+        appendOperator(not);
+        appendPredicatePriority(leftOperand, not);
     }
 
     protected void appendBinaryOperation(Operation operation) {
+        Expression leftOperand = operation.firstOperand();
+        Operator operator = operation.operator();
+        Expression rightOperand = operation.secondOperand();
+        appendBinaryOperation(leftOperand, operator, rightOperand);
+    }
+
+    protected void appendBinaryOperation(Expression leftOperand,
+                                         Operator operator,
+                                         Expression rightOperand) {
+        appendExpressionPriority(leftOperand, operator);
+        appendOperator(operator);
+        appendExpressionPriority(rightOperand, operator);
+    }
+
+    protected void appendMultiOperation(Operation operation) {
         appendFirstOperation(operation);
         Operator operator = operation.operator();
-        List<? extends BaseExpression> operands = operation.operands();
+        List<? extends Expression> operands = operation.operands();
         for (int i = 1; i < operands.size(); i++) {
-            BaseExpression value = operands.get(i);
+            Expression value = operands.get(i);
             appendOperator(operator);
-            Operator operator1 = getOperator(value);
-            if (operator1 != null && operator1.priority() >= operator.priority()) {
-                sql.append('(');
-                appendExpression(value);
-                sql.append(')');
-            } else {
-                appendExpression(value);
-            }
+            appendExpressionPriority(value, operator);
         }
     }
 
     protected void appendBetween(Operation operation) {
-        BaseExpression leftOperand = operation.firstOperand();
+        Expression leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
         appendBlank();
         appendExpression(leftOperand);
@@ -404,29 +408,37 @@ abstract class AbstractQuerySqlBuilder {
     }
 
     protected void appendLogicalOperation(Operation operation) {
-        BaseExpression leftOperand = operation.firstOperand();
+        Expression leftOperand = operation.firstOperand();
         Operator operator = operation.operator();
-        Operator operator0 = getOperator(leftOperand);
         appendBlank();
-        if (operator0 != null && operator0.priority() > operator.priority()) {
+        appendPredicatePriority(leftOperand, operator);
+        List<? extends Expression> operands = operation.operands();
+        for (int i = 1; i < operands.size(); i++) {
+            Expression value = operands.get(i);
+            appendOperator(operator);
+            appendPredicatePriority(value, operator);
+        }
+    }
+
+    private void appendPredicatePriority(Expression expression, Operator operator) {
+        Operator append = getOperator(expression);
+        if (append != null && append.priority() > operator.priority()) {
             sql.append('(');
-            appendPredicate(leftOperand);
+            appendPredicate(expression);
             sql.append(')');
         } else {
-            appendPredicate(leftOperand);
+            appendPredicate(expression);
         }
-        List<? extends BaseExpression> operands = operation.operands();
-        for (int i = 1; i < operands.size(); i++) {
-            BaseExpression value = operands.get(i);
-            appendOperator(operator);
-            Operator operator1 = getOperator(value);
-            if (operator1 != null && operator1.priority() >= operator.priority()) {
-                sql.append('(');
-                appendPredicate(value);
-                sql.append(')');
-            } else {
-                appendPredicate(value);
-            }
+    }
+
+    private void appendExpressionPriority(Expression value, Operator operator) {
+        Operator next = getOperator(value);
+        if (next != null && next.priority() > operator.priority()) {
+            sql.append('(');
+            appendExpression(value);
+            sql.append(')');
+        } else {
+            appendExpression(value);
         }
     }
 
@@ -446,59 +458,41 @@ abstract class AbstractQuerySqlBuilder {
         appendBlank();
         int iMax = column.deep() - 1;
         if (iMax == -1)
-            return;
-        int i = 0;
+            throw new IllegalStateException();
+        BasicAttribute attribute = column.toAttribute(context.getEntityType());
         if (column.deep() == 1) {
             appendFromAlias().append(".");
+        } else {
+            BasicAttribute join = (BasicAttribute) attribute.declareBy();
+            Integer index = joins.get(join.path());
+            appendTableAlias(index).append('.');
         }
-        BasicAttribute tail = column.toAttribute(context.getEntityType());
-        List<? extends BasicAttribute> chain = tail.attributePaths();
-        BasicAttribute join = chain.get(0);
-
-        for (String path : column) {
-            EntitySchema info = context.getEntityType();
-            BasicAttribute attribute = info.getAttribute(path);
-            if (i++ == iMax) {
-                if (attribute.isObject()) {
-                    AssociationAttribute ja = (AssociationAttribute) attribute;
-                    sql.append(leftQuotedIdentifier()).append(ja.joinColumnName()).append(rightQuotedIdentifier());
-                } else {
-                    sql.append(leftQuotedIdentifier()).append(attribute.columnName()).append(rightQuotedIdentifier());
-                }
-                return;
-            } else {
-                joins.putIfAbsent(join.path(), joins.size());
-                if (i == iMax) {
-                    Integer index = joins.get(join.path());
-                    appendTableAlias(sql, index).append('.');
-                }
-            }
-            join = ((AssociationAttribute) join).getAttribute(path);
-        }
+        sql.append(leftQuotedIdentifier()).append(attribute.columnName()).append(rightQuotedIdentifier());
     }
 
-    protected void insertJoin(int sqlIndex) {
-        StringBuilder sql = new StringBuilder();
-
-        joins.forEach((k, v) -> {
+    protected void appendJoin() {
+        for (Entry<EntityPath, Integer> entry : joins.entrySet()) {
+            EntityPath k = entry.getKey();
+            Integer v = entry.getValue();
             BasicAttribute attribute = getAttribute(k);
-            EntitySchema entityTypeInfo = context.getEntityType();
-            StringBuilder append = sql.append(" left join ");
+            EntitySchema entityTypeInfo = (EntitySchema) context.getEntityType().getAttribute(k);
+            StringBuilder append = sql.append(LEFT_JOIN);
             appendTable(append, entityTypeInfo);
 
-            appendTableAlias(sql, v);
+            appendTableAlias(v);
             sql.append(ON);
-            EntityPath parent = k.parent();
-            if (parent == null) {
-                appendFromAlias(sql);
-            } else {
+            EntitySchema declared = attribute.declareBy();
+            if (declared.isAttribute()) {
+                EntityPath parent = ((BasicAttribute) declared).path();
                 Integer parentIndex = joins.get(parent);
-                appendTableAlias(sql, parentIndex);
+                appendTableAlias(parentIndex);
+            } else {
+                appendFromAlias(sql);
             }
             if (attribute.isObject()) {
                 AssociationAttribute join = (AssociationAttribute) attribute;
-                sql.append(".").append(join.joinColumnName()).append("=");
-                appendTableAlias(sql, v);
+                sql.append(".").append(join.columnName()).append("=");
+                appendTableAlias(v);
                 String referenced = join.referencedColumnName();
                 if (referenced.isEmpty()) {
                     referenced = entityTypeInfo.id().columnName();
@@ -507,9 +501,49 @@ abstract class AbstractQuerySqlBuilder {
             } else {
                 throw new IllegalStateException();
             }
-        });
-        this.sql.insert(sqlIndex, sql);
+        }
 
+    }
+
+    private void initJoinColumnIndex() {
+        QueryStructure structure = context.getStructure();
+        addJoinPrimitive(context.getConstructor().primitives());
+        addJoin(structure.where());
+        addJoin(structure.groupBy());
+        for (Order<?> order : structure.orderBy()) {
+            addJoin(order.expression());
+        }
+        addJoin(structure.having());
+    }
+
+    private void addJoin(Expression select) {
+        if (select instanceof EntityPath) {
+            EntityType entityType = context.getEntityType();
+            BasicAttribute attribute = entityType.getAttribute((EntityPath) select);
+            for (BasicAttribute join : attribute.attributePaths()) {
+                if (join.isObject()) {
+                    joins.putIfAbsent(join.path(), joins.size());
+                }
+            }
+        } else if (select instanceof Operation) {
+            addJoin(((Operation) select).operands());
+        }
+    }
+
+    private void addJoinPrimitive(List<? extends InstanceFactory.PrimitiveFactory> operands) {
+        if (operands != null && !operands.isEmpty()) {
+            for (InstanceFactory.PrimitiveFactory operand : operands) {
+                addJoin(operand.expression());
+            }
+        }
+    }
+
+    private void addJoin(List<? extends Expression> operands) {
+        if (operands != null && !operands.isEmpty()) {
+            for (Expression operand : operands) {
+                addJoin(operand);
+            }
+        }
     }
 
     protected void appendTable(StringBuilder append, EntitySchema entityTypeInfo) {
@@ -520,14 +554,15 @@ abstract class AbstractQuerySqlBuilder {
         }
     }
 
-    Operator getOperator(BaseExpression expression) {
+    Operator getOperator(Expression expression) {
         return expression instanceof Operation ? ((Operation) expression).operator() : null;
     }
 
-    protected StringBuilder appendTableAlias(StringBuilder sql, Integer index) {
+    protected StringBuilder appendTableAlias(Integer index) {
+        StringBuilder sql = this.sql;
         EntityType entityType = context.getEntityType();
         String tableName = entityType.type().getSimpleName();
-        StringBuilder append = appendBlank(sql).append(sortAlias(tableName));
+        StringBuilder append = appendBlank(sql).append(shortAlias(tableName));
         if (subIndex > 0) {
             sql.append(subIndex).append("_");
         }
@@ -549,11 +584,11 @@ abstract class AbstractQuerySqlBuilder {
     protected abstract void appendOffsetAndLimit();
 
     protected void appendGroupBy() {
-        List<? extends BaseExpression> groupBy = context.getStructure().groupBy();
+        List<? extends Expression> groupBy = context.getStructure().groupBy();
         if (groupBy != null && !groupBy.isEmpty()) {
             sql.append(" group by ");
             boolean first = true;
-            for (BaseExpression e : groupBy) {
+            for (Expression e : groupBy) {
                 if (first) {
                     first = false;
                 } else {
@@ -572,7 +607,7 @@ abstract class AbstractQuerySqlBuilder {
             for (Order<?> order : orders) {
                 sql.append(delimiter);
                 delimiter = ",";
-                int selectIndex = context.getSelects().indexOf(order.expression());
+                int selectIndex = getSelectIndex(order);
                 if (selectIndex > 0) {
                     sql.append(selectIndex + 1);
                 } else {
@@ -582,6 +617,17 @@ abstract class AbstractQuerySqlBuilder {
             }
 
         }
+    }
+
+    private int getSelectIndex(Order<?> order) {
+        List<? extends InstanceFactory.PrimitiveFactory> primitives = context.getConstructor().primitives();
+        for (int i = 0; i < primitives.size(); i++) {
+            InstanceFactory.PrimitiveFactory primitive = primitives.get(i);
+            if (primitive.expression().equals(order.expression())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
 }

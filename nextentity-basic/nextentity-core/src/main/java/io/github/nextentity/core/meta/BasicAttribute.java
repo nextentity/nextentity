@@ -1,12 +1,11 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.api.expression.EntityPath;
+import io.github.nextentity.core.expression.EntityPath;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public interface BasicAttribute extends Schema, Attribute {
@@ -16,6 +15,19 @@ public interface BasicAttribute extends Schema, Attribute {
     boolean isVersion();
 
     EntitySchema declareBy();
+
+    DatabaseType databaseType();
+
+    default Object getDatabaseValue(Object entity) {
+        Object o = get(entity);
+        return databaseType().toDatabaseType(o);
+    }
+
+    default void setByDatabaseValue(Object entity, Object value) {
+        value = databaseType().toAttributeType(value);
+        set(entity, value);
+    }
+
 
     @Override
     default int deep() {
@@ -37,8 +49,6 @@ public interface BasicAttribute extends Schema, Attribute {
                 break;
             }
         }
-        // noinspection Java9CollectionFactory
-        return Collections.unmodifiableList(new ArrayList<>(attributes));
+        return new ImmutableList<>(attributes);
     }
-
 }

@@ -1,6 +1,6 @@
 package io.github.nextentity.data;
 
-import io.github.nextentity.core.Updaters.UpdateExecutor;
+import io.github.nextentity.core.UpdateExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 

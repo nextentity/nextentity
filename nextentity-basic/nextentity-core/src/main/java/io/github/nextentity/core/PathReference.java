@@ -1,6 +1,6 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Path;
+import io.github.nextentity.api.Path;
 import io.github.nextentity.core.exception.BeanReflectiveException;
 import io.github.nextentity.core.util.Exceptions;
 import lombok.Getter;

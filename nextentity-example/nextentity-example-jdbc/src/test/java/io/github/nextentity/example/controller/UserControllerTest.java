@@ -1,6 +1,6 @@
 package io.github.nextentity.example.controller;
 
-import io.github.nextentity.core.api.Page;
+import io.github.nextentity.api.model.Page;
 import io.github.nextentity.example.eneity.Gender;
 import io.github.nextentity.example.eneity.User;
 import io.github.nextentity.example.model.UserQuery;

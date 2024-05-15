@@ -1,7 +1,7 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Page;
-import io.github.nextentity.core.api.Pageable;
+import io.github.nextentity.api.model.Page;
+import io.github.nextentity.api.model.Pageable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,6 +1,6 @@
 package io.github.nextentity.core.converter;
 
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public interface TypeConverter {
     }
 
     static TypeConverter of(TypeConverter... converters) {
-        return new TypeConverters(Lists.of(converters));
+        return new TypeConverters(ImmutableList.of(converters));
     }
 
     static TypeConverter of(List<TypeConverter> converters) {

@@ -1,12 +1,16 @@
 package io.github.nextentity.core.meta;
 
-import io.github.nextentity.core.BasicExpressions;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
-import io.github.nextentity.core.reflect.SelectedConstruct;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
+import io.github.nextentity.core.reflect.InstanceFactories.AttributeFactoryImpl;
+import io.github.nextentity.core.reflect.InstanceFactories.ObjectFactoryImpl;
+import io.github.nextentity.core.reflect.InstanceFactories.ProjectionAttributeFactory;
+import io.github.nextentity.core.reflect.InstanceFactories.ProjectionObjectAttributeFactory;
 import io.github.nextentity.core.reflect.schema.Attribute;
+import io.github.nextentity.core.reflect.schema.InstanceFactory;
+import io.github.nextentity.core.reflect.schema.InstanceFactory.AttributeFactory;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -15,8 +19,7 @@ import lombok.experimental.Delegate;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -62,10 +65,11 @@ public class Metamodels {
     @Getter
     @Accessors(fluent = true)
     public static class BasicAttributeImpl extends AttributeImpl<EntitySchema> implements BasicAttribute {
-        private final String columnName;
+        protected String columnName;
         private final boolean isVersion;
         private final List<? extends BasicAttribute> referencedAttributes;
         private final EntityPath path;
+        private DatabaseType databaseType;
 
         public BasicAttributeImpl(Attribute attribute, String columnName, boolean isVersion) {
             super(attribute, (EntitySchema) attribute.declareBy());
@@ -74,8 +78,30 @@ public class Metamodels {
             this.referencedAttributes = BasicAttribute.super.attributePaths();
             List<String> paths = referencedAttributes.stream()
                     .map(BasicAttribute::name)
-                    .toList();
-            this.path = BasicExpressions.column(paths);
+                    .collect(ImmutableList.collector(referencedAttributes.size()));
+            this.path = ExpressionImpls.column(paths);
+        }
+
+        public void databaseType(DatabaseType converter) {
+            this.databaseType = converter == null ? new IdentityDatabaseType() : converter;
+        }
+
+        class IdentityDatabaseType implements DatabaseType {
+            @Override
+            public Class<?> databaseType() {
+                return type();
+            }
+
+            @Override
+            public Object toDatabaseType(Object value) {
+                return value;
+            }
+
+            @Override
+            public Object toAttributeType(Object value) {
+                return value;
+            }
+
         }
 
     }
@@ -85,26 +111,10 @@ public class Metamodels {
     @Accessors(fluent = true)
     public static class EntityTypeImpl extends EntitySchemaImpl implements EntityType {
         private BiFunction<EntityType, Class<?>, ProjectionType> projectionTypes;
-        private volatile SelectedConstruct constructor;
 
         @Override
         public ProjectionType getProjection(Class<?> type) {
             return projectionTypes.apply(this, type);
-        }
-
-        @Override
-        public SelectedConstruct constructor() {
-            if (constructor == null) {
-                synchronized (this) {
-                    if (constructor == null) {
-                        SelectEntity selected = new SelectEntity()
-                                .type(type())
-                                .fetch(Collections.emptyList());
-                        constructor = SelectedConstruct.of(this, selected, false);
-                    }
-                }
-            }
-            return constructor;
         }
 
         public EntityTypeImpl() {
@@ -123,9 +133,22 @@ public class Metamodels {
         private BasicAttribute version;
         private String tableName;
         private Map<String, BasicAttribute> dictionary;
-        private transient List<?extends BasicAttribute> primitiveAttributes;
+        private transient List<? extends BasicAttribute> primitiveAttributes;
+        private transient InstanceFactory.ObjectFactory instanceFactory;
 
         public EntitySchemaImpl() {
+        }
+
+        @Override
+        public InstanceFactory.ObjectFactory getInstanceFactory() {
+            if (instanceFactory == null) {
+                List<? extends BasicAttribute> basicAttributes = primitiveAttributes();
+                ImmutableList<AttributeFactoryImpl> primitives = basicAttributes.stream()
+                        .map(AttributeFactoryImpl::new)
+                        .collect(ImmutableList.collector(basicAttributes.size()));
+                instanceFactory = new ObjectFactoryImpl(primitives, type());
+            }
+            return instanceFactory;
         }
 
         public Collection<BasicAttribute> attributes() {
@@ -177,7 +200,6 @@ public class Metamodels {
     @Accessors(fluent = true)
     public static class AssociationAttributeImpl extends BasicAttributeImpl implements AssociationAttribute {
         private String joinName;
-        private String joinColumnName;
         private String referencedColumnName;
         private Supplier<EntitySchema> referencedSupplier;
         @Delegate(excludes = Schema.class)
@@ -186,6 +208,11 @@ public class Metamodels {
 
         public AssociationAttributeImpl(Attribute attribute, String columnName) {
             super(attribute, columnName, false);
+            databaseType(new IdentityDatabaseType());
+        }
+
+        public void columnName(String columnName) {
+            this.columnName = columnName;
         }
 
     }
@@ -209,8 +236,10 @@ public class Metamodels {
         private final Function<ProjectionAssociationAttribute, Collection<? extends ProjectionBasicAttribute>> attributesSupplier;
         @Getter(lazy = true)
         private final Map<String, ? extends ProjectionBasicAttribute> dictionary = attributesSupplier.apply(this)
-                .stream().collect(Collectors.toMap(Attribute::name, Function.identity()));
-
+                .stream().collect(Collectors.toMap(Attribute::name, Function.identity(), (a, b) -> {
+                    throw new IllegalStateException("duplicate key");
+                }, LinkedHashMap::new));
+        private InstanceFactory.AttributeFactory instanceFactory;
 
         ProjectionAssociationAttributeImpl(Attribute attribute,
                                            AssociationAttribute entityAttribute,
@@ -231,13 +260,26 @@ public class Metamodels {
         }
 
         @Override
-        public SelectedConstruct constructor() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Attribute getAttribute(String name) {
             return dictionary().get(name);
+        }
+
+        public InstanceFactory.AttributeFactory getInstanceFactory() {
+            if (instanceFactory == null) {
+                boolean primitiveOnly = deep() >= 8 || circularReferenced();
+                ImmutableList<AttributeFactory> primitives = dictionary().values().stream()
+                        .filter(it -> !primitiveOnly || it.isPrimitive())
+                        .map(it -> {
+                            if (it instanceof ProjectionAssociationAttribute paa) {
+                                return ((ProjectionAssociationAttributeImpl) paa).getInstanceFactory();
+                            } else {
+                                return new ProjectionAttributeFactory(it);
+                            }
+                        })
+                        .collect(ImmutableList.collector(dictionary().size()));
+                this.instanceFactory = new ProjectionObjectAttributeFactory(primitives, this);
+            }
+            return instanceFactory;
         }
     }
 
@@ -245,9 +287,9 @@ public class Metamodels {
     @Accessors(fluent = true)
     static final class ProjectionSchemaImpl implements ProjectionType {
         private final Class<?> type;
-        private final Map<String, ProjectionBasicAttribute> dictionary = new HashMap<>();
+        private final Map<String, ProjectionBasicAttribute> dictionary = new LinkedHashMap<>();
         private final EntitySchema entityType;
-        private volatile SelectedConstruct constructor;
+        private InstanceFactory.ObjectFactory instanceFactory;
 
         public ProjectionSchemaImpl(Class<?> type, EntitySchema entityType) {
             this.type = type;
@@ -270,21 +312,6 @@ public class Metamodels {
         }
 
         @Override
-        public SelectedConstruct constructor() {
-            if (constructor == null) {
-                synchronized (this) {
-                    if (constructor == null) {
-                        SelectProjection selected = new SelectProjection()
-                                .entityType(entityType.type())
-                                .type(type());
-                        constructor = SelectedConstruct.of((EntityType) entityType(), selected, false);
-                    }
-                }
-            }
-            return constructor;
-        }
-
-        @Override
         public ProjectionBasicAttribute getAttribute(String name) {
             return dictionary.get(name);
         }
@@ -298,5 +325,22 @@ public class Metamodels {
         public Attribute declareBy() {
             return null;
         }
+
+        public InstanceFactory.ObjectFactory getInstanceFactory() {
+            if (instanceFactory == null) {
+                ImmutableList<AttributeFactory> primitives = dictionary.values().stream()
+                        .map(it -> {
+                            if (it instanceof ProjectionAssociationAttribute paa) {
+                                return ((ProjectionAssociationAttributeImpl) paa).getInstanceFactory();
+                            } else {
+                                return new ProjectionAttributeFactory(it);
+                            }
+                        })
+                        .collect(ImmutableList.collector(dictionary.size()));
+                this.instanceFactory = new ObjectFactoryImpl(primitives, type());
+            }
+            return instanceFactory;
+        }
+
     }
 }

@@ -1,20 +1,21 @@
 package io.github.nextentity.jpa;
 
-import io.github.nextentity.core.BasicExpressions;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.api.model.Order;
+import io.github.nextentity.api.SortOrder;
 import io.github.nextentity.core.QueryExecutor;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.SortOrder;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Operation;
-import io.github.nextentity.core.api.expression.QueryStructure;
-import io.github.nextentity.core.api.expression.QueryStructure.From;
-import io.github.nextentity.core.api.expression.QueryStructure.From.FromSubQuery;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure.From;
+import io.github.nextentity.core.expression.QueryStructure.From.FromSubQuery;
+import io.github.nextentity.core.expression.QueryStructure.Selected;
+import io.github.nextentity.core.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.expression.impl.ExpressionImpls;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.SubSelectType;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.jdbc.QueryContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -28,7 +29,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory;
 
 public class JpaQueryExecutor implements QueryExecutor {
 
@@ -48,26 +50,20 @@ public class JpaQueryExecutor implements QueryExecutor {
             return nativeQueryExecutor.getList(queryStructure);
         }
         Selected selected = queryStructure.select();
-        Class<?> entityType = queryStructure.from().type();
         if (selected instanceof SelectEntity) {
             List<?> resultList = getEntityResultList(queryStructure);
             return TypeCastUtil.cast(resultList);
         }
         QueryContext context = new QueryContext(queryStructure, metamodel, false);
-        List<Object[]> objectsList = getObjectsList(queryStructure, context.getSelects());
+        List<Object[]> objectsList = getObjectsList(queryStructure, context.getConstructor().primitives());
         List<Object> result = objectsList.stream()
                 .map(objects -> {
                     JpaArguments arguments = new JpaArguments(
-                            objects, null, null, metamodel, entityType);
+                            objects, null, null);
                     return context.construct(arguments);
                 })
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(objectsList.size()));
         return TypeCastUtil.cast(result);
-    }
-
-    @Override
-    public Metamodel metamodel() {
-        return metamodel;
     }
 
     private boolean requiredNativeQuery(@NotNull QueryStructure queryStructure) {
@@ -93,8 +89,8 @@ public class JpaQueryExecutor implements QueryExecutor {
         return false;
     }
 
-    private boolean hasSubQuery(Collection<? extends BaseExpression> expressions) {
-        for (BaseExpression operand : expressions) {
+    private boolean hasSubQuery(Collection<? extends Expression> expressions) {
+        for (Expression operand : expressions) {
             if (hasSubQuery(operand)) {
                 return true;
             }
@@ -102,12 +98,12 @@ public class JpaQueryExecutor implements QueryExecutor {
         return false;
     }
 
-    private boolean hasSubQuery(BaseExpression expression) {
+    private boolean hasSubQuery(Expression expression) {
         if (expression instanceof QueryStructure) {
             return true;
         }
         if (expression instanceof Operation) {
-            List<? extends BaseExpression> expressions = ((Operation) expression).operands();
+            List<? extends Expression> expressions = ((Operation) expression).operands();
             return hasSubQuery(expressions);
         }
         return false;
@@ -121,7 +117,7 @@ public class JpaQueryExecutor implements QueryExecutor {
         return new EntityBuilder(root, cb, query, structure).getResultList();
     }
 
-    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends BaseExpression> columns) {
+    private List<Object[]> getObjectsList(@NotNull QueryStructure structure, List<? extends PrimitiveFactory> columns) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<?> query = cb.createQuery(Object[].class);
         Root<?> root = query.from(structure.from().type());
@@ -130,19 +126,20 @@ public class JpaQueryExecutor implements QueryExecutor {
 
     class ObjectArrayBuilder extends Builder {
 
-        private final List<? extends BaseExpression> selects;
+        private final List<? extends PrimitiveFactory> selects;
 
         public ObjectArrayBuilder(Root<?> root,
                                   CriteriaBuilder cb,
                                   CriteriaQuery<?> query,
                                   QueryStructure structure,
-                                  List<? extends BaseExpression> selects) {
+                                  List<? extends PrimitiveFactory> selects) {
             super(root, cb, query, structure);
             this.selects = selects;
         }
 
         public List<Object[]> getResultList() {
-            return super.getResultList()
+            List<?> resultList = super.getResultList();
+            return resultList
                     .stream()
                     .map(it -> {
                         if (it instanceof Object[]) {
@@ -150,15 +147,16 @@ public class JpaQueryExecutor implements QueryExecutor {
                         }
                         return new Object[]{it};
                     })
-                    .collect(Collectors.toList());
+                    .collect(ImmutableList.collector(resultList.size()));
         }
 
         @Override
         protected TypedQuery<?> getTypedQuery() {
             CriteriaQuery<?> select = query.multiselect(
                     selects.stream()
+                            .map(PrimitiveFactory::expression)
                             .map(this::toExpression)
-                            .collect(Collectors.toList())
+                            .collect(ImmutableList.collector(selects.size()))
             );
 
             return entityManager.createQuery(select);
@@ -194,26 +192,28 @@ public class JpaQueryExecutor implements QueryExecutor {
                         .map(o -> o.order() == SortOrder.DESC
                                 ? cb.desc(toExpression(o.expression()))
                                 : cb.asc(toExpression(o.expression())))
-                        .collect(Collectors.toList());
+                        .collect(ImmutableList.collector(orderBy.size()));
                 query.orderBy(orders);
             }
         }
 
-        protected void setWhere(BaseExpression where) {
-            if (!BasicExpressions.isNullOrTrue(where)) {
+        protected void setWhere(Expression where) {
+            if (!ExpressionImpls.isNullOrTrue(where)) {
                 query.where(toPredicate(where));
             }
         }
 
-        protected void setGroupBy(List<? extends BaseExpression> groupBy) {
+        protected void setGroupBy(List<? extends Expression> groupBy) {
             if (groupBy != null && !groupBy.isEmpty()) {
-                List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream().map(this::toExpression).collect(Collectors.toList());
+                List<jakarta.persistence.criteria.Expression<?>> grouping = groupBy.stream()
+                        .map(this::toExpression)
+                        .collect(ImmutableList.collector(groupBy.size()));
                 query.groupBy(grouping);
             }
         }
 
-        protected void setHaving(BaseExpression having) {
-            if (!BasicExpressions.isNullOrTrue(having)) {
+        protected void setHaving(Expression having) {
+            if (!ExpressionImpls.isNullOrTrue(having)) {
                 query.having(toPredicate(having));
             }
         }

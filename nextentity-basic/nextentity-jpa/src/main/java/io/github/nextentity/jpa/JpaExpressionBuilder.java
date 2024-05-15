@@ -1,11 +1,11 @@
 package io.github.nextentity.jpa;
 
+import io.github.nextentity.api.Expression;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Literal;
-import io.github.nextentity.core.api.expression.Operation;
-import io.github.nextentity.core.api.Operator;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.FetchParent;
 import jakarta.persistence.criteria.From;
@@ -33,122 +33,128 @@ public class JpaExpressionBuilder {
         this.cb = cb;
     }
 
-    public jakarta.persistence.criteria.Expression<?> toExpression(BaseExpression expression) {
+    public jakarta.persistence.criteria.Expression<?> toExpression(Expression expression) {
         if (expression instanceof Literal) {
-            Literal cv = (Literal) expression;
-            return cb.literal(cv.value());
+            Literal literal = (Literal) expression;
+            return cb.literal(literal.value());
         }
         if (expression instanceof EntityPath) {
-            EntityPath pv = (EntityPath) expression;
-            return getPath(pv);
+            EntityPath path = (EntityPath) expression;
+            return getPath(path);
         }
         if (expression instanceof Operation) {
-            Operation ov = (Operation) expression;
-            Operator operator = ov.operator();
-            jakarta.persistence.criteria.Expression<?> e0 = toExpression(ov.firstOperand());
-            BaseExpression e1 = ov.secondOperand();
-            BaseExpression e2 = ov.thirdOperand();
+            Operation operation = (Operation) expression;
+            Operator operator = operation.operator();
+            Expression e1 = operation.secondOperand();
+            Expression e2 = operation.thirdOperand();
             switch (operator) {
                 case NOT:
-                    return toPredicate(e0).not();
+                    return toPredicate(firstExpression(operation)).not();
                 case AND: {
-                    Predicate[] predicates = toPredicateArray(ov.operands());
+                    Predicate[] predicates = toPredicateArray(operation.operands());
                     return cb.and(predicates);
                 }
                 case OR: {
-                    Predicate[] predicates = toPredicateArray(ov.operands());
+                    Predicate[] predicates = toPredicateArray(operation.operands());
                     return cb.or(predicates);
                 }
                 case EQ: {
-                    return cb.equal(e0, toExpression(e1));
+                    return cb.equal(firstExpression(operation), toExpression(e1));
                 }
                 case NE: {
-                    return cb.notEqual(e0, toExpression(e1));
+                    return cb.notEqual(firstExpression(operation), toExpression(e1));
                 }
                 case GT: {
-                    return cb.gt(cast(e0), cast(toExpression(e1)));
+                    return cb.gt(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case GE: {
-                    return cb.ge(cast(e0), cast(toExpression(e1)));
+                    return cb.ge(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case LT: {
-                    return cb.lt(cast(e0), cast(toExpression(e1)));
+                    return cb.lt(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case LE: {
-                    return cb.le(cast(e0), cast(toExpression(e1)));
+                    return cb.le(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case LIKE: {
-                    return cb.like(cast(e0), cast(toExpression(e1)));
+                    return cb.like(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case IS_NULL:
-                    return cb.isNull(e0);
+                    return cb.isNull(firstExpression(operation));
                 case IS_NOT_NULL:
-                    return cb.isNotNull(e0);
+                    return cb.isNotNull(firstExpression(operation));
                 case IN: {
-                    List<? extends BaseExpression> operands = ov.operands();
+                    List<? extends Expression> operands = operation.operands();
                     if (operands.size() <= 1) {
                         return cb.literal(false);
                     } else {
-                        CriteriaBuilder.In<Object> in = cb.in(e0);
+                        CriteriaBuilder.In<Object> in = cb.in(firstExpression(operation));
                         for (int i = 1; i < operands.size(); i++) {
-                            BaseExpression arg = operands.get(i);
+                            Expression arg = operands.get(i);
                             in = in.value(toExpression(arg));
                         }
                         return in;
                     }
                 }
                 case BETWEEN: {
-                    return cb.between(cast(e0), cast(toExpression(e1)), cast(toExpression(e2)));
+                    return cb.between(firstExpression(operation), cast(toExpression(e1)), cast(toExpression(e2)));
                 }
                 case LOWER:
-                    return cb.lower(cast(e0));
+                    return cb.lower(firstExpression(operation));
                 case UPPER:
-                    return cb.upper(cast(e0));
+                    return cb.upper(firstExpression(operation));
                 case SUBSTRING: {
-                    List<? extends BaseExpression> operands = ov.operands();
+                    List<? extends Expression> operands = operation.operands();
+                    jakarta.persistence.criteria.Expression<?> operand0 = firstExpression(operation);
                     if (operands.size() == 2) {
-                        return cb.substring(cast(e0), cast(toExpression(e1)));
+                        return cb.substring(cast(operand0), cast(toExpression(e1)));
                     } else if (operands.size() == 3) {
-                        return cb.substring(cast(e0), cast(toExpression(e1)), cast(toExpression(e2)));
+                        return cb.substring(cast(operand0), cast(toExpression(e1)), cast(toExpression(e2)));
                     } else {
                         throw new IllegalArgumentException("argument length error");
                     }
                 }
                 case TRIM:
-                    return cb.trim(cast(e0));
+                    return cb.trim(firstExpression(operation));
                 case LENGTH:
-                    return cb.length(cast(e0));
+                    return cb.length(firstExpression(operation));
                 case ADD: {
-                    return cb.sum(cast(e0), cast(toExpression(e1)));
+                    return cb.sum(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case SUBTRACT: {
-                    return cb.diff(cast(e0), cast(toExpression(e1)));
+                    return cb.diff(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case MULTIPLY: {
-                    return cb.prod(cast(e0), cast(toExpression(e1)));
+                    return cb.prod(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case DIVIDE: {
-                    return cb.quot(cast(e0), cast(toExpression(e1)));
+                    return cb.quot(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case MOD: {
-                    return cb.mod(cast(e0), cast(toExpression(e1)));
+                    return cb.mod(firstExpression(operation), cast(toExpression(e1)));
                 }
                 case NULLIF: {
+                    jakarta.persistence.criteria.Expression<?> e0 = firstExpression(operation);
                     return cb.nullif(e0, toExpression(e1));
                 }
                 case IF_NULL: {
-                    return cb.coalesce(e0, toExpression(e1));
+                    return cb.coalesce(firstExpression(operation), toExpression(e1));
                 }
                 case MIN:
-                    return cb.min(cast(e0));
+                    return cb.min(firstExpression(operation));
                 case MAX:
-                    return cb.max(cast(e0));
+                    return cb.max(firstExpression(operation));
                 case COUNT:
-                    return cb.count(cast(e0));
+                    Expression operand = operation.firstOperand();
+                    if (operand instanceof Operation opt && opt.operator() == Operator.DISTINCT) {
+                        return cb.countDistinct(toExpression(opt.firstOperand()));
+                    } else {
+                        return cb.count(firstExpression(operation));
+                    }
                 case AVG:
-                    return cb.avg(cast(e0));
+                    return cb.avg(firstExpression(operation));
                 case SUM:
-                    return cb.sum(cast(e0));
+                    return cb.sum(firstExpression(operation));
                 default:
                     throw new UnsupportedOperationException(operator.name());
             }
@@ -157,7 +163,11 @@ public class JpaExpressionBuilder {
         }
     }
 
-    public Predicate toPredicate(BaseExpression expression) {
+    private <X> jakarta.persistence.criteria.Expression<X> firstExpression(Operation ov) {
+        return cast(toExpression(ov.firstOperand()));
+    }
+
+    public Predicate toPredicate(Expression expression) {
         return toPredicate(toExpression(expression));
     }
 
@@ -169,7 +179,7 @@ public class JpaExpressionBuilder {
     }
 
     @NotNull
-    private Predicate[] toPredicateArray(List<? extends BaseExpression> operands) {
+    private Predicate[] toPredicateArray(List<? extends Expression> operands) {
         return operands.stream()
                 .map(this::toPredicate)
                 .toArray(Predicate[]::new);

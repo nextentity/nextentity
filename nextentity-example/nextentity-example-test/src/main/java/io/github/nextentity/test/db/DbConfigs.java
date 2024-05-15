@@ -1,6 +1,6 @@
 package io.github.nextentity.test.db;
 
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.util.List;
 
@@ -12,6 +12,6 @@ public interface DbConfigs {
 
     DbConfig MYSQL = new Mysql().getConfig();
     DbConfig SQLSERVER = new SqlServer().getConfig();
-    List<DbConfig> CONFIGS = Lists.of(MYSQL, SQLSERVER);
+    List<DbConfig> CONFIGS = ImmutableList.of(MYSQL, SQLSERVER);
 
 }

@@ -1,6 +1,6 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.test.db.DbConfig;
 import io.github.nextentity.test.db.DbConfigs;
 import io.github.nextentity.test.db.UserRepository;
@@ -27,7 +27,12 @@ public class UserQueryProvider implements ArgumentsProvider {
         return config.getEntitiesFactories().stream()
                 .map(it -> {
                     Repository<Integer, User> entities = it.getRepository(User.class);
-                    return new UserRepository(entities, config);
+                    return new UserRepository(entities, config) {
+                        @Override
+                        public String toString() {
+                            return it.toString();
+                        }
+                    };
                 });
     }
 

@@ -1,6 +1,6 @@
 package io.github.nextentity.test.domain;
 
-import io.github.nextentity.core.api.Sliceable;
+import io.github.nextentity.api.model.Sliceable;
 import lombok.Data;
 
 import java.util.List;

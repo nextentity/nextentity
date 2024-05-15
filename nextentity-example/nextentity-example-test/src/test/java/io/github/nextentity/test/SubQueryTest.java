@@ -1,6 +1,6 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.core.RepositoryFactory;
 import io.github.nextentity.test.db.DbConfigs;
 import io.github.nextentity.test.entity.UserSummaryMysql;

@@ -1,8 +1,8 @@
 package io.github.nextentity.test;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
+import io.github.nextentity.api.Select;
 import io.github.nextentity.core.RepositoryFactory;
-import io.github.nextentity.core.api.Query.Select;
 import io.github.nextentity.test.db.DbConfig;
 import io.github.nextentity.test.db.Transaction;
 import io.github.nextentity.test.db.UserRepository;
@@ -166,6 +166,8 @@ public class UpdateTest {
             List<AutoGenId> list = Arrays.asList(new AutoGenId(), new AutoGenId());
             entities.insert(list);
             checkId(list, entities);
+            entities.update(list);
+            entities.update(list.get(0));
         });
     }
 

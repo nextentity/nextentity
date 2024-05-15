@@ -1,6 +1,6 @@
 package io.github.nextentity.jdbc;
 
-import io.github.nextentity.core.api.expression.BaseExpression;
+import io.github.nextentity.api.Expression;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.QuerySqlBuilder;
 
 import java.util.List;
@@ -44,7 +44,7 @@ public class MySqlQuerySqlBuilder implements QuerySqlBuilder {
         }
 
         @Override
-        protected void appendPredicate(BaseExpression node) {
+        protected void appendPredicate(Expression node) {
             appendExpression(node);
         }
 

@@ -1,20 +1,21 @@
 package io.github.nextentity.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.nextentity.api.ExpressionBuilder.Conjunction;
+import io.github.nextentity.api.Path;
+import io.github.nextentity.api.TypedExpression;
+import io.github.nextentity.api.TypedExpression.NumberPathExpression;
+import io.github.nextentity.api.TypedExpression.Predicate;
+import io.github.nextentity.api.model.EntityRoot;
+import io.github.nextentity.api.model.Slice;
+import io.github.nextentity.api.model.Tuple;
+import io.github.nextentity.api.model.Tuple2;
+import io.github.nextentity.api.model.Tuple3;
 import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.api.EntityRoot;
-import io.github.nextentity.core.api.Expression;
-import io.github.nextentity.core.api.Expression.Predicate;
-import io.github.nextentity.core.api.ExpressionBuilder.AndOperator;
-import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.api.tuple.Tuple;
-import io.github.nextentity.core.api.tuple.Tuple2;
-import io.github.nextentity.core.api.tuple.Tuple3;
 import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.meta.ProjectionType;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Paths;
 import io.github.nextentity.meta.jpa.JpaMetamodel;
 import io.github.nextentity.test.db.UserRepository;
@@ -56,6 +57,31 @@ public class GenericApiTest {
 
     protected static final String username = "Jeremy Keynes";
 
+
+    @ParameterizedTest
+    @ArgumentsSource(UserQueryProvider.class)
+    public void testIfNull(UserRepository userQuery) {
+        List<User> list = userQuery
+                .where(User::getId).eqIfNotNull(null)
+                .where(User::getId).geIfNotNull(null)
+                .where(User::getId).eq(10)
+                .getList();
+
+        NumberPathExpression<User, Integer> id = Paths.get(User::getId);
+
+        System.out.println(list.size());
+        ImmutableList<Predicate<User>> predicates = ImmutableList.of(id.geIfNotNull(null), id.eqIfNotNull(null));
+        Predicate<User> predicate = id.eqIfNotNull(null)
+                .and(predicates);
+        List<User> list1 = userQuery.where(predicate).getList();
+        System.out.println(list1.size());
+        list1 = userQuery.where(predicate.and(User::getId).eq(1)).getList();
+        System.out.println(list1.size());
+        list1 = userQuery.where(predicate.and(id.eq(1))).getList();
+        System.out.println(list1.size());
+
+    }
+
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     public void testAndOr(UserRepository userQuery) {
@@ -65,10 +91,8 @@ public class GenericApiTest {
                 .getSingle(10);
         System.out.println(single);
         List<User> dbList = userQuery
-                .where(User::getRandomNumber)
-                .ne(1)
-                .where(User::getRandomNumber)
-                .gt(100)
+                .where(User::getRandomNumber).ne(1)
+                .where(User::getRandomNumber).gt(100)
                 .where(User::getRandomNumber).ne(125)
                 .where(User::getRandomNumber).le(666)
                 .where(get(User::getRandomNumber).lt(106)
@@ -214,6 +238,12 @@ public class GenericApiTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     void te(UserRepository userQuery) {
+
+        userQuery.fetch(Paths.get(User::getParentUser).get(User::getId))
+                .where(User::getId).eq(0)
+                .orderBy(User::getId)
+                .getList();
+
         // UserRepository userQuery = DbConfigs.MYSQL.getJdbc();
         List<User> users = userQuery.fetch(
                         User::getParentUser,
@@ -290,7 +320,7 @@ public class GenericApiTest {
             assertEquals(u0.getTestUser(), u1.getTestUser());
         }
 
-        users = userQuery.fetch(Lists.<Path<User, ?>>of(
+        users = userQuery.fetch(ImmutableList.<Path<User, ?>>of(
                         User::getParentUser,
                         User::getRandomUser,
                         User::getTestUser))
@@ -310,7 +340,7 @@ public class GenericApiTest {
     @ArgumentsSource(UserQueryProvider.class)
     public void testAggregateFunction(UserRepository userQuery) {
 
-        List<Expression<User, ?>> selected = Arrays.asList(
+        List<TypedExpression<User, ?>> selected = Arrays.asList(
                 get(User::getRandomNumber).min(),
                 get(User::getRandomNumber).max(),
                 get(User::getRandomNumber).count(),
@@ -365,6 +395,15 @@ public class GenericApiTest {
                 .orderBy(get(User::getId).desc())
                 .getFirst();
         assertEquals(first, userQuery.users().get(userQuery.users().size() - 1).getId());
+
+        Long count = userQuery
+                .select(get(User::getRandomNumber).countDistinct())
+                .getSingle();
+        long count1 = userQuery.users()
+                .stream().mapToInt(User::getRandomNumber)
+                .distinct()
+                .count();
+        assertEquals(count1, count);
     }
 
     @ParameterizedTest
@@ -741,7 +780,7 @@ public class GenericApiTest {
                 .collect(Collectors.toList());
         assertEquals(qList, fList);
 
-        AndOperator<User> predicate = get(User::getRandomNumber).eq(20).and(User::getUsername).eqIfNotNull(null);
+        Conjunction<User> predicate = get(User::getRandomNumber).eq(20).and(User::getUsername).eqIfNotNull(null);
         qList = userQuery.where(predicate).getList();
 
         assertEquals(qList, fList);
@@ -1095,7 +1134,7 @@ public class GenericApiTest {
 
         Date time = userQuery.users().get(20).getTime();
 
-        Expression<User, Boolean> or = get(User::isValid).eq(true)
+        TypedExpression<User, Boolean> or = get(User::isValid).eq(true)
                 .or(
                         Paths.get(User::getParentUser)
                                 .get(User::getUsername)
@@ -1259,16 +1298,6 @@ public class GenericApiTest {
                                 .and(User::getTime).ge(time)
                         ))
                 .count();
-    }
-
-    public static void main(String[] args) {
-        Metamodel metamodel = JpaMetamodel.of();
-        BasicAttribute attribute = metamodel.getEntity(User.class).getAttribute("parentUser");
-        boolean dictionary = attribute.isObject();
-        System.out.println(dictionary);
-        System.out.println(attribute);
-        ProjectionType projection = metamodel.getEntity(User.class).getProjection(UserInterface.class);
-        System.out.println(projection);
     }
 
     @ParameterizedTest
@@ -1703,7 +1732,7 @@ public class GenericApiTest {
     @ParameterizedTest
     @ArgumentsSource(UserQueryProvider.class)
     public void subQueryTest(UserRepository userQuery) {
-        Expression<User, List<Integer>> ids = userQuery
+        TypedExpression<User, List<Integer>> ids = userQuery
                 .select(User::getId).where(User::getId)
                 .in(1, 2, 3)
                 .asSubQuery();

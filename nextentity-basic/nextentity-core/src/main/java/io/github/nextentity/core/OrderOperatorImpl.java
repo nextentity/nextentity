@@ -1,25 +1,25 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.EntityRoot;
-import io.github.nextentity.core.api.Order;
-import io.github.nextentity.core.api.LockModeType;
-import io.github.nextentity.core.api.Page;
-import io.github.nextentity.core.api.Pageable;
-import io.github.nextentity.core.api.Path;
-import io.github.nextentity.core.api.Query.Collector;
-import io.github.nextentity.core.api.Query.OrderBy;
-import io.github.nextentity.core.api.Query.OrderOperator;
-import io.github.nextentity.core.api.Query.SubQueryBuilder;
-import io.github.nextentity.core.api.Slice;
-import io.github.nextentity.core.api.Sliceable;
-import io.github.nextentity.core.api.SortOrder;
+import io.github.nextentity.api.Collector;
+import io.github.nextentity.api.SelectOrderByStep;
+import io.github.nextentity.api.OrderOperator;
+import io.github.nextentity.api.Path;
+import io.github.nextentity.api.SubQueryBuilder;
+import io.github.nextentity.api.model.EntityRoot;
+import io.github.nextentity.api.model.LockModeType;
+import io.github.nextentity.api.model.Order;
+import io.github.nextentity.api.model.Page;
+import io.github.nextentity.api.model.Pageable;
+import io.github.nextentity.api.model.Slice;
+import io.github.nextentity.api.model.Sliceable;
+import io.github.nextentity.api.SortOrder;
+import io.github.nextentity.core.util.ImmutableList;
 import io.github.nextentity.core.util.Paths;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     private final WhereImpl<T, U> builder;
@@ -35,11 +35,11 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
         return orderByPaths
                 .stream()
                 .map(path -> Paths.get(path).sort(sort))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(orderByPaths.size()));
     }
 
     @Override
-    public OrderBy<T, U> sort(SortOrder order) {
+    public SelectOrderByStep<T, U> sort(SortOrder order) {
         return builder.addOrderBy(asOrderList(order));
     }
 
@@ -91,6 +91,11 @@ public class OrderOperatorImpl<T, U> implements OrderOperator<T, U> {
     @Override
     public Page<U> getPage(Pageable pageable) {
         return asc().getPage(pageable);
+    }
+
+    @Override
+    public <R> Collector<R> map(Function<? super U, ? extends R> mapper) {
+        return asc().map(mapper);
     }
 
     @Override

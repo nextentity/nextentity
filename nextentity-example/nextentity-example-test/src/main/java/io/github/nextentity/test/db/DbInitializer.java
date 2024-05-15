@@ -27,7 +27,7 @@ public class DbInitializer extends Transaction {
         doInTransaction(connection -> {
             try {
                 UserRepository query = config.getJdbc();
-                // resetData(connection, query);
+                resetData(connection, query);
                 allUsers = queryAllUsers(query);
             } catch (Exception e) {
                 throw new RuntimeException(e);

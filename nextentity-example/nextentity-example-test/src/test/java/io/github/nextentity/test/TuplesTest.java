@@ -1,16 +1,16 @@
 package io.github.nextentity.test;
 
+import io.github.nextentity.api.model.Tuple;
+import io.github.nextentity.api.model.Tuple10;
+import io.github.nextentity.api.model.Tuple2;
+import io.github.nextentity.api.model.Tuple3;
+import io.github.nextentity.api.model.Tuple4;
+import io.github.nextentity.api.model.Tuple5;
+import io.github.nextentity.api.model.Tuple6;
+import io.github.nextentity.api.model.Tuple7;
+import io.github.nextentity.api.model.Tuple8;
+import io.github.nextentity.api.model.Tuple9;
 import io.github.nextentity.core.Tuples;
-import io.github.nextentity.core.api.tuple.Tuple;
-import io.github.nextentity.core.api.tuple.Tuple10;
-import io.github.nextentity.core.api.tuple.Tuple2;
-import io.github.nextentity.core.api.tuple.Tuple3;
-import io.github.nextentity.core.api.tuple.Tuple4;
-import io.github.nextentity.core.api.tuple.Tuple5;
-import io.github.nextentity.core.api.tuple.Tuple6;
-import io.github.nextentity.core.api.tuple.Tuple7;
-import io.github.nextentity.core.api.tuple.Tuple8;
-import io.github.nextentity.core.api.tuple.Tuple9;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

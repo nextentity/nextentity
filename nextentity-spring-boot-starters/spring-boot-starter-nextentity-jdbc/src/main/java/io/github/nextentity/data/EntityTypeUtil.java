@@ -1,9 +1,9 @@
 package io.github.nextentity.data;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
+import io.github.nextentity.api.Select;
+import io.github.nextentity.api.Update;
 import io.github.nextentity.core.TypeCastUtil;
-import io.github.nextentity.core.api.Query.Select;
-import io.github.nextentity.core.api.Update;
 import io.github.nextentity.core.meta.Metamodel;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.config.DependencyDescriptor;
@@ -56,7 +56,7 @@ public class EntityTypeUtil {
         Class<?> expected = metamodel.getEntity(entityType).id().type();
         if (expected != idType) {
             String msg = descriptor.getResolvableType() + " " + descriptor
-                    + " id type mismatch, expected: " + expected + ", actual: " + idType;
+                         + " id type mismatch, expected: " + expected + ", actual: " + idType;
             throw new EntityIdTypeMismatchException(msg);
         }
     }

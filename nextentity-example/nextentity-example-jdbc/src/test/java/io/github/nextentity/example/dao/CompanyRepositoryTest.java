@@ -1,8 +1,9 @@
 package io.github.nextentity.example.dao;
 
-import io.github.nextentity.core.Repository;
+import io.github.nextentity.api.Repository;
 import io.github.nextentity.example.eneity.Company;
 import io.github.nextentity.example.eneity.Employee;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @author HuangChengwei
  * @since 2024-03-27 14:26
  */
+@Slf4j
 @SpringBootTest
 class CompanyRepositoryTest {
     @Autowired(required = false)
@@ -32,6 +34,21 @@ class CompanyRepositoryTest {
         Assertions.assertNotNull(companyRepository);
         Assertions.assertNotNull(employeeRepository);
         Assertions.assertNotNull(employeeRepository2);
+    }
+
+
+    @Test
+    void testFindById() {
+        Company company = companyRepository.get(1);
+        log.info("{}", company);
+
+        Employee employee = employeeRepository.fetch(Employee::getCompany).getFirst();
+        log.info("{}", employee);
+
+        Company company1 = employeeRepository.select(Employee::getCompany).getFirst();
+        log.info("{}", company1);
+
+
     }
 
 }

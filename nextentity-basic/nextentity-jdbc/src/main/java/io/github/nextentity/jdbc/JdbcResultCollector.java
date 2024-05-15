@@ -2,6 +2,7 @@ package io.github.nextentity.jdbc;
 
 import io.github.nextentity.core.TypeCastUtil;
 import io.github.nextentity.core.converter.TypeConverter;
+import io.github.nextentity.core.reflect.schema.InstanceFactory.PrimitiveFactory;
 import io.github.nextentity.jdbc.JdbcQueryExecutor.ResultCollector;
 
 import java.sql.ResultSet;
@@ -34,15 +35,12 @@ public class JdbcResultCollector implements ResultCollector {
             result = new ArrayList<>();
         }
         int columnsCount = resultSet.getMetaData().getColumnCount();
-
-        Class<?>[] types = context.getSelects().stream()
-                .map(context::getExpressionType)
-                .toArray(Class<?>[]::new);
-        if (types.length != columnsCount) {
+        List<? extends PrimitiveFactory> primitives = context.getConstructor().primitives();
+        if (primitives.size() != columnsCount) {
             throw new IllegalStateException();
         }
         while (resultSet.next()) {
-            JdbcArguments arguments = new JdbcArguments(resultSet, context.getEntityType(), types, typeConverter);
+            JdbcArguments arguments = new JdbcArguments(resultSet, primitives, typeConverter);
             Object o = context.construct(arguments);
             result.add(o);
         }

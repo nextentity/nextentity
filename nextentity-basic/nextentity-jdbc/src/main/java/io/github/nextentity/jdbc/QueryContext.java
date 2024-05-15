@@ -1,25 +1,26 @@
 package io.github.nextentity.jdbc;
 
+import io.github.nextentity.api.Expression;
 import io.github.nextentity.core.ExpressionTypeResolver;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.QueryStructure;
-import io.github.nextentity.core.api.expression.QueryStructure.From;
-import io.github.nextentity.core.api.expression.QueryStructure.From.Entity;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectEntity;
-import io.github.nextentity.core.api.expression.QueryStructure.Selected.SelectProjection;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.expression.QueryStructure.From;
+import io.github.nextentity.core.expression.QueryStructure.From.FromEntity;
+import io.github.nextentity.core.expression.QueryStructure.Selected;
+import io.github.nextentity.core.expression.QueryStructure.Selected.SelectEntity;
+import io.github.nextentity.core.expression.QueryStructure.Selected.SelectProjection;
+import io.github.nextentity.core.meta.AssociationAttribute;
+import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.meta.Metamodel;
 import io.github.nextentity.core.reflect.Arguments;
-import io.github.nextentity.core.reflect.ObjectFactory;
-import io.github.nextentity.core.reflect.SelectedConstruct;
-import io.github.nextentity.core.reflect.Timer;
+import io.github.nextentity.core.reflect.InstanceFactories;
+import io.github.nextentity.core.reflect.schema.InstanceFactory;
+import io.github.nextentity.core.util.ImmutableList;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author HuangChengwei
@@ -28,37 +29,55 @@ import java.util.List;
 @Data
 public class QueryContext {
 
-    public static Timer timer = new Timer();
-
     protected final QueryStructure structure;
     protected final Metamodel metamodel;
     protected final EntityType entityType;
     protected final boolean expandReferencePath;
-    protected final List<BaseExpression> selects;
-    protected final ObjectFactory constructor;
+    protected final InstanceFactory constructor;
 
     public QueryContext(QueryStructure structure, Metamodel metamodel, boolean expandObjectAttribute) {
         this.structure = structure;
         this.metamodel = metamodel;
         this.expandReferencePath = expandObjectAttribute;
         From from = structure.from();
-        this.entityType = from instanceof Entity ? metamodel.getEntity(from.type()) : null;
-        SelectedConstruct selectedConstruct = getSelectedConstruct();
-        this.constructor = selectedConstruct;
-        this.selects = selectedConstruct.selects();
+        this.entityType = from instanceof FromEntity ? metamodel.getEntity(from.type()) : null;
+        this.constructor = getSelectedConstruct();
     }
 
-    private @NotNull SelectedConstruct getSelectedConstruct() {
+    private @NotNull InstanceFactory getSelectedConstruct() {
         Selected select = structure.select();
         if (select instanceof SelectEntity) {
             Collection<? extends EntityPath> fetch = ((SelectEntity) select).fetch();
-            if (fetch == null || fetch.isEmpty()) {
-                return entityType.constructor();
+            if (fetch == null || fetch.isEmpty() || !expandReferencePath) {
+                return entityType.getInstanceFactory();
+            } else {
+                return InstanceFactories.fetch(entityType, fetch);
             }
-        }else if(select instanceof SelectProjection) {
-            return entityType.getProjection(select.type()).constructor();
+        } else if (select instanceof SelectProjection) {
+            return entityType.getProjection(select.type()).getInstanceFactory();
+        } else if (select instanceof Selected.SelectPrimitive selectPrimitive) {
+            return newPrimitiveFactory(selectPrimitive);
+        } else if (select instanceof Selected.SelectArray selectArray) {
+            ImmutableList<InstanceFactory> factories = selectArray.items().stream()
+                    .map(this::newPrimitiveFactory)
+                    .collect(ImmutableList.collector(selectArray.items().size()));
+            return new InstanceFactories.ArrayFactoryImpl(factories);
         }
-        return SelectedConstruct.of(entityType, structure.select(), expandReferencePath);
+        throw new IllegalArgumentException("Unknown select type: " + select.getClass().getName());
+    }
+
+    private InstanceFactory newPrimitiveFactory(Selected.SelectPrimitive select) {
+        Expression expression = select.expression();
+        if (expression instanceof EntityPath entityPath) {
+            BasicAttribute attribute = entityType.getAttribute(entityPath);
+            if (expandReferencePath && attribute.isObject()) {
+                return ((AssociationAttribute) attribute).getInstanceFactory();
+            } else {
+                return new InstanceFactories.AttributeFactoryImpl(attribute);
+            }
+        }
+        return new InstanceFactories.PrimitiveFactoryImpl(
+                expression, ExpressionTypeResolver.getExpressionType(expression, entityType));
     }
 
     public QueryContext newContext(QueryStructure structure) {
@@ -66,12 +85,7 @@ public class QueryContext {
     }
 
     public Object construct(Arguments arguments) {
-        return constructor.get(arguments);
+        return constructor.getInstance(arguments.iterator());
     }
-
-    public Class<?> getExpressionType(BaseExpression expression) {
-        return ExpressionTypeResolver.getExpressionType(expression, entityType);
-    }
-
 
 }

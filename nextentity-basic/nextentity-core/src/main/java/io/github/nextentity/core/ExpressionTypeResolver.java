@@ -1,16 +1,15 @@
 package io.github.nextentity.core;
 
-import io.github.nextentity.core.api.Operator;
-import io.github.nextentity.core.api.expression.BaseExpression;
-import io.github.nextentity.core.api.expression.EntityPath;
-import io.github.nextentity.core.api.expression.Literal;
-import io.github.nextentity.core.api.expression.Operation;
-import io.github.nextentity.core.api.expression.QueryStructure;
-import io.github.nextentity.core.meta.EntitySchema;
+import io.github.nextentity.api.Expression;
+import io.github.nextentity.core.expression.EntityPath;
+import io.github.nextentity.core.expression.Literal;
+import io.github.nextentity.core.expression.Operation;
+import io.github.nextentity.core.expression.Operator;
+import io.github.nextentity.core.expression.QueryStructure;
+import io.github.nextentity.core.meta.BasicAttribute;
 import io.github.nextentity.core.meta.EntityType;
 import io.github.nextentity.core.reflect.PrimitiveTypes;
-import io.github.nextentity.core.reflect.schema.Schema;
-import io.github.nextentity.core.util.Lists;
+import io.github.nextentity.core.util.ImmutableList;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -22,7 +21,7 @@ import java.util.List;
  */
 public class ExpressionTypeResolver {
 
-    private static final List<Class<? extends Number>> NUMBER_TYPES = Lists.of(
+    private static final List<Class<? extends Number>> NUMBER_TYPES = ImmutableList.of(
             Byte.class,
             Short.class,
             Integer.class,
@@ -34,7 +33,7 @@ public class ExpressionTypeResolver {
     );
 
 
-    public static Class<?> getExpressionType(BaseExpression expression, EntityType entityType) {
+    public static Class<?> getExpressionType(Expression expression, EntityType entityType) {
         if (expression instanceof EntityPath) {
             return getColumnType((EntityPath) expression, entityType);
         } else if (expression instanceof Literal) {
@@ -105,7 +104,7 @@ public class ExpressionTypeResolver {
 
     private static Class<?> getNumberType(Operation expression, EntityType entityType) {
         int index = -1;
-        for (BaseExpression operand : expression.operands()) {
+        for (Expression operand : expression.operands()) {
             Class<?> type = getExpressionType(operand, entityType);
             if (type.isPrimitive()) {
                 type = PrimitiveTypes.getWrapper(type);
@@ -128,11 +127,8 @@ public class ExpressionTypeResolver {
     }
 
     public static Class<?> getColumnType(EntityPath column, EntityType entityType) {
-        Schema t = entityType;
-        for (String s : column) {
-            t = ((EntitySchema) t).getAttribute(s);
-        }
-        return t.type();
+        BasicAttribute attribute = entityType.getAttribute(column);
+        return attribute.databaseType().databaseType();
     }
 
 }

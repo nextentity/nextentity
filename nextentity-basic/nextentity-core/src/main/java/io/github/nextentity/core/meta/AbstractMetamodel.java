@@ -4,18 +4,19 @@ import io.github.nextentity.core.PathReference;
 import io.github.nextentity.core.annotaion.EntityAttribute;
 import io.github.nextentity.core.annotaion.SubSelect;
 import io.github.nextentity.core.exception.BeanReflectiveException;
-import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.AssociationAttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.AttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.BasicAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.EntitySchemaImpl;
 import io.github.nextentity.core.meta.Metamodels.EntityTypeImpl;
-import io.github.nextentity.core.meta.Metamodels.ProjectionAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.ProjectionAssociationAttributeImpl;
+import io.github.nextentity.core.meta.Metamodels.ProjectionAttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.ProjectionSchemaImpl;
-import io.github.nextentity.core.meta.Metamodels.AttributeImpl;
 import io.github.nextentity.core.meta.Metamodels.SubSelectEntity;
 import io.github.nextentity.core.reflect.ReflectUtil;
 import io.github.nextentity.core.reflect.schema.Attribute;
 import io.github.nextentity.core.reflect.schema.Schema;
+import io.github.nextentity.core.util.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class AbstractMetamodel implements Metamodel {
@@ -98,7 +98,7 @@ public abstract class AbstractMetamodel implements Metamodel {
         RecordComponent[] components = projectionType.getRecordComponents();
         return Arrays.stream(components)
                 .map(it -> newAttribute(null, it.getAccessor(), null, owner))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(components.length));
     }
 
     protected BasicAttribute getEntityAttribute(Attribute attribute, EntitySchema entity) {
@@ -135,9 +135,10 @@ public abstract class AbstractMetamodel implements Metamodel {
 
     @NotNull
     private List<Attribute> getInterfaceAttributes(Class<?> clazz, Schema owner) {
-        return Arrays.stream(clazz.getMethods())
+        Method[] methods = clazz.getMethods();
+        return Arrays.stream(methods)
                 .map(it -> newAttribute(null, it, null, owner))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(methods.length));
     }
 
     protected abstract String getTableName(Class<?> javaType);
@@ -159,6 +160,13 @@ public abstract class AbstractMetamodel implements Metamodel {
     protected abstract String getColumnName(Attribute attribute);
 
     protected abstract Field[] getSuperClassField(Class<?> baseClass, Class<?> superClass);
+
+    protected DatabaseType databaseType(Attribute attribute) {
+        if (attribute.type().isEnum()) {
+            return new OrdinalOfEnumType(attribute.type());
+        }
+        return null;
+    }
 
     protected EntityType createEntityType(Class<?> entityType) {
         EntityTypeImpl result;
@@ -198,7 +206,9 @@ public abstract class AbstractMetamodel implements Metamodel {
                         versionColumn = hasVersion = true;
                     }
                 }
-                attribute = new BasicAttributeImpl(attr, getColumnName(attr), versionColumn);
+                BasicAttributeImpl impl = new BasicAttributeImpl(attr, getColumnName(attr), versionColumn);
+                impl.databaseType(databaseType(attr));
+                attribute = impl;
                 if (versionColumn) {
                     result.version(attribute);
                 }
@@ -228,7 +238,7 @@ public abstract class AbstractMetamodel implements Metamodel {
             BasicAttribute value = entry.getValue();
             if (value instanceof AssociationAttributeImpl attr) {
                 String joinColumnName = getJoinColumnName(map, attr);
-                attr.joinColumnName(joinColumnName);
+                attr.columnName(joinColumnName);
             }
         }
     }
@@ -255,9 +265,10 @@ public abstract class AbstractMetamodel implements Metamodel {
         } catch (IntrospectionException e) {
             throw new BeanReflectiveException(e);
         }
-        List<Attribute> attributes = getDeclaredFields(type).stream()
+        Collection<Field> declaredFields = getDeclaredFields(type);
+        List<Attribute> attributes = declaredFields.stream()
                 .map(field -> newAttribute(owner, field, map.remove(field.getName())))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.collector(declaredFields.size()));
         map.values().stream()
                 .map(descriptor -> newAttribute(owner, null, descriptor))
                 .forEach(attributes::add);
